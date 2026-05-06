@@ -1,0 +1,9 @@
+export const currency = '$';
+export const currentYear = new Date().getFullYear();
+export const appName = 'Simple';
+export const appTitle = 'Simple - Responsive Bootstrap 5 Admin Dashboard';
+export const appDescription = 'Perfect for building CRM, CMS, project management tools, and custom web apps with clean UI, responsive design, and powerful features.';
+export const author = 'Coderthemes';
+export const authorWebsite = 'https://coderthemes.com/';
+export const authorContact = '';
+export const basePath = '';
