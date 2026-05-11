@@ -1,5 +1,5 @@
 import { TbBellRinging, TbCreditCard, TbHeadset, TbLock, TbLogout2, TbSettings2, TbUserCircle } from 'react-icons/tb';
-import { LuBookUser, LuCalendar, LuChartPie, LuCircleGauge, LuCommand, LuFingerprint, LuLayers2, LuMapPin, LuNotebookText, LuPencilRuler, LuShieldBan, LuSparkles, LuSquarePi, LuTable2 } from 'react-icons/lu';
+import { LuBookUser, LuCalendar, LuChartPie, LuCircleGauge, LuCommand, LuFingerprint, LuLayers2, LuMapPin, LuNotebookText, LuPencilRuler, LuShieldBan, LuSparkles, LuSquarePi, LuTable2, LuTruck } from 'react-icons/lu';
 export const userDropdownItems = [{
   label: 'Welcome back!',
   isHeader: true
@@ -40,6 +40,11 @@ export const menuItems = [{
   label: 'Dashboard',
   icon: LuCircleGauge,
   url: '/dashboard'
+}, {
+  key: 'dispatch-hub',
+  label: 'Dispatch Hub',
+  icon: LuTruck,
+  url: '/dispatch-hub'
 }, {
   key: 'ton-ai',
   label: 'Ton AI',
