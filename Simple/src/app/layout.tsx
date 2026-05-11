@@ -12,7 +12,7 @@ import 'react-quill-new/dist/quill.bubble.css';
 import 'flatpickr/dist/flatpickr.min.css';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import '@/assets/scss/app.scss';
-
+import 'devextreme/dist/css/dx.light.css';
 export const metadata = {
   title: {
     default: appTitle,

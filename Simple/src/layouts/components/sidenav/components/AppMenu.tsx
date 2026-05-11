@@ -2,25 +2,41 @@
 
 import { useLayoutContext } from '@/context/useLayoutContext';
 import { scrollToElement } from '@/helpers/layout';
-import { menuItems } from '@/layouts/components/data';
+import { menuItems, MenuItemType } from '@/layouts/components/data';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Collapse } from 'react-bootstrap';
 import { TbChevronDown } from 'react-icons/tb';
 
+interface MenuItemWithChildrenProps {
+  item: MenuItemType
+  openMenuKey: string | null
+  setOpenMenuKey: (key: string | null) => void
+  level?: number
+}
+
+interface MenuItemProps {
+  item: MenuItemType
+}
+
 const MenuItemWithChildren = ({
   item,
   openMenuKey,
   setOpenMenuKey,
   level = 0
-}) => {
+}: MenuItemWithChildrenProps) => {
   const pathname = usePathname();
   const isTopLevel = level === 0;
   const [localOpen, setLocalOpen] = useState(false);
   const [didAutoOpen, setDidAutoOpen] = useState(false);
 
-  const isChildActive = children => children.some(child => child.url && pathname.endsWith(child.url) || child.children && isChildActive(child.children));
+  const isChildActive = (children: MenuItemType[]): boolean =>
+    children.some(child =>
+      (child.url && pathname.endsWith(child.url)) ||
+      (child.children && isChildActive(child.children))
+    );
+
   const isActive = isChildActive(item.children || []);
   const isOpen = isTopLevel ? openMenuKey === item.key : localOpen;
 
@@ -45,25 +61,26 @@ const MenuItemWithChildren = ({
 
   return <li className={`side-nav-item ${isOpen ? 'active' : ''}`}>
       <button onClick={toggleOpen} className="side-nav-link" aria-expanded={isOpen}>
-        {item.icon && <span className="menu-icon">
-            <item.icon />
-          </span>}
+        {item.icon && <span className="menu-icon"><item.icon /></span>}
         <span className="menu-text">{item.label}</span>
-        {item.badge ? <span className={`badge bg-${item.badge.variant}`}>{item.badge.text}</span> : <span className="menu-arrow">
-            <TbChevronDown />
-          </span>}
+        {item.badge && <span className={`badge bg-${item.badge.variant}`}>{item.badge.text}</span>}
+        <span className="menu-arrow"><TbChevronDown /></span>
       </button>
       <Collapse in={isOpen}>
         <div>
           <ul className="sub-menu">
-            {(item.children || []).map(child => child.children ? <MenuItemWithChildren key={child.key} item={child} openMenuKey={openMenuKey} setOpenMenuKey={setOpenMenuKey} level={level + 1} /> : <MenuItem key={child.key} item={child} />)}
+            {(item.children || []).map(child =>
+              child.children
+                ? <MenuItemWithChildren key={child.key} item={child} openMenuKey={openMenuKey} setOpenMenuKey={setOpenMenuKey} level={level + 1} />
+                : <MenuItem key={child.key} item={child} />
+            )}
           </ul>
         </div>
       </Collapse>
     </li>;
 };
 
-const MenuItem = ({ item }) => {
+const MenuItem = ({ item }: MenuItemProps) => {
   const pathname = usePathname();
   const isActive = item.url && pathname.endsWith(item.url);
   const { sidenav, hideBackdrop } = useLayoutContext();
@@ -75,10 +92,8 @@ const MenuItem = ({ item }) => {
   };
 
   return <li className={`side-nav-item ${isActive ? 'active' : ''}`}>
-      <Link href={item.url ?? '/'} onClick={toggleBackdrop} className={`side-nav-link  ${isActive ? 'active' : ''} ${item.isDisabled ? 'disabled' : ''}`}>
-        {item.icon && <span className="menu-icon">
-            <item.icon />
-          </span>}
+      <Link href={item.url ?? '/'} onClick={toggleBackdrop} className={`side-nav-link ${isActive ? 'active' : ''} ${item.isDisabled ? 'disabled' : ''}`}>
+        {item.icon && <span className="menu-icon"><item.icon /></span>}
         <span className="menu-text">{item.label}</span>
         {item.badge && <span className={`badge text-bg-${item.badge.variant}`}>{item.badge.text}</span>}
       </Link>
@@ -86,7 +101,7 @@ const MenuItem = ({ item }) => {
 };
 
 const AppMenu = () => {
-  const [openMenuKey, setOpenMenuKey] = useState(null);
+  const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
 
   const scrollToActiveLink = () => {
     const activeItem = document.querySelector('.side-nav-link.active') as HTMLElement;
@@ -104,9 +119,13 @@ const AppMenu = () => {
   }, []);
 
   return <ul className="side-nav">
-      {menuItems.map(item => item.isTitle ? <li className="side-nav-title mt-2" key={item.key}>
-            {item.label}
-          </li> : item.children ? <MenuItemWithChildren key={item.key} item={item} openMenuKey={openMenuKey} setOpenMenuKey={setOpenMenuKey} /> : <MenuItem key={item.key} item={item} />)}
+      {menuItems.map(item =>
+        item.isTitle
+          ? <li className="side-nav-title mt-2" key={item.key}>{item.label}</li>
+          : item.children
+            ? <MenuItemWithChildren key={item.key} item={item} openMenuKey={openMenuKey} setOpenMenuKey={setOpenMenuKey} />
+            : <MenuItem key={item.key} item={item} />
+      )}
     </ul>;
 };
 
