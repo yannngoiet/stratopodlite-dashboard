@@ -11,7 +11,7 @@ import { COMPANY_ID, assignDelivery, bulkAssignDeliveries, fetchDriversWithAssig
 
 interface BulkDrag {
   _bulk: true
-  deliveries: UnassignedDelivery[]
+  deliveries: (UnassignedDelivery | AssignedDelivery)[]
   deliveryNo: string
 }
 
@@ -188,6 +188,15 @@ const DispatchHub = () => {
     if (source === 'unassigned' && selectedDeliveries.has(delivery.deliveryNo) && selectedDeliveries.size > 1) {
       const bulk = allUnassignedDeliveries.filter((d) => selectedDeliveries.has(d.deliveryNo))
       setDraggedDelivery({ _bulk: true, deliveries: bulk, deliveryNo: `${bulk.length} deliveries` })
+    } else if (source === 'driver' && selectedAssigned.has(delivery.deliveryNo) && selectedAssigned.size > 1) {
+      const bulk = drivers.flatMap((d) =>
+        d.shipments.flatMap((s) =>
+          s.deliveries
+            .filter((x) => selectedAssigned.has(x.deliveryNo))
+            .map((x) => ({ ...x, _driverId: d.driverId, _shipmentNo: s.shipmentNo }))
+        )
+      )
+      setDraggedDelivery({ _bulk: true, deliveries: bulk, deliveryNo: `${bulk.length} deliveries` })
     } else {
       setDraggedDelivery(delivery)
     }
@@ -231,16 +240,12 @@ const DispatchHub = () => {
     }
 
     if (dragSource === 'driver') {
-      const fromId = (draggedDelivery as any)._driverId
-      updatedDrivers = currentDrivers.map((d) => {
-        if (d.driverId !== fromId) return d
-        return {
-          ...d,
-          shipments: d.shipments
-            .map((s) => ({ ...s, deliveries: s.deliveries.filter((x) => !nos.has(x.deliveryNo)) }))
-            .filter((s) => s.deliveries.length > 0),
-        }
-      })
+      updatedDrivers = currentDrivers.map((d) => ({
+        ...d,
+        shipments: d.shipments
+          .map((s) => ({ ...s, deliveries: s.deliveries.filter((x) => !nos.has(x.deliveryNo)) }))
+          .filter((s) => s.deliveries.length > 0),
+      }))
     }
 
     return { updatedDrivers, updatedGroups }
@@ -281,9 +286,9 @@ const DispatchHub = () => {
 
     try {
       if (deliveryNos.length === 1) {
-        await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId })
+        await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId, shipmentNo })
       } else {
-        await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId })
+        await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId, shipmentNo })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0].deliveryNo
       showToast(`${label} added to shipment ${shipmentNo}`)
@@ -337,40 +342,19 @@ const DispatchHub = () => {
     if (!draggedDelivery || dragSource !== 'driver') return
     setDragOverTarget(null)
 
-    const deliveryNo = (draggedDelivery as any).deliveryNo
-    const fromId = (draggedDelivery as any)._driverId
-    const returned = { ...draggedDelivery } as any
-    delete returned._driverId
-    delete returned._shipmentNo
+    const deliveryNos = getDraggedNos()
+    const { updatedDrivers } = removeFromSource(drivers, deliveryGroups)
 
-    setDrivers((prev) =>
-      prev.map((d) => {
-        if (d.driverId !== fromId) return d
-        return {
-          ...d,
-          shipments: d.shipments
-            .map((s) => ({ ...s, deliveries: s.deliveries.filter((x) => x.deliveryNo !== deliveryNo) }))
-            .filter((s) => s.deliveries.length > 0),
-        }
-      })
-    )
-    setDeliveryGroups((prev) => {
-      const updated = [...prev]
-      if (updated.length > 0 && updated[0].factories.length > 0) {
-        updated[0] = {
-          ...updated[0],
-          factories: updated[0].factories.map((f, i) => (i === 0 ? { ...f, deliveries: [...f.deliveries, returned] } : f)),
-        }
-      }
-      return updated
-    })
+    setDrivers(updatedDrivers)
     setSelectedDeliveries(new Set())
+    setSelectedAssigned(new Set())
     setDraggedDelivery(null)
     setDragSource(null)
 
     try {
-      await unassignDelivery(COMPANY_ID, deliveryNo)
-      showToast(`Delivery ${deliveryNo} returned to unassigned`, 'warning')
+      await Promise.all(deliveryNos.map((no) => unassignDelivery(COMPANY_ID, no)))
+      const label = deliveryNos.length > 1 ? `${deliveryNos.length} deliveries` : `Delivery ${deliveryNos[0]}`
+      showToast(`${label} returned to unassigned`, 'warning')
       refreshAll()
     } catch (err: any) {
       showToast(err.message, 'danger')
@@ -417,7 +401,7 @@ const DispatchHub = () => {
             ) : driversError ? (
               <div className="text-center py-4">
                 <div className="text-danger mb-2" style={{ fontSize: 13 }}>{driversError}</div>
-                <Button size="sm" variant="outline-danger" onClick={loadDrivers}>Retry</Button>
+                <Button size="sm" variant="outline-secondary" onClick={loadDrivers}>Retry</Button>
               </div>
             ) : filteredDrivers.length === 0 ? (
               <div className="text-center text-muted py-5" style={{ fontSize: 13 }}>No drivers found</div>
@@ -463,7 +447,7 @@ const DispatchHub = () => {
               <Button size="sm" variant="outline-secondary" title="Refresh" onClick={loadDeliveries} disabled={deliveriesLoading}>
                 <LuRefreshCw size={13} className={deliveriesLoading ? 'spin' : ''} />
               </Button>
-              <Button size="sm" style={{ background: '#dc3545', border: 'none', whiteSpace: 'nowrap' }}>
+              <Button size="sm" style={{ background: '#2c3e50', border: 'none', whiteSpace: 'nowrap' }}>
                 Submit Dispatch
               </Button>
             </div>
@@ -512,7 +496,7 @@ const DispatchHub = () => {
                   color: '#dc3545',
                   fontSize: 12,
                 }}>
-                Drop here to unassign delivery
+                Drop here to unassign
               </div>
             )}
 
@@ -524,7 +508,7 @@ const DispatchHub = () => {
             ) : deliveriesError ? (
               <div className="text-center py-5">
                 <div className="text-danger mb-2" style={{ fontSize: 13 }}>{deliveriesError}</div>
-                <Button size="sm" variant="outline-danger" onClick={loadDeliveries}>Retry</Button>
+                <Button size="sm" variant="outline-secondary" onClick={loadDeliveries}>Retry</Button>
               </div>
             ) : filteredGroups.length === 0 ? (
               <div className="text-center text-muted py-5">
@@ -555,7 +539,7 @@ const DispatchHub = () => {
                           <div key={factKey} className="ms-2 mt-1">
                             <div
                               className="d-flex align-items-center justify-content-between px-2 py-1 rounded"
-                              style={{ background: '#fffbf0', cursor: 'pointer', userSelect: 'none', border: '1px solid #f0e8c8' }}
+                              style={{ background: '#eef2f7', cursor: 'pointer', userSelect: 'none', border: '1px solid #d0dbe8' }}
                               onClick={() => toggleFactory(factKey)}>
                               <div className="d-flex align-items-center gap-2" style={{ fontSize: 12 }}>
                                 {collapsedFactories[factKey] ? <LuChevronRight size={13} /> : <LuChevronDown size={13} />}
@@ -619,8 +603,8 @@ function DriverCard({
   const totalDeliveries = driver.shipments.reduce((s, sh) => s + sh.deliveries.length, 0)
 
   return (
-    <div className="mb-3" style={{ border: '1px solid #e0e0e0', borderRadius: 6, background: '#fff' }}>
-      <div className="d-flex align-items-start justify-content-between px-3 py-2" style={{ borderBottom: '1px solid #f0f0f0' }}>
+    <div className="mb-3" style={{ border: '1px solid #d0dbe8', borderRadius: 6, background: '#fff' }}>
+      <div className="d-flex align-items-start justify-content-between px-3 py-2" style={{ borderBottom: '1px solid #d0dbe8' }}>
         <div>
           <div style={{ fontSize: 12, color: '#666' }}>
             Driver: <strong className="text-dark">{driver.fullName}</strong>
@@ -631,7 +615,7 @@ function DriverCard({
           </div>
         </div>
         <div className="d-flex align-items-center gap-2">
-          <Button size="sm" variant="outline-danger" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+          <Button size="sm" style={{ fontSize: 12, whiteSpace: 'nowrap', background: '#2c3e50', border: 'none', color: '#fff' }}>
             Delivery Details
           </Button>
         </div>
@@ -707,15 +691,15 @@ function ShipmentBlock({
         e.preventDefault()
         onDropOnShipment(driverId, shipment.shipmentNo)
       }}>
-      <div className="d-flex align-items-center justify-content-between px-2 py-1" style={{ background: '#222', borderRadius: '4px 4px 0 0' }}>
+      <div className="d-flex align-items-center justify-content-between px-2 py-1" style={{ background: '#2c3e50', borderRadius: '4px 4px 0 0' }}>
         <span style={{ fontSize: 11, color: '#fff' }}>
           Shipment: {shipment.shipmentNo ?? <em style={{ opacity: 0.6 }}>Assigning...</em>}
         </span>
         <div className="d-flex align-items-center gap-1">
-          <Button size="sm" style={{ fontSize: 10, padding: '1px 6px', background: '#444', border: 'none' }}>
+          <Button size="sm" style={{ fontSize: 10, padding: '1px 6px', background: '#3d5166', border: 'none' }}>
             Waybill Required?
           </Button>
-          <Button size="sm" style={{ fontSize: 10, padding: '1px 6px', background: '#444', border: 'none' }}>
+          <Button size="sm" style={{ fontSize: 10, padding: '1px 6px', background: '#3d5166', border: 'none' }}>
             Customer Addresses
           </Button>
         </div>
@@ -789,7 +773,7 @@ function AssignedDeliveryCard({ delivery, isChecked, onToggleCheck, onDragStart,
       onDragEnd={onDragEnd}
       className="mb-2 rounded"
       style={{
-        border: isChecked ? '2px solid #0d6efd' : '2px solid #dc3545',
+        border: isChecked ? '2px solid #0d6efd' : '2px solid #2c3e50',
         background: isChecked ? '#f0f5ff' : '#fff',
         cursor: 'grab',
         fontSize: 11,

@@ -1,4 +1,3 @@
-import DispatchLayout from '@/layouts/DispatchLayout'
 import DispatchHub from './components/DispatchHub'
 
 export const metadata = {
@@ -7,7 +6,7 @@ export const metadata = {
 
 const Page = () => {
   return (
-    <DispatchLayout companyName="STRATO">
+    <>
       <div className="mb-3">
         <h4 className="fw-bold mb-1">Dispatch Hub</h4>
         <p className="text-muted mb-0" style={{ fontSize: 13 }}>
@@ -15,7 +14,7 @@ const Page = () => {
         </p>
       </div>
       <DispatchHub />
-    </DispatchLayout>
+    </>
   )
 }
 
