@@ -81,12 +81,16 @@ export interface AssignDeliveryRequest {
   deliveryNo: string
   driverId: number
   vehicleId?: number | null
+  shipmentNo?: string | null
+  executionDate?: string | null
 }
 
 export interface BulkAssignRequest {
   deliveryNos: string[]
   driverId: number
   vehicleId?: number | null
+  shipmentNo?: string | null
+  executionDate?: string | null
 }
 
 export interface AssignDeliveryResponse {
