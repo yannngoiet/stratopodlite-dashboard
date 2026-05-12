@@ -15,9 +15,7 @@ import {
   LuMail,
   LuSettings,
   LuCarFront,
-  LuCamera,
   LuReceipt,
-  LuFactory,
   LuShieldCheck,
 } from 'react-icons/lu';
 import { IconType } from 'react-icons';
@@ -59,7 +57,7 @@ export const menuItems: MenuItemType[] = [
     key: 'vehicle-dispatch',
     label: 'Vehicle Dispatch',
     icon: LuTruck,
-    url: '/vehicle-dispatch'
+    url: '/dispatch-hub'
   },
   {
     key: 'delivery-notes',
@@ -167,7 +165,7 @@ export const menuItems: MenuItemType[] = [
     url: '/mailing-list'
   },
 
-  // ── Configuration (lookup/reference tables) ───────────────
+  // ── Configuration ─────────────────────────────────────────
   {
     key: 'configuration',
     label: 'Configuration',
