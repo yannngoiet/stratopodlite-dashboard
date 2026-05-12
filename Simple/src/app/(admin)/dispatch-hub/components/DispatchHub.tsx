@@ -286,9 +286,9 @@ const DispatchHub = () => {
 
     try {
       if (deliveryNos.length === 1) {
-        await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId, shipmentNo })
+        await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId, shipmentNo, executionDate: deliveryDate })
       } else {
-        await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId, shipmentNo })
+        await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId, shipmentNo, executionDate: deliveryDate })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0].deliveryNo
       showToast(`${label} added to shipment ${shipmentNo}`)
@@ -325,9 +325,9 @@ const DispatchHub = () => {
     try {
       let result: any
       if (deliveryNos.length === 1) {
-        result = await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId })
+        result = await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId, executionDate: deliveryDate })
       } else {
-        result = await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId })
+        result = await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId, executionDate: deliveryDate })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0].deliveryNo
       showToast(`Shipment ${result.shipmentNo} created — ${label}`)
