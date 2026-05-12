@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Simple - Responsive Bootstrap 5 Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Perfect for building CRM, CMS, project management tools, and custom web apps with clean UI, responsive design, and powerful features." />
+    <meta name="keywords" content="Simple, admin dashboard, HTML template, Bootstrap admin, CRM template, CMS template, responsive admin, web app UI, admin theme, best admin template" />
+    <meta name="author" content="Coderthemes" />
+
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="assets/images/favicon.ico" />
+
+    <!-- Theme Config Js -->
+    <script src="assets/js/config.js"></script>
+
+    <!-- Vendor css -->
+    <link href="assets/css/vendor.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- App css -->
+    <link href="assets/css/app.min.css" rel="stylesheet" type="text/css" id="app-style" />
+
+    <!-- Icons css -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+    <!-- Begin page -->
+    <div class="wrapper">
+        <!-- Sidenav Menu Start -->
+        <div class="sidenav-menu">
+
+            <div class="scrollbar" data-simplebar>
+                <!--- Sidenav Menu -->
+                <ul class="side-nav">
+                    <li class="side-nav-title">Menu</li>
+
+                    <!-- Introduction -->
+                    <li class="side-nav-item">
+                        <a href="index.html" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-shield-check"></i></span>
+                            <span class="menu-text">Introduction</span>
+                        </a>
+                    </li>
+
+                    <!-- Folder Structure -->
+                    <li class="side-nav-item">
+                        <a href="folder-structure.html" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-folders"></i></span>
+                            <span class="menu-text">Folder Structure</span>
+                        </a>
+                    </li>
+
+                    <!-- Getting Started -->
+                    <li class="side-nav-item">
+                        <a href="getting-started.html" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-rocket"></i></span>
+                            <span class="menu-text">Getting Started</span>
+                        </a>
+                    </li>
+
+                    <li class="side-nav-title mt-2">Layouts</li>
+
+                    <li class="side-nav-item">
+                        <a href="sidebar.html" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-layout-sidebar"></i></span>
+                            <span class="menu-text" data-translator-key="sidebars"> Sidebars Option </span>
+                        </a>
+                    </li>
+
+                    <li class="side-nav-item">
+                        <a href="topbar.html" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-layout-bottombar"></i></span>
+                            <span class="menu-text" data-translator-key="sidebars"> Topbar Option</span>
+                        </a>
+                    </li>
+
+                    <!-- Theme Setup -->
+                    <li class="side-nav-item">
+                        <a href="theme-skin-setup.html" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-diamond"></i></span>
+                            <span class="menu-text">Theme Skin Setup</span>
+                        </a>
+                    </li>
+
+                    <!-- Dark Mode -->
+                    <li class="side-nav-item">
+                        <a href="dark-mode.html" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-moon"></i></span>
+                            <span class="menu-text">Dark Mode</span>
+                        </a>
+                    </li>
+
+                    <!-- Sources & Credits -->
+                    <li class="side-nav-item">
+                        <a href="sources.html" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-alert-circle"></i></span>
+                            <span class="menu-text">Sources & Credits</span>
+                        </a>
+                    </li>
+
+                    <!-- Changelog -->
+                    <li class="side-nav-item">
+                        <a href="changelog.html" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-book"></i></span>
+                            <span class="menu-text">Changelog</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <!-- Sidenav Menu End -->
+
+        <!-- Topbar Start -->
+        <header class="app-topbar">
+            <div class="container-fluid topbar-menu">
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Topbar Brand Logo -->
+                    <div class="logo-topbar">
+                        <!-- Logo light -->
+                        <a href="index.html" class="logo-light">
+                            <span class="logo-lg">
+                                <img src="assets/images/logo.png" alt="logo" />
+                            </span>
+                            <span class="logo-sm">
+                                <img src="assets/images/logo-sm.png" alt="small logo" />
+                            </span>
+                        </a>
+
+                        <!-- Logo Dark -->
+                        <a href="index.html" class="logo-dark">
+                            <span class="logo-lg">
+                                <img src="assets/images/logo-black.png" alt="dark logo" />
+                            </span>
+                            <span class="logo-sm">
+                                <img src="assets/images/logo-sm.png" alt="small logo" />
+                            </span>
+                        </a>
+                    </div>
+
+                    <!-- Sidebar Menu Toggle Button -->
+                    <button class="sidenav-toggle-button btn btn-primary btn-icon d-md-none d-flex">
+                        <i class="ti ti-menu-4 fs-22"></i>
+                    </button>
+                </div>
+                <!-- .d-flex-->
+            </div>
+        </header>
+        <!-- Topbar End -->
+
+        <!-- ============================================================== -->
+        <!-- Start Page Content here -->
+        <!-- ============================================================== -->
+
+        <div class="content-page">
+            <div class="container mt-3">
+
+                <div class="row row-cols-lg-2">
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Bootstrap</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Bootstrap</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="http://getbootstrap.com/" target="_blank">
+                                    Bootstrap on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Bootstrap</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Bootstrap</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://react-bootstrap.netlify.app" target="_blank">
+                                    React Bootstrap on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Icons (Tabler & Lucide)</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Icons (Tabler & Lucide)</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://react-icons.github.io/react-icons" target="_blank">
+                                    React Icons (Tabler & Lucide) on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Simplebar React</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Simplebar React</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://www.npmjs.com/package/simplebar-react" target="_blank">
+                                    Simplebar React on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Flatpickr</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Flatpickr</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://www.npmjs.com/package/react-flatpickr" target="_blank">
+                                    React Flatpickr on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Jsvectormap</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Jsvectormap</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://github.com/kadoshms/react-jvectormap" target="_blank">
+                                    Jsvectormap on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Chartjs</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Chartjs</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://www.chartjs.org/docs/latest" target="_blank">
+                                    Chartjs on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Chartjs 2</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Chartjs 2</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://react-chartjs-2.js.org" target="_blank">
+                                    React Chartjs 2 on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Countup</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Countup</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://www.npmjs.com/package/react-countup" target="_blank">
+                                    React Countup on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Clsx</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Clsx</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://www.npmjs.com/package/clsx" target="_blank">
+                                    Clsx on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Usehooks Ts</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Usehooks Ts</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://usehooks-ts.com" target="_blank">
+                                    Usehooks Ts on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Fullcalendar</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Fullcalendar</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://fullcalendar.io/docs/initialize-globals" target="_blank">
+                                    Fullcalendar on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Bootstrap Typeahead</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Bootstrap Typeahead</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://ericgio.github.io/react-bootstrap-typeahead/" target="_blank">
+                                    React Bootstrap Typeahead on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Dropzone</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Dropzone</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://github.com/react-dropzone/react-dropzone" target="_blank">
+                                    React Dropzone on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Hook Form</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Hook Form</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://react-hook-form.com/" target="_blank">
+                                    React Hook Form on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Yup</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Yup</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://github.com/jquense/yup" target="_blank">
+                                    Yup on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Leaflet</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Leaflet</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://react-leaflet.js.org/" target="_blank">
+                                    React Leaflet on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Quilljs</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Quilljs</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://quilljs.com/" target="_blank">
+                                    Quilljs on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Quill New</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Quill New</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://github.com/VaguelySerious/react-quill" target="_blank">
+                                    React Quill New on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Select</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Select</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://react-select.com/home" target="_blank">
+                                    React Select on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">React Use Wizard</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>React Use Wizard</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://github.com/devrnt/react-use-wizard#readme" target="_blank">
+                                    React Use Wizard on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title text-capitalize">Zod</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    Learn more about <strong>Zod</strong> – a useful JavaScript library for enhancing your project functionality.
+                                </p>
+                                <a class="fw-semibold text-capitalize" href="https://zod.dev/" target="_blank">
+                                    Zod on View Official Website
+                                    <i class="ti ti-chevron-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title text-capitalize">Lodash</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-2">
+                                Learn more about <strong>Lodash</strong> – a useful JavaScript library for enhancing your project functionality.
+                            </p>
+                            <a class="fw-semibold text-capitalize" href="https://lodash.com/" target="_blank">
+                                Lodash on View Official Website
+                                <i class="ti ti-chevron-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!--end card-->
+            </div>
+            <!-- container -->
+
+            <!-- Footer Start -->
+            <footer class="footer">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6 text-center text-md-start">
+                            ©
+                            <script>
+                                document.write(new Date().getFullYear())
+                            </script>
+                            Simple By <span class="fw-semibold">Coderthemes</span>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-md-end d-none d-md-block">10GB of <span class="fw-bold">250GB</span> Free.</div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            <!-- end Footer -->
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- End Page content -->
+        <!-- ============================================================== -->
+    </div>
+    <!-- END wrapper -->
+
+    <!-- Vendor js -->
+    <script src="assets/js/vendor.min.js"></script>
+
+    <!-- App js -->
+    <script src="assets/js/app.js"></script>
+</body>
+
+</html>

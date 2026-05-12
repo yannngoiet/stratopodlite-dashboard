@@ -1,0 +1,56 @@
+import httpClient from './api'
+
+export interface DeliveryNoteListItem {
+  deliveryNo: string
+  shipmentNo: string | null
+  customerName: string | null
+  status: string | null
+  invoiceNo: string | null
+  purchaseOrderNo: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DeliveryNoteListResult {
+  items: DeliveryNoteListItem[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export interface DeliveryNoteFilters {
+  deliveryNo?: string
+  customerName?: string
+  dateFrom?: string
+  dateTo?: string
+  page?: number
+  pageSize?: number
+}
+
+const deliveryNoteService = {
+  getAll: async (companyId: number, filters: DeliveryNoteFilters = {}): Promise<DeliveryNoteListResult> => {
+    const params = new URLSearchParams({
+      page: String(filters.page ?? 1),
+      pageSize: String(filters.pageSize ?? 10),
+      ...(filters.deliveryNo && { deliveryNo: filters.deliveryNo }),
+      ...(filters.customerName && { customerName: filters.customerName }),
+      ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
+      ...(filters.dateTo && { dateTo: filters.dateTo })
+    })
+
+    const res = await httpClient.get<DeliveryNoteListResult>(
+      `/companies/${companyId}/deliveries/list?${params}`
+    )
+    return res.data
+  },
+
+  getById: async (companyId: number, deliveryNo: string): Promise<DeliveryNoteListItem> => {
+    const res = await httpClient.get<DeliveryNoteListItem>(
+      `/companies/${companyId}/deliveries/${deliveryNo}`
+    )
+    return res.data
+  }
+}
+
+export default deliveryNoteService
