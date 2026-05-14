@@ -29,8 +29,8 @@ interface DriverCardProps {
   isDropTarget: boolean
   dragOverTarget: string | null
   setDragOverTarget: (target: string | null) => void
-  onDropOnShipment: (driverId: number, shipmentNo: string | null) => Promise<void>
-  onDropOnNewShipment: (driverId: number, vehicleReg: string) => Promise<void>
+  onDropOnShipment: (driverId: number, shipmentNo: string | null, vehicleId: number | null) => Promise<void>
+  onDropOnNewShipment: (driverId: number, vehicleReg: string, vehicleId: number | null) => Promise<void>
   onDragStartDelivery: (delivery: any, source: DragSource) => void
   onDragEnd: () => void
   selectedAssigned: Set<string>
@@ -44,7 +44,7 @@ interface ShipmentBlockProps {
   isDropTarget: boolean
   dragOverTarget: string | null
   setDragOverTarget: (target: string | null) => void
-  onDropOnShipment: (driverId: number, shipmentNo: string | null) => Promise<void>
+  onDropOnShipment: (driverId: number, shipmentNo: string | null, vehicleId: number | null) => Promise<void>
   onDragStartDelivery: (delivery: any, source: DragSource) => void
   onDragEnd: () => void
   selectedAssigned: Set<string>
@@ -54,10 +54,11 @@ interface ShipmentBlockProps {
 interface NewShipmentBlockProps {
   driverId: number
   vehicleReg: string
+  vehicleId: number | null
   isDropTarget: boolean
   dragOverTarget: string | null
   setDragOverTarget: (target: string | null) => void
-  onDropOnNewShipment: (driverId: number, vehicleReg: string) => Promise<void>
+  onDropOnNewShipment: (driverId: number, vehicleReg: string, vehicleId: number | null) => Promise<void>
 }
 
 interface AssignedDeliveryCardProps {
@@ -80,7 +81,7 @@ interface DeliveryCardProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DispatchHub = () => {
-  const [deliveryDate, setDeliveryDate] = useState('2026-04-29')
+  const [deliveryDate, setDeliveryDate] = useState(() => new Date().toISOString().split('T')[0])
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [driversLoading, setDriversLoading] = useState(false)
   const [driversError, setDriversError] = useState<string | null>(null)
@@ -256,7 +257,7 @@ const DispatchHub = () => {
     loadDrivers()
   }
 
-  const onDropOnShipment = async (driverId: number, shipmentNo: string | null) => {
+  const onDropOnShipment = async (driverId: number, shipmentNo: string | null, vehicleId: number | null = null) => {
     if (!draggedDelivery) return
     setDragOverTarget(null)
     if (dragSource === 'driver' && !(draggedDelivery as BulkDrag)._bulk && (draggedDelivery as any)._shipmentNo === shipmentNo) {
@@ -286,9 +287,9 @@ const DispatchHub = () => {
 
     try {
       if (deliveryNos.length === 1) {
-        await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId, shipmentNo, executionDate: deliveryDate })
+        await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId, vehicleId, shipmentNo, executionDate: deliveryDate })
       } else {
-        await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId, shipmentNo, executionDate: deliveryDate })
+        await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId, vehicleId, shipmentNo, executionDate: deliveryDate })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0].deliveryNo
       showToast(`${label} added to shipment ${shipmentNo}`)
@@ -299,7 +300,7 @@ const DispatchHub = () => {
     }
   }
 
-  const onDropOnNewShipment = async (driverId: number, vehicleReg: string) => {
+  const onDropOnNewShipment = async (driverId: number, vehicleReg: string, vehicleId: number | null = null) => {
     if (!draggedDelivery) return
     setDragOverTarget(null)
 
@@ -312,7 +313,7 @@ const DispatchHub = () => {
         if (d.driverId !== driverId) return d
         return {
           ...d,
-          shipments: [...d.shipments, { shipmentNo: null, status: 'Assigning...', vehicleReg: vehicleReg ?? 'N/A', deliveries: incoming }],
+          shipments: [...d.shipments, { shipmentNo: null, status: 'Assigning...', vehicleId: vehicleId, vehicleReg: vehicleReg ?? 'N/A', deliveries: incoming }],
         }
       })
     )
@@ -325,9 +326,9 @@ const DispatchHub = () => {
     try {
       let result: any
       if (deliveryNos.length === 1) {
-        result = await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId, executionDate: deliveryDate })
+        result = await assignDelivery(COMPANY_ID, { deliveryNo: deliveryNos[0], driverId, vehicleId, executionDate: deliveryDate })
       } else {
-        result = await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId, executionDate: deliveryDate })
+        result = await bulkAssignDeliveries(COMPANY_ID, { deliveryNos, driverId, vehicleId, executionDate: deliveryDate })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0].deliveryNo
       showToast(`Shipment ${result.shipmentNo} created — ${label}`)
@@ -642,6 +643,7 @@ function DriverCard({
         <NewShipmentBlock
           driverId={driver.driverId}
           vehicleReg={driver.shipments?.[0]?.vehicleReg ?? 'N/A'}
+          vehicleId={driver.shipments?.[0]?.vehicleId ?? null}
           isDropTarget={isDropTarget}
           dragOverTarget={dragOverTarget}
           setDragOverTarget={setDragOverTarget}
@@ -689,7 +691,7 @@ function ShipmentBlock({
       }}
       onDrop={(e) => {
         e.preventDefault()
-        onDropOnShipment(driverId, shipment.shipmentNo)
+        onDropOnShipment(driverId, shipment.shipmentNo, shipment.vehicleId ?? null)
       }}>
       <div className="d-flex align-items-center justify-content-between px-2 py-1" style={{ background: '#2c3e50', borderRadius: '4px 4px 0 0' }}>
         <span style={{ fontSize: 11, color: '#fff' }}>
@@ -728,7 +730,7 @@ function ShipmentBlock({
 }
 
 // ── New Shipment Block ────────────────────────────────────────────────────────
-function NewShipmentBlock({ driverId, vehicleReg, isDropTarget, dragOverTarget, setDragOverTarget, onDropOnNewShipment }: NewShipmentBlockProps) {
+function NewShipmentBlock({ driverId, vehicleReg, vehicleId, isDropTarget, dragOverTarget, setDragOverTarget, onDropOnNewShipment }: NewShipmentBlockProps) {
   const targetKey = `new-shipment-${driverId}`
   const isHovered = dragOverTarget === targetKey
 
@@ -754,7 +756,7 @@ function NewShipmentBlock({ driverId, vehicleReg, isDropTarget, dragOverTarget, 
       }}
       onDrop={(e) => {
         e.preventDefault()
-        onDropOnNewShipment(driverId, vehicleReg)
+        onDropOnNewShipment(driverId, vehicleReg, vehicleId)
       }}>
       {isHovered && isDropTarget ? 'Release to create new shipment' : 'New Shipment'}
     </div>

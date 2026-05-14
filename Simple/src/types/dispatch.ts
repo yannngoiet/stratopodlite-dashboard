@@ -56,6 +56,7 @@ export interface AssignedDelivery {
 export interface Shipment {
   shipmentNo: string | null
   status: string
+  vehicleId: number | null
   vehicleReg: string
   deliveries: AssignedDelivery[]
 }
