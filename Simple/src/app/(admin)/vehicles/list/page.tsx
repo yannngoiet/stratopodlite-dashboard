@@ -1,195 +1,146 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getExpandedRowModel,
   useReactTable,
   type ColumnDef,
-} from '@tanstack/react-table';
-import {
-  Container, Form, Button, Row, Col, Badge,
-  Modal, FormGroup, FormLabel, FormControl, FormCheck
-} from 'react-bootstrap';
-import { LuSearch, LuRefreshCw, LuPlus, LuPencil, LuTrash2, LuCarFront } from 'react-icons/lu';
-import vehicleService, { type Vehicle } from '@/services/vehicleService';
+  type SortingState,
+  type ColumnFiltersState,
+  type ExpandedState,
+} from '@tanstack/react-table'
+import { Badge, Button, Container, Form, Modal } from 'react-bootstrap'
+import { LuPencil, LuTrash2, LuCarFront, LuChevronDown, LuChevronRight, LuPlus } from 'react-icons/lu'
+import vehicleService, { type Vehicle } from '@/services/vehicleService'
+import { getCompanyId } from '@/helpers/config'
 
-interface VehicleForm {
-  vehicleReg: string
-  trailerReg: string
-  vehicleType: string
-  isActive: boolean
-}
-
-const defaultForm: VehicleForm = {
-  vehicleReg: '',
-  trailerReg: '',
-  vehicleType: '',
-  isActive: true
-}
-
-const COMPANY_ID = 1
-
-const formatDate = (date: string) =>
-  new Date(date).toLocaleString('en-ZA', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  })
-
-const Page = () => {
-  const [data, setData] = useState<Vehicle[]>([])
-  const [allData, setAllData] = useState<Vehicle[]>([])
+export default function VehiclesPage() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(false)
-  const [totalCount, setTotalCount] = useState(0)
-  const [page, setPage] = useState(1)
-  const pageSize = 10
-  const [totalPages, setTotalPages] = useState(0)
-
-  const [vehicleReg, setVehicleReg] = useState('')
-  const [vehicleType, setVehicleType] = useState('')
-
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [rowSelection, setRowSelection] = useState({})
+  const [expanded, setExpanded] = useState<ExpandedState>({})
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
   const [showModal, setShowModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
-  const [form, setForm] = useState<VehicleForm>(defaultForm)
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null)
+  const [deletingVehicle, setDeletingVehicle] = useState<Vehicle | null>(null)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [formData, setFormData] = useState({
+    vehicleReg: '',
+    trailerReg: '',
+    vehicleType: '',
+    isActive: true,
+  })
 
-  const applyFiltersAndPaginate = (
-    all: Vehicle[],
-    reg: string,
-    type: string,
-    currentPage: number
-  ) => {
-    let result = [...all]
-    if (reg) result = result.filter(v =>
-      v.vehicleReg.toLowerCase().includes(reg.toLowerCase()))
-    if (type) result = result.filter(v =>
-      v.vehicleType?.toLowerCase().includes(type.toLowerCase()))
-    setTotalCount(result.length)
-    setTotalPages(Math.ceil(result.length / pageSize) || 1)
-    const start = (currentPage - 1) * pageSize
-    setData(result.slice(start, start + pageSize))
-  }
+  const companyId = getCompanyId()
 
-  const fetchData = useCallback(async () => {
+  const loadVehicles = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await vehicleService.getAll(COMPANY_ID)
-      setAllData(result)
-      applyFiltersAndPaginate(result, '', '', 1)
-    } catch (err) {
-      console.error(err)
-      setData([])
-      setAllData([])
+      const data = await vehicleService.getAll(companyId)
+      setVehicles(data)
+    } catch (error) {
+      console.error(error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [companyId])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { loadVehicles() }, [loadVehicles])
 
-  const handleSearch = () => {
-    setPage(1)
-    applyFiltersAndPaginate(allData, vehicleReg, vehicleType, 1)
+  const resetForm = () => {
+    setFormData({ vehicleReg: '', trailerReg: '', vehicleType: '', isActive: true })
   }
 
-  const handleReset = () => {
-    setVehicleReg('')
-    setVehicleType('')
-    setPage(1)
-    applyFiltersAndPaginate(allData, '', '', 1)
-  }
-
-  const handlePageChange = (p: number) => {
-    setPage(p)
-    applyFiltersAndPaginate(allData, vehicleReg, vehicleType, p)
-  }
-
-  const openCreate = () => {
-    setSelectedVehicle(null)
-    setForm(defaultForm)
-    setError(null)
-    setShowModal(true)
-  }
-
-  const openEdit = (vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle)
-    setForm({
-      vehicleReg: vehicle.vehicleReg,
-      trailerReg: vehicle.trailerReg ?? '',
-      vehicleType: vehicle.vehicleType ?? '',
-      isActive: vehicle.isActive
-    })
-    setError(null)
-    setShowModal(true)
-  }
-
-  const openDelete = (vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle)
-    setShowDeleteModal(true)
-  }
-
-  const handleSave = async () => {
-    if (!form.vehicleReg.trim()) { setError('Vehicle registration is required'); return }
+  const handleCreate = async () => {
+    if (!formData.vehicleReg.trim()) return
     setSaving(true)
-    setError(null)
     try {
-      const isEdit = !!selectedVehicle
-      if (isEdit) {
-        await vehicleService.update(COMPANY_ID, selectedVehicle!.id, {
-          vehicleReg: form.vehicleReg,
-          trailerReg: form.trailerReg || null,
-          vehicleType: form.vehicleType || null,
-          isActive: form.isActive
-        })
-      } else {
-        await vehicleService.create(COMPANY_ID, {
-          vehicleReg: form.vehicleReg,
-          trailerReg: form.trailerReg || null,
-          vehicleType: form.vehicleType || null,
-          isActive: form.isActive
-        })
-      }
+      await vehicleService.create(companyId, {
+        vehicleReg: formData.vehicleReg,
+        trailerReg: formData.trailerReg || null,
+        vehicleType: formData.vehicleType || null,
+        isActive: formData.isActive,
+      })
+      await loadVehicles()
       setShowModal(false)
-      await fetchData()
-    } catch (err: any) {
-      setError(err.response?.data || err.message || 'Failed to save')
+      resetForm()
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleUpdate = async () => {
+    if (!editingVehicle || !formData.vehicleReg.trim()) return
+    setSaving(true)
+    try {
+      await vehicleService.update(companyId, editingVehicle.id, {
+        vehicleReg: formData.vehicleReg,
+        trailerReg: formData.trailerReg || null,
+        vehicleType: formData.vehicleType || null,
+        isActive: formData.isActive,
+      })
+      await loadVehicles()
+      setShowModal(false)
+      setEditingVehicle(null)
+      resetForm()
+    } catch (error) {
+      console.error(error)
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!selectedVehicle) return
+    if (!deletingVehicle) return
     setSaving(true)
     try {
-      await vehicleService.delete(COMPANY_ID, selectedVehicle.id)
+      await vehicleService.delete(companyId, deletingVehicle.id)
+      await loadVehicles()
       setShowDeleteModal(false)
-      await fetchData()
-    } catch (err) {
-      console.error(err)
+      setDeletingVehicle(null)
+    } catch (error) {
+      console.error(error)
     } finally {
       setSaving(false)
     }
   }
 
-  const columns: ColumnDef<Vehicle>[] = [
+  const columns = useMemo<ColumnDef<Vehicle>[]>(() => [
     {
-      header: '#',
-      cell: ({ row }) => (page - 1) * pageSize + row.index + 1,
-      size: 50
+      id: 'expander',
+      header: () => null,
+      size: 40,
+      cell: ({ row }) => (
+        <button
+          className="btn btn-sm btn-link p-0 text-secondary"
+          onClick={() => row.toggleExpanded()}
+        >
+          {row.getIsExpanded() ? <LuChevronDown size={14} /> : <LuChevronRight size={14} />}
+        </button>
+      ),
     },
+    { accessorKey: 'id', header: 'ID', size: 60 },
     { accessorKey: 'vehicleReg', header: 'Vehicle Reg' },
     {
       accessorKey: 'trailerReg',
       header: 'Trailer Reg',
-      cell: ({ row }) => row.original.trailerReg ?? '-'
+      cell: ({ row }) => row.original.trailerReg || '—',
     },
     {
       accessorKey: 'vehicleType',
       header: 'Vehicle Type',
-      cell: ({ row }) => row.original.vehicleType ?? '-'
+      cell: ({ row }) => row.original.vehicleType || '—',
     },
     {
       accessorKey: 'isActive',
@@ -198,85 +149,130 @@ const Page = () => {
         <Badge bg={row.original.isActive ? 'success' : 'danger'}>
           {row.original.isActive ? 'Active' : 'Inactive'}
         </Badge>
-      )
-    },
-    {
-      accessorKey: 'createdAt',
-      header: 'Created',
-      cell: ({ row }) => formatDate(row.original.createdAt)
-    },
-    {
-      accessorKey: 'updatedAt',
-      header: 'Updated',
-      cell: ({ row }) => formatDate(row.original.updatedAt)
+      ),
     },
     {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => (
         <div className="d-flex gap-1">
-          <Button size="sm" variant="outline-primary" onClick={() => openEdit(row.original)}>
-            <LuPencil />
+          <Button
+            size="sm"
+            variant="outline-primary"
+            onClick={() => {
+              setEditingVehicle(row.original)
+              setFormData({
+                vehicleReg: row.original.vehicleReg,
+                trailerReg: row.original.trailerReg || '',
+                vehicleType: row.original.vehicleType || '',
+                isActive: row.original.isActive,
+              })
+              setShowModal(true)
+            }}
+          >
+            <LuPencil size={12} />
           </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => openDelete(row.original)}>
-            <LuTrash2 />
+          <Button
+            size="sm"
+            variant="outline-danger"
+            onClick={() => { setDeletingVehicle(row.original); setShowDeleteModal(true) }}
+          >
+            <LuTrash2 size={12} />
           </Button>
         </div>
-      )
-    }
-  ]
+      ),
+    },
+  ], [])
 
   const table = useReactTable({
-    data: data ?? [],
+    data: vehicles,
     columns,
+    state: { sorting, columnFilters, globalFilter, rowSelection, expanded, pagination },
+    enableRowSelection: true,
+    enableExpanding: true,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onRowSelectionChange: setRowSelection,
+    onExpandedChange: setExpanded,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    pageCount: totalPages
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getRowCanExpand: () => true,
   })
 
-  const start = totalCount === 0 ? 0 : (page - 1) * pageSize + 1
-  const end = Math.min(page * pageSize, totalCount)
+  const totalVehicles = vehicles.length
+  const activeVehicles = vehicles.filter(v => v.isActive).length
 
   return (
     <Container fluid className="py-3">
+
+      {/* Header */}
+      <div className="mb-4">
+        <h4 className="fw-bold d-flex align-items-center gap-2 mb-1">
+          <LuCarFront size={22} /> Fleet Management
+        </h4>
+        <p className="text-muted small mb-0">Manage your vehicle fleet</p>
+      </div>
+
+      {/* Stats */}
+      <div className="row g-3 mb-4">
+        <div className="col-6 col-md-3">
+          <div className="card shadow-sm text-center py-3">
+            <div className="text-muted small">Total Vehicles</div>
+            <div className="fs-3 fw-bold">{totalVehicles}</div>
+          </div>
+        </div>
+        <div className="col-6 col-md-3">
+          <div className="card shadow-sm text-center py-3">
+            <div className="text-muted small">Active</div>
+            <div className="fs-3 fw-bold text-success">{activeVehicles}</div>
+          </div>
+        </div>
+        <div className="col-6 col-md-3">
+          <div className="card shadow-sm text-center py-3">
+            <div className="text-muted small">Inactive</div>
+            <div className="fs-3 fw-bold text-danger">{totalVehicles - activeVehicles}</div>
+          </div>
+        </div>
+        <div className="col-6 col-md-3">
+          <div className="card shadow-sm text-center py-3">
+            <div className="text-muted small">Selected</div>
+            <div className="fs-3 fw-bold text-primary">{Object.keys(rowSelection).length}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Table Card */}
       <div className="card shadow-sm">
         <div className="card-header d-flex justify-content-between align-items-center py-2">
-          <h6 className="mb-0 fw-semibold d-flex align-items-center gap-2">
-            <LuCarFront /> Vehicles ({totalCount})
+          <h6 className="mb-0 fw-semibold">
+            Vehicles ({table.getFilteredRowModel().rows.length})
           </h6>
-          <Button size="sm" variant="primary" onClick={openCreate}>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => { setEditingVehicle(null); resetForm(); setShowModal(true) }}
+          >
             <LuPlus className="me-1" />Add Vehicle
           </Button>
         </div>
-
         <div className="card-body p-3">
-          {/* Filters */}
-          <Row className="g-2 mb-3 align-items-center">
-            <Col xs={12} md={4}>
-              <Form.Control
-                size="sm" type="text" placeholder="Vehicle Reg"
-                value={vehicleReg}
-                onChange={e => setVehicleReg(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              />
-            </Col>
-            <Col xs={12} md={4}>
-              <Form.Control
-                size="sm" type="text" placeholder="Vehicle Type"
-                value={vehicleType}
-                onChange={e => setVehicleType(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              />
-            </Col>
-            <Col xs={12} md={4} className="d-flex gap-2">
-              <Button size="sm" variant="primary" onClick={handleSearch} disabled={loading}>
-                <LuSearch className="me-1" />Search
-              </Button>
-              <Button size="sm" variant="secondary" onClick={handleReset} disabled={loading}>
-                <LuRefreshCw className="me-1" />Reset
-              </Button>
-            </Col>
-          </Row>
+
+          {/* Search */}
+          <div className="mb-3">
+            <Form.Control
+              size="sm"
+              type="text"
+              placeholder="Search vehicles..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              style={{ maxWidth: 320 }}
+            />
+          </div>
 
           {/* Table */}
           <div className="table-responsive">
@@ -285,8 +281,22 @@ const Page = () => {
                 {table.getHeaderGroups().map(hg => (
                   <tr key={hg.id}>
                     {hg.headers.map(h => (
-                      <th key={h.id} className="py-2 px-3 text-uppercase">
-                        {flexRender(h.column.columnDef.header, h.getContext())}
+                      <th
+                        key={h.id}
+                        className="py-2 px-3 text-uppercase"
+                        style={{ cursor: h.column.getCanSort() ? 'pointer' : 'default' }}
+                        onClick={h.column.getToggleSortingHandler()}
+                      >
+                        <div className="d-flex align-items-center gap-1">
+                          {flexRender(h.column.columnDef.header, h.getContext())}
+                          {h.column.getCanSort() && (
+                            <span style={{ opacity: 0.6, fontSize: 10 }}>
+                              {h.column.getIsSorted() === 'asc' ? '↑'
+                                : h.column.getIsSorted() === 'desc' ? '↓'
+                                : '↕'}
+                            </span>
+                          )}
+                        </div>
                       </th>
                     ))}
                   </tr>
@@ -307,13 +317,49 @@ const Page = () => {
                   </tr>
                 ) : (
                   table.getRowModel().rows.map(row => (
-                    <tr key={row.id}>
-                      {row.getVisibleCells().map(cell => (
-                        <td key={cell.id} className="py-2 px-3">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
-                    </tr>
+                    <React.Fragment key={row.id}>
+                      <tr>
+                        {row.getVisibleCells().map(cell => (
+                          <td key={cell.id} className="py-2 px-3">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
+                        ))}
+                      </tr>
+                      {row.getIsExpanded() && (
+                        <tr style={{ background: '#f8f9fa' }}>
+                          <td colSpan={row.getVisibleCells().length} className="px-4 py-3">
+                            <div className="row g-3 small">
+                              <div className="col-6 col-md-4">
+                                <div className="text-muted">Vehicle Registration</div>
+                                <div className="fw-medium">{row.original.vehicleReg}</div>
+                              </div>
+                              <div className="col-6 col-md-4">
+                                <div className="text-muted">Trailer Registration</div>
+                                <div className="fw-medium">{row.original.trailerReg || '—'}</div>
+                              </div>
+                              <div className="col-6 col-md-4">
+                                <div className="text-muted">Vehicle Type</div>
+                                <div className="fw-medium">{row.original.vehicleType || '—'}</div>
+                              </div>
+                              <div className="col-6 col-md-4">
+                                <div className="text-muted">Created</div>
+                                <div className="fw-medium">{new Date(row.original.createdAt).toLocaleString('en-ZA')}</div>
+                              </div>
+                              <div className="col-6 col-md-4">
+                                <div className="text-muted">Last Updated</div>
+                                <div className="fw-medium">{new Date(row.original.updatedAt).toLocaleString('en-ZA')}</div>
+                              </div>
+                              <div className="col-6 col-md-4">
+                                <div className="text-muted">Status</div>
+                                <Badge bg={row.original.isActive ? 'success' : 'danger'}>
+                                  {row.original.isActive ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))
                 )}
               </tbody>
@@ -323,60 +369,74 @@ const Page = () => {
           {/* Pagination */}
           <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
             <small className="text-muted">
-              {totalCount > 0
-                ? `Showing ${start} to ${end} of ${totalCount} entries`
-                : 'No entries found'}
+              Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} vehicles
             </small>
-            <div className="d-flex gap-1">
-              <Button variant="outline-secondary" size="sm"
-                disabled={page === 1 || loading}
-                onClick={() => handlePageChange(1)}>«</Button>
-              <Button variant="outline-secondary" size="sm"
-                disabled={page === 1 || loading}
-                onClick={() => handlePageChange(page - 1)}>‹</Button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const p = Math.max(1, page - 2) + i
-                if (p > totalPages) return null
-                return (
-                  <Button key={p} size="sm"
-                    variant={p === page ? 'primary' : 'outline-secondary'}
-                    onClick={() => handlePageChange(p)}>{p}</Button>
-                )
-              })}
-              <Button variant="outline-secondary" size="sm"
-                disabled={page >= totalPages || loading}
-                onClick={() => handlePageChange(page + 1)}>›</Button>
-              <Button variant="outline-secondary" size="sm"
-                disabled={page >= totalPages || loading}
-                onClick={() => handlePageChange(totalPages)}>»</Button>
+            <div className="d-flex align-items-center gap-2">
+              <Form.Select
+                size="sm"
+                style={{ width: 100 }}
+                value={pagination.pageSize}
+                onChange={(e) => setPagination(p => ({ ...p, pageSize: Number(e.target.value), pageIndex: 0 }))}
+              >
+                {[10, 20, 50].map(size => (
+                  <option key={size} value={size}>{size} / page</option>
+                ))}
+              </Form.Select>
+              <div className="d-flex gap-1">
+                <Button variant="outline-secondary" size="sm"
+                  disabled={!table.getCanPreviousPage()}
+                  onClick={() => table.setPageIndex(0)}>«</Button>
+                <Button variant="outline-secondary" size="sm"
+                  disabled={!table.getCanPreviousPage()}
+                  onClick={() => table.previousPage()}>‹</Button>
+                <span className="d-flex align-items-center px-2 small">
+                  Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                </span>
+                <Button variant="outline-secondary" size="sm"
+                  disabled={!table.getCanNextPage()}
+                  onClick={() => table.nextPage()}>›</Button>
+                <Button variant="outline-secondary" size="sm"
+                  disabled={!table.getCanNextPage()}
+                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}>»</Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Add/Edit Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={showModal} onHide={() => { setShowModal(false); setEditingVehicle(null); resetForm() }} centered>
         <Modal.Header closeButton>
-          <Modal.Title>{selectedVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</Modal.Title>
+          <Modal.Title>{editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {error && <div className="alert alert-danger py-2 mb-3">{error}</div>}
-          <FormGroup className="mb-3">
-            <FormLabel>Vehicle Registration <span className="text-danger">*</span></FormLabel>
-            <FormControl size="sm" type="text" placeholder="e.g. ABC 123 GP"
-              value={form.vehicleReg}
-              onChange={e => setForm({ ...form, vehicleReg: e.target.value })} />
-          </FormGroup>
-          <FormGroup className="mb-3">
-            <FormLabel>Trailer Registration</FormLabel>
-            <FormControl size="sm" type="text" placeholder="e.g. TRL 456 GP"
-              value={form.trailerReg}
-              onChange={e => setForm({ ...form, trailerReg: e.target.value })} />
-          </FormGroup>
-          <FormGroup className="mb-3">
-            <FormLabel>Vehicle Type</FormLabel>
-            <Form.Select size="sm" value={form.vehicleType}
-              onChange={e => setForm({ ...form, vehicleType: e.target.value })}>
+          <Form.Group className="mb-3">
+            <Form.Label>Vehicle Registration <span className="text-danger">*</span></Form.Label>
+            <Form.Control
+              size="sm"
+              type="text"
+              placeholder="ABC 123 GP"
+              value={formData.vehicleReg}
+              onChange={(e) => setFormData({ ...formData, vehicleReg: e.target.value.toUpperCase() })}
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Trailer Registration</Form.Label>
+            <Form.Control
+              size="sm"
+              type="text"
+              placeholder="TRL 456 GP"
+              value={formData.trailerReg}
+              onChange={(e) => setFormData({ ...formData, trailerReg: e.target.value.toUpperCase() })}
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Vehicle Type</Form.Label>
+            <Form.Select
+              size="sm"
+              value={formData.vehicleType}
+              onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
+            >
               <option value="">Select type...</option>
               <option value="Truck">Truck</option>
               <option value="Tipper">Tipper</option>
@@ -385,38 +445,46 @@ const Page = () => {
               <option value="Van">Van</option>
               <option value="Other">Other</option>
             </Form.Select>
-          </FormGroup>
-          <FormGroup>
-            <FormCheck type="switch" label="Active"
-              checked={form.isActive}
-              onChange={e => setForm({ ...form, isActive: e.target.checked })} />
-          </FormGroup>
+          </Form.Group>
+          <Form.Check
+            type="switch"
+            label="Active Vehicle"
+            checked={formData.isActive}
+            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+          />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" size="sm" onClick={() => setShowModal(false)}>Cancel</Button>
-          <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
+          <Button variant="secondary" size="sm"
+            onClick={() => { setShowModal(false); setEditingVehicle(null); resetForm() }}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={saving}
+            onClick={editingVehicle ? handleUpdate : handleCreate}
+          >
+            {saving ? 'Saving...' : editingVehicle ? 'Update' : 'Create'}
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
         <Modal.Header closeButton>
           <Modal.Title>Delete Vehicle</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete <strong>{selectedVehicle?.vehicleReg}</strong>?
+          Are you sure you want to delete <strong>{deletingVehicle?.vehicleReg}</strong>?
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" size="sm" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-          <Button variant="danger" size="sm" onClick={handleDelete} disabled={saving}>
+          <Button variant="danger" size="sm" disabled={saving} onClick={handleDelete}>
             {saving ? 'Deleting...' : 'Delete'}
           </Button>
         </Modal.Footer>
       </Modal>
+
     </Container>
   )
 }
-
-export default Page

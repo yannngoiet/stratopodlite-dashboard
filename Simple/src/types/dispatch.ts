@@ -63,6 +63,9 @@ export interface Shipment {
 export interface Driver {
   driverId: number
   fullName: string
+  vehicleId: number          // ← added to match controller
+  photoUrl?: string | null
+  vehiclePhotoUrl?: string | null
   shipments: Shipment[]
 }
 
@@ -77,20 +80,18 @@ export interface LocationGroup {
   factories: FactoryGroup[]
 }
 
+// Matches AssignDeliveryRequest in controller
 export interface AssignDeliveryRequest {
   deliveryNo: string
   driverId: number
-  vehicleId?: number | null
-  shipmentNo?: string | null
-  executionDate?: string | null
+  vehicleId: number
 }
 
+// Matches BulkAssignDeliveryRequest in controller
 export interface BulkAssignRequest {
   deliveryNos: string[]
   driverId: number
-  vehicleId?: number | null
-  shipmentNo?: string | null
-  executionDate?: string | null
+  vehicleId: number
 }
 
 export interface AssignDeliveryResponse {
