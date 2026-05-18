@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import authService from '@/services/authService'
 
+const STATIC_USERNAME = 'admin'
+const STATIC_PASSWORD = 'admin123'
+
 export const useAuth = () => {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
@@ -10,25 +13,29 @@ export const useAuth = () => {
   const login = async (usernameOrEmail: string, password: string): Promise<void> => {
     setLoading(true)
     setError(null)
-    try {
-      const res = await authService.login(usernameOrEmail, password)
 
-      if (!res.success) {
-        setError(res.message)
-        return
-      }
+    await new Promise((r) => setTimeout(r, 500))
 
-      if (res.mustChangePassword) {
-        router.push('/auth/change-password')
-        return
-      }
-
-      router.push('/dashboard')
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Something went wrong')
-    } finally {
+    if (usernameOrEmail !== STATIC_USERNAME || password !== STATIC_PASSWORD) {
+      setError('Invalid username or password.')
       setLoading(false)
+      return
     }
+
+    localStorage.setItem('accessToken', 'static-token')
+    localStorage.setItem('user', JSON.stringify({
+      id: 1,
+      companyId: 5,
+      username: 'admin',
+      email: 'admin@stratopod.co.za',
+      firstName: 'Admin',
+      lastName: 'User',
+      role: 'ADMIN',
+      plantId: null
+    }))
+
+    router.push('/dashboard')
+    setLoading(false)
   }
 
   const logout = () => {
