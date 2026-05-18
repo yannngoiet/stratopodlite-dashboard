@@ -10,9 +10,9 @@ interface AuthService {
 
 const authService: AuthService = {
   login: async (usernameOrEmail, password) => {
-    const res = await httpClient.post<LoginResponse>('/auth/login', { 
-      usernameOrEmail, 
-      password 
+    const res = await httpClient.post<LoginResponse>('/api/auth/login', {
+      usernameOrEmail,
+      password
     })
     const data = res.data
 
