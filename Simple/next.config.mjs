@@ -1,7 +1,9 @@
+// Fix self-signed SSL for local .NET API development
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const nextConfig = {
-  /* config options here */
   reactStrictMode: false,
-  
+
   async redirects() {
     return [{
       source: '/',
@@ -10,4 +12,5 @@ const nextConfig = {
     }];
   }
 };
+
 export default nextConfig;
