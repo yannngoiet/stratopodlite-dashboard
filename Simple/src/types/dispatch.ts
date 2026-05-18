@@ -56,6 +56,7 @@ export interface AssignedDelivery {
 export interface Shipment {
   shipmentNo: string | null
   status: string
+  vehicleId: number | null
   vehicleReg: string
   deliveries: AssignedDelivery[]
 }
@@ -63,7 +64,10 @@ export interface Shipment {
 export interface Driver {
   driverId: number
   fullName: string
-  vehicleId: number          // ← added to match controller
+  empNo: string | null
+  isSignedIn: boolean
+  assignedVehicleId: number | null    // ← add
+  assignedVehicleReg: string | null   // ← add
   photoUrl?: string | null
   vehiclePhotoUrl?: string | null
   shipments: Shipment[]

@@ -57,6 +57,15 @@ export async function unassignDelivery(deliveryNo: string): Promise<UnassignResp
   return res.data
 }
 
+export async function submitDispatch(): Promise<{ shipmentsDispatched: number; deliveriesDispatched: number }> {
+  const companyId = getCompanyId()
+  const res = await httpClient.post(
+    `/companies/${companyId}/dispatch/submit`,
+    { shipmentNos: null }
+  )
+  return res.data
+}
+
 export function groupDeliveriesByFactory(items: UnassignedDelivery[]): LocationGroup[] {
   const factoryMap = new Map<string, { factoryCode: string; factoryName: string; deliveries: UnassignedDelivery[] }>()
 

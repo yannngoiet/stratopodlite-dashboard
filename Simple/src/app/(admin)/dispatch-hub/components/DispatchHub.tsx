@@ -6,6 +6,8 @@ import { LuChevronDown, LuChevronRight, LuFilter, LuPrinter, LuRefreshCw, LuSear
 import { TbPackage, TbTruck } from 'react-icons/tb'
 import { AssignedDelivery, Driver, LocationGroup, Shipment, UnassignedDelivery } from '@/types/dispatch'
 import { assignDelivery, bulkAssignDeliveries, fetchDriversWithAssignments, fetchUnassignedDeliveries, groupDeliveriesByFactory, unassignDelivery } from '@/services/dispatchService'
+import vehicleService, { type Vehicle } from '@/services/vehicleService'
+import { getCompanyId } from '@/helpers/config'
 
 interface BulkDrag {
   _bulk: true
@@ -24,8 +26,8 @@ interface DriverCardProps {
   isDropTarget: boolean
   dragOverTarget: string | null
   setDragOverTarget: (target: string | null) => void
-  onDropOnShipment: (driverId: number, shipmentNo: string | null) => Promise<void>
-  onDropOnNewShipment: (driverId: number, vehicleId?: number) => Promise<void>
+  onDropOnShipment: (driverId: number, shipmentNo: string | null, vehicleId: number | null) => Promise<void>
+  onDropOnNewShipment: (driverId: number, vehicleReg: string, vehicleId: number | null) => Promise<void>
   onDragStartDelivery: (delivery: any, source: DragSource) => void
   onDragEnd: () => void
   selectedAssigned: Set<string>
@@ -39,7 +41,7 @@ interface ShipmentBlockProps {
   isDropTarget: boolean
   dragOverTarget: string | null
   setDragOverTarget: (target: string | null) => void
-  onDropOnShipment: (driverId: number, shipmentNo: string | null) => Promise<void>
+  onDropOnShipment: (driverId: number, shipmentNo: string | null, vehicleId: number | null) => Promise<void>
   onDragStartDelivery: (delivery: any, source: DragSource) => void
   onDragEnd: () => void
   selectedAssigned: Set<string>
@@ -48,10 +50,12 @@ interface ShipmentBlockProps {
 
 interface NewShipmentBlockProps {
   driverId: number
+  vehicleReg: string
+  vehicleId: number | null
   isDropTarget: boolean
   dragOverTarget: string | null
   setDragOverTarget: (target: string | null) => void
-  onDropOnNewShipment: (driverId: number, vehicleId?: number) => Promise<void>
+  onDropOnNewShipment: (driverId: number, vehicleReg: string, vehicleId: number | null) => Promise<void>
 }
 
 interface AssignedDeliveryCardProps {
@@ -70,15 +74,6 @@ interface DeliveryCardProps {
   onDragStart: () => void
   onDragEnd: () => void
 }
-
-// Available vehicles list (would come from API in production)
-const AVAILABLE_VEHICLES = [
-  { id: 1, registration: 'YFB145GP', name: 'Toyota Hilux', type: 'Bakkie' },
-  { id: 2, registration: 'ABC123GP', name: 'Ford Ranger', type: 'Bakkie' },
-  { id: 3, registration: 'XYZ789GP', name: 'Isuzu KB', type: 'Truck' },
-  { id: 4, registration: 'DEF456GP', name: 'Hino 300', type: 'Truck' },
-  { id: 5, registration: 'GHI789GP', name: 'Scania P-series', type: 'Heavy Truck' },
-]
 
 const DispatchHub = () => {
   const [deliveryDate, setDeliveryDate] = useState(() => new Date().toISOString().split('T')[0])
@@ -102,7 +97,9 @@ const DispatchHub = () => {
   const [toast, setToast] = useState<Toast | null>(null)
   const [showVehicleModal, setShowVehicleModal] = useState(false)
   const [selectedVehicleIdForDriver, setSelectedVehicleIdForDriver] = useState<number | null>(null)
-  const [pendingNewShipmentDriver, setPendingNewShipmentDriver] = useState<number | null>(null)
+  const [pendingNewShipmentDriver, setPendingNewShipmentDriver] = useState<{ driverId: number; vehicleReg: string } | null>(null)
+  const [availableVehicles, setAvailableVehicles] = useState<Vehicle[]>([])
+  const [submitting, setSubmitting] = useState(false)
 
   const loadDeliveries = async () => {
     setDeliveriesLoading(true)
@@ -130,7 +127,20 @@ const DispatchHub = () => {
     }
   }
 
-  useEffect(() => { loadDeliveries(); loadDrivers() }, [])
+  const loadVehicles = async () => {
+    try {
+      const data = await vehicleService.getAll(getCompanyId())
+      setAvailableVehicles(data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  useEffect(() => {
+    loadDeliveries()
+    loadDrivers()
+    loadVehicles()
+  }, [])
 
   const showToast = (message: string, type = 'success') => {
     setToast({ message, type })
@@ -140,7 +150,6 @@ const DispatchHub = () => {
   const toggleLocation = (loc: string) => setCollapsedLocations((prev) => ({ ...prev, [loc]: !prev[loc] }))
   const toggleFactory = (key: string) => setCollapsedFactories((prev) => ({ ...prev, [key]: !prev[key] }))
 
-  // Driver-centric search - search driver name first, then vehicle
   const filteredDrivers = drivers.filter((d) => {
     if (!driverSearch) return true
     const q = driverSearch.toLowerCase()
@@ -254,7 +263,21 @@ const DispatchHub = () => {
 
   const refreshAll = () => { loadDeliveries(); loadDrivers() }
 
-  const onDropOnShipment = async (driverId: number, shipmentNo: string | null) => {
+  const handleSubmitDispatch = async () => {
+    setSubmitting(true)
+    try {
+      const { submitDispatch } = await import('@/services/dispatchService')
+      const result = await submitDispatch()
+      showToast(`${result.shipmentsDispatched} shipments dispatched with ${result.deliveriesDispatched} deliveries`)
+      refreshAll()
+    } catch (err: any) {
+      showToast(err.response?.data?.message || err.message || 'Failed to submit dispatch', 'danger')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const onDropOnShipment = async (driverId: number, shipmentNo: string | null, vehicleId: number | null = null) => {
     if (!draggedDelivery) return
     setDragOverTarget(null)
     if (dragSource === 'driver' && !(draggedDelivery as BulkDrag)._bulk && (draggedDelivery as any)._shipmentNo === shipmentNo) {
@@ -271,11 +294,10 @@ const DispatchHub = () => {
     setSelectedDeliveries(new Set()); setSelectedAssigned(new Set())
     setDraggedDelivery(null); setDragSource(null)
     try {
-      const driver = drivers.find(d => d.driverId === driverId)
       if (deliveryNos.length === 1) {
-        await assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId: driver?.vehicleId || 0 })
+        await assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId: vehicleId ?? 0 })
       } else {
-        await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId: driver?.vehicleId || 0 })
+        await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId: vehicleId ?? 0 })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0].deliveryNo
       showToast(`${label} added to shipment ${shipmentNo}`)
@@ -283,57 +305,74 @@ const DispatchHub = () => {
     } catch (err: any) { showToast(err.message, 'danger'); refreshAll() }
   }
 
-  const onDropOnNewShipment = async (driverId: number, vehicleId?: number) => {
-    // If no vehicleId provided, open modal to select vehicle
-    if (!vehicleId) {
-      setPendingNewShipmentDriver(driverId)
-      setShowVehicleModal(true)
-      return
-    }
-
-    // Create shipment with the selected vehicle
-    if (!draggedDelivery) {
-      showToast('No deliveries to assign', 'warning')
-      return
-    }
-
+  // ── Core shipment creation logic ──────────────────────────────────────────
+  const proceedWithNewShipment = async (
+    driverId: number,
+    vehicleReg: string,
+    vehicleId: number
+  ) => {
+    setDragOverTarget(null)
     const incoming = getDraggedList()
     const deliveryNos = getDraggedNos()
     const { updatedDrivers, updatedGroups } = removeFromSource(drivers, deliveryGroups)
-    
-    const selectedVehicle = AVAILABLE_VEHICLES.find(v => v.id === vehicleId)
-    
+
     setDrivers(updatedDrivers.map((d) => {
       if (d.driverId !== driverId) return d
-      return { ...d, shipments: [...d.shipments, { shipmentNo: null, status: 'Assigning...', vehicleReg: selectedVehicle?.registration || 'N/A', deliveries: incoming }] }
+      return {
+        ...d,
+        shipments: [...d.shipments, {
+          shipmentNo: null, status: 'Assigning...',
+          statusId: 0, assignedExecutionDate: null,
+          vehicleId, vehicleReg, deliveries: incoming
+        }]
+      }
     }))
     if (dragSource === 'unassigned') setDeliveryGroups(updatedGroups)
     setSelectedDeliveries(new Set()); setSelectedAssigned(new Set())
     setDraggedDelivery(null); setDragSource(null)
     setShowVehicleModal(false)
-    
+
     try {
       let result: any
       if (deliveryNos.length === 1) {
-        result = await assignDelivery({ 
-          deliveryNo: deliveryNos[0], 
-          driverId, 
-          vehicleId
-        })
+        result = await assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId })
       } else {
-        result = await bulkAssignDeliveries({ 
-          deliveryNos, 
-          driverId, 
-          vehicleId
-        })
+        result = await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0].deliveryNo
       showToast(`Shipment ${result.shipmentNo} created — ${label}`)
       refreshAll()
     } catch (err: any) { showToast(err.message, 'danger'); refreshAll() }
-    
+
     setPendingNewShipmentDriver(null)
     setSelectedVehicleIdForDriver(null)
+  }
+
+  const onDropOnNewShipment = async (
+    driverId: number,
+    vehicleReg: string,
+    vehicleId: number | null = null
+  ) => {
+    if (!draggedDelivery) return
+
+    if (!vehicleId) {
+      const driver = drivers.find(d => d.driverId === driverId)
+      if (driver?.assignedVehicleId) {
+        // Driver has pre-assigned vehicle — skip modal
+        await proceedWithNewShipment(
+          driverId,
+          driver.assignedVehicleReg ?? 'N/A',
+          driver.assignedVehicleId
+        )
+        return
+      }
+      // No vehicle assigned → open modal
+      setPendingNewShipmentDriver({ driverId, vehicleReg })
+      setShowVehicleModal(true)
+      return
+    }
+
+    await proceedWithNewShipment(driverId, vehicleReg, vehicleId)
   }
 
   const handleCreateShipment = async () => {
@@ -341,9 +380,12 @@ const DispatchHub = () => {
       showToast('Please select a vehicle', 'warning')
       return
     }
-    
-    // Call onDropOnNewShipment with the selected vehicleId
-    await onDropOnNewShipment(pendingNewShipmentDriver, selectedVehicleIdForDriver)
+    const vehicle = availableVehicles.find(v => v.id === selectedVehicleIdForDriver)
+    await proceedWithNewShipment(
+      pendingNewShipmentDriver.driverId,
+      vehicle?.vehicleReg ?? 'N/A',
+      selectedVehicleIdForDriver
+    )
   }
 
   const onDropOnUnassigned = async () => {
@@ -380,44 +422,41 @@ const DispatchHub = () => {
         setShowVehicleModal(false)
         setPendingNewShipmentDriver(null)
         setSelectedVehicleIdForDriver(null)
-      }} size="sm">
+      }} size="sm" centered>
         <Modal.Header closeButton>
-          <Modal.Title>Select Vehicle</Modal.Title>
+          <Modal.Title style={{ fontSize: 15 }}>Select Vehicle</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form.Group>
-            <Form.Label>Choose a vehicle for this shipment</Form.Label>
-            <Form.Select 
-              value={selectedVehicleIdForDriver || ''} 
-              onChange={(e) => setSelectedVehicleIdForDriver(Number(e.target.value))}
-              style={{ fontSize: 13 }}>
+            <Form.Label className="small">Choose a vehicle for this shipment</Form.Label>
+            <Form.Select
+              size="sm"
+              value={selectedVehicleIdForDriver || ''}
+              onChange={(e) => setSelectedVehicleIdForDriver(Number(e.target.value))}>
               <option value="">Select vehicle...</option>
-              {AVAILABLE_VEHICLES.map(vehicle => (
+              {availableVehicles.map(vehicle => (
                 <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.registration} - {vehicle.name} ({vehicle.type})
+                  {vehicle.vehicleReg}{vehicle.vehicleType ? ` — ${vehicle.vehicleType}` : ''}
                 </option>
               ))}
             </Form.Select>
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => {
+          <Button size="sm" variant="secondary" onClick={() => {
             setShowVehicleModal(false)
             setPendingNewShipmentDriver(null)
             setSelectedVehicleIdForDriver(null)
-          }}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleCreateShipment}>
+          }}>Cancel</Button>
+          <Button size="sm" variant="primary" onClick={handleCreateShipment}>
             Create Shipment
           </Button>
         </Modal.Footer>
       </Modal>
 
       <Row className="g-3">
-        {/* ===== LEFT: Drivers (Driver-Centric) ===== */}
+        {/* ===== LEFT: Drivers ===== */}
         <Col lg={5}>
-          {/* Header - Changed to Drivers */}
           <div className="d-flex align-items-center justify-content-between mb-2 p-2 rounded"
             style={{ background: '#fff', border: '1px solid #d0dbe8' }}>
             <div className="d-flex align-items-center gap-2">
@@ -434,13 +473,16 @@ const DispatchHub = () => {
               <Button size="sm" style={{ background: '#17a2b8', border: 'none', fontSize: 12 }}>
                 <LuPrinter size={13} className="me-1" />PRINT ALL
               </Button>
-              <Button size="sm" style={{ background: '#28a745', border: 'none', fontSize: 12 }}>
-                SUBMIT DISPATCH
+              <Button
+                size="sm"
+                style={{ background: '#28a745', border: 'none', fontSize: 12 }}
+                disabled={submitting}
+                onClick={handleSubmitDispatch}>
+                {submitting ? 'Submitting...' : 'SUBMIT DISPATCH'}
               </Button>
             </div>
           </div>
 
-          {/* Filters - Driver Status Badges */}
           <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
             <Form.Select size="sm" style={{ width: 160, fontSize: 12 }}>
               <option>Driver Status</option>
@@ -449,26 +491,16 @@ const DispatchHub = () => {
               <option>On Break</option>
               <option>Off Duty</option>
             </Form.Select>
-            <Badge bg="success" style={{ fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>
-              ✅ Available
-            </Badge>
-            <Badge bg="warning" text="dark" style={{ fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>
-              🚚 On Route
-            </Badge>
-            <Badge bg="secondary" style={{ fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>
-              ⏸ On Break
-            </Badge>
+            <Badge bg="success" style={{ fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>✅ Available</Badge>
+            <Badge bg="warning" text="dark" style={{ fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>🚚 On Route</Badge>
+            <Badge bg="secondary" style={{ fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>⏸ On Break</Badge>
             <InputGroup size="sm" style={{ flex: 1, minWidth: 100 }}>
               <InputGroup.Text style={{ background: '#fff' }}><LuSearch size={12} /></InputGroup.Text>
-              <Form.Control 
-                placeholder="Search drivers by name or vehicle..." 
-                value={driverSearch}
-                onChange={(e) => setDriverSearch(e.target.value)} 
-                style={{ fontSize: 12 }} />
+              <Form.Control placeholder="Search drivers..." value={driverSearch}
+                onChange={(e) => setDriverSearch(e.target.value)} style={{ fontSize: 12 }} />
             </InputGroup>
           </div>
 
-          {/* Driver List */}
           <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
             {driversLoading ? (
               <div className="text-center text-muted py-5">
@@ -505,18 +537,19 @@ const DispatchHub = () => {
 
         {/* ===== RIGHT: Deliveries ===== */}
         <Col lg={7}>
-          {/* Header */}
           <div className="d-flex align-items-center justify-content-between mb-2 p-2 rounded"
             style={{ background: '#fff', border: '1px solid #d0dbe8' }}>
-            <div className="d-flex align-items-center gap-2">
-              <strong style={{ fontSize: 14 }}>📄 Delivery Notes</strong>
-            </div>
+            <strong style={{ fontSize: 14 }}>📄 Delivery Notes</strong>
             <div className="d-flex align-items-center gap-2">
               <Button size="sm" variant="outline-secondary" onClick={loadDeliveries} disabled={deliveriesLoading}>
                 <LuRefreshCw size={13} className={deliveriesLoading ? 'spin' : ''} />
               </Button>
-              <Button size="sm" style={{ background: '#28a745', border: 'none', fontSize: 12 }}>
-                SUBMIT DISPATCH
+              <Button
+                size="sm"
+                style={{ background: '#28a745', border: 'none', fontSize: 12 }}
+                disabled={submitting}
+                onClick={handleSubmitDispatch}>
+                {submitting ? 'Submitting...' : 'SUBMIT DISPATCH'}
               </Button>
               <Form.Control type="date" size="sm" value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
@@ -524,20 +557,12 @@ const DispatchHub = () => {
             </div>
           </div>
 
-          {/* Status Badges */}
           <div className="d-flex gap-2 mb-2 flex-wrap">
-            <Badge bg="primary" style={{ fontSize: 11, padding: '6px 10px', cursor: 'pointer' }}>
-              📄 POD IN TONS
-            </Badge>
-            <Badge bg="warning" text="dark" style={{ fontSize: 11, padding: '6px 10px', cursor: 'pointer' }}>
-              📄 POD DISPATCHED
-            </Badge>
-            <Badge bg="danger" style={{ fontSize: 11, padding: '6px 10px', cursor: 'pointer' }}>
-              📄 WEIGHBRIDGE ERROR
-            </Badge>
+            <Badge bg="primary" style={{ fontSize: 11, padding: '6px 10px', cursor: 'pointer' }}>📄 POD IN TONS</Badge>
+            <Badge bg="warning" text="dark" style={{ fontSize: 11, padding: '6px 10px', cursor: 'pointer' }}>📄 POD DISPATCHED</Badge>
+            <Badge bg="danger" style={{ fontSize: 11, padding: '6px 10px', cursor: 'pointer' }}>📄 WEIGHBRIDGE ERROR</Badge>
           </div>
 
-          {/* Filters */}
           <div className="d-flex gap-2 mb-2">
             <InputGroup size="sm" style={{ flex: 1 }}>
               <InputGroup.Text style={{ background: '#fff' }}><LuSearch size={12} /></InputGroup.Text>
@@ -619,9 +644,7 @@ const DispatchHub = () => {
                                 <span className="text-muted">{factory.factoryCode}</span>
                                 <span>– {factory.factoryName}</span>
                               </div>
-                              <Badge bg="warning" text="dark" style={{ fontSize: 10 }}>
-                                {factory.deliveries.length}
-                              </Badge>
+                              <Badge bg="warning" text="dark" style={{ fontSize: 10 }}>{factory.deliveries.length}</Badge>
                             </div>
                             <Collapse in={!collapsedFactories[factKey]}>
                               <div>
@@ -659,15 +682,17 @@ const DispatchHub = () => {
 
 export default DispatchHub
 
-// ── Driver Card (Driver-Centric Redesign) ─────────────────────────────────────
+// ── Driver Card ───────────────────────────────────────────────────────────────
 function DriverCard({
   driver, index, isDropTarget, dragOverTarget, setDragOverTarget,
   onDropOnShipment, onDropOnNewShipment, onDragStartDelivery,
   onDragEnd, selectedAssigned, toggleSelectAssigned,
 }: DriverCardProps) {
   const totalDeliveries = driver.shipments.reduce((s, sh) => s + sh.deliveries.length, 0)
-  const hasVehicle = driver.shipments.length > 0 && driver.shipments[0]?.vehicleReg
-  const currentVehicle = driver.shipments[0]?.vehicleReg ?? 'No vehicle assigned'
+  const hasVehicle = !!driver.shipments[0]?.vehicleReg || !!driver.assignedVehicleReg
+  const currentVehicle = driver.shipments[0]?.vehicleReg
+    ?? driver.assignedVehicleReg
+    ?? 'No vehicle assigned'
   const activeShipmentsCount = driver.shipments.length
 
   return (
@@ -680,25 +705,18 @@ function DriverCard({
           {index}
         </div>
 
-        {/* Driver Avatar - NOW PRIMARY (moved to left) */}
+        {/* Driver Avatar */}
         <div className="d-flex align-items-center justify-content-center px-3"
           style={{ borderRight: '1px solid #eee', flexShrink: 0 }}>
           {driver.photoUrl ? (
-            <img
-              src={driver.photoUrl}
-              alt={driver.fullName}
-              style={{
-                width: 56, height: 56, borderRadius: '50%',
-                objectFit: 'cover', border: '2px solid #2c3e50'
-              }}
-            />
+            <img src={driver.photoUrl} alt={driver.fullName}
+              style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid #2c3e50' }} />
           ) : (
             <div style={{
               width: 56, height: 56, borderRadius: '50%',
               background: driver.fullName ? '#2c3e50' : '#ccc',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 24, fontWeight: 700,
-              border: '2px solid #2c3e50'
+              color: '#fff', fontSize: 24, fontWeight: 700, border: '2px solid #2c3e50'
             }}>
               {driver.fullName ? driver.fullName.charAt(0).toUpperCase() : '?'}
             </div>
@@ -713,26 +731,20 @@ function DriverCard({
           </Button>
         </div>
 
-        {/* Driver Info + Shipments - DRIVER NAME PROMINENT */}
+        {/* Driver Info + Shipments */}
         <div className="flex-grow-1 p-2">
-          <div>
-            {/* Driver Name - Large and prominent */}
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#2c3e50' }}>
-              {driver.fullName || 'Unassigned Driver'}
-            </div>
-            {/* Vehicle - Secondary information */}
-            <div style={{ fontSize: 12, color: hasVehicle ? '#28a745' : '#dc3545', fontWeight: 600 }}>
-              <TbTruck size={12} className="me-1" />
-              {currentVehicle}
-            </div>
-            {/* Stats */}
-            <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>
-              Active Shipments: <strong>{activeShipmentsCount}</strong> | 
-              Total Deliveries: <strong>{totalDeliveries}</strong>
-            </div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#2c3e50' }}>
+            {driver.fullName || 'Unassigned Driver'}
+          </div>
+          <div style={{ fontSize: 12, color: hasVehicle ? '#28a745' : '#dc3545', fontWeight: 600 }}>
+            <TbTruck size={12} className="me-1" />
+            {currentVehicle}
+          </div>
+          <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>
+            Active Shipments: <strong>{activeShipmentsCount}</strong> |
+            Total Deliveries: <strong>{totalDeliveries}</strong>
           </div>
 
-          {/* Shipments */}
           {driver.shipments.map((shipment, idx) => (
             <ShipmentBlock
               key={shipment.shipmentNo ?? `pending-${idx}`}
@@ -752,6 +764,8 @@ function DriverCard({
 
           <NewShipmentBlock
             driverId={driver.driverId}
+            vehicleReg={driver.shipments?.[0]?.vehicleReg ?? driver.assignedVehicleReg ?? 'N/A'}
+            vehicleId={driver.shipments?.[0]?.vehicleId ?? driver.assignedVehicleId ?? null}
             isDropTarget={isDropTarget}
             dragOverTarget={dragOverTarget}
             setDragOverTarget={setDragOverTarget}
@@ -759,19 +773,15 @@ function DriverCard({
           />
         </div>
 
-        {/* Vehicle Photo - NOW SECONDARY (moved to right) */}
+        {/* Vehicle Photo */}
         <div style={{ width: 80, minHeight: 80, borderLeft: '1px solid #eee', overflow: 'hidden', flexShrink: 0 }}>
           {driver.vehiclePhotoUrl ? (
-            <img
-              src={driver.vehiclePhotoUrl}
-              alt="Vehicle"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
+            <img src={driver.vehiclePhotoUrl} alt="Vehicle"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             <div style={{
               width: '100%', height: '100%', minHeight: 80,
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'center', background: '#e8e8e8'
+              display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e8e8e8'
             }}>
               <TbTruck size={32} color="#aaa" />
             </div>
@@ -804,7 +814,22 @@ function ShipmentBlock({
       }}
       onDragOver={(e) => { e.preventDefault(); setDragOverTarget(targetKey) }}
       onDragLeave={() => { if (dragOverTarget === targetKey) setDragOverTarget(null) }}
-      onDrop={(e) => { e.preventDefault(); onDropOnShipment(driverId, shipment.shipmentNo) }}>
+      onDrop={(e) => { e.preventDefault(); onDropOnShipment(driverId, shipment.shipmentNo, shipment.vehicleId ?? null) }}>
+
+      <div className="d-flex align-items-center justify-content-between px-2 py-1"
+        style={{ background: '#2c3e50', borderRadius: '4px 4px 0 0' }}>
+        <span style={{ fontSize: 11, color: '#fff' }}>
+          Shipment: {shipment.shipmentNo ?? <em style={{ opacity: 0.6 }}>Assigning...</em>}
+        </span>
+        <div className="d-flex align-items-center gap-1">
+          <Button size="sm" style={{ fontSize: 10, padding: '1px 6px', background: '#3d5166', border: 'none' }}>
+            Waybill Required?
+          </Button>
+          <Button size="sm" style={{ fontSize: 10, padding: '1px 6px', background: '#3d5166', border: 'none' }}>
+            Customer Addresses
+          </Button>
+        </div>
+      </div>
 
       {isHovered && isDropTarget && (
         <div className="text-center py-1" style={{ fontSize: 11, color: borderColor, fontWeight: 600 }}>
@@ -826,8 +851,8 @@ function ShipmentBlock({
   )
 }
 
-// ── New Shipment Block (Updated for driver-centric) ───────────────────────────
-function NewShipmentBlock({ driverId, isDropTarget, dragOverTarget, setDragOverTarget, onDropOnNewShipment }: NewShipmentBlockProps) {
+// ── New Shipment Block ────────────────────────────────────────────────────────
+function NewShipmentBlock({ driverId, vehicleReg, vehicleId, isDropTarget, dragOverTarget, setDragOverTarget, onDropOnNewShipment }: NewShipmentBlockProps) {
   const targetKey = `new-shipment-${driverId}`
   const isHovered = dragOverTarget === targetKey
 
@@ -844,13 +869,8 @@ function NewShipmentBlock({ driverId, isDropTarget, dragOverTarget, setDragOverT
       }}
       onDragOver={(e) => { e.preventDefault(); setDragOverTarget(targetKey) }}
       onDragLeave={() => { if (dragOverTarget === targetKey) setDragOverTarget(null) }}
-      onDrop={(e) => { 
-        e.preventDefault(); 
-        onDropOnNewShipment(driverId)
-      }}
-      onClick={() => {
-        onDropOnNewShipment(driverId)
-      }}>
+      onDrop={(e) => { e.preventDefault(); onDropOnNewShipment(driverId, vehicleReg, vehicleId) }}
+      onClick={() => onDropOnNewShipment(driverId, vehicleReg, vehicleId)}>
       {isHovered && isDropTarget ? 'Release to create new shipment' : '+ New Shipment'}
     </div>
   )
@@ -870,44 +890,33 @@ function AssignedDeliveryCard({ delivery, isChecked, onToggleCheck, onDragStart,
         borderRadius: 3, margin: '2px 0',
       }}>
       <div className="d-flex align-items-stretch">
-        {/* Checkbox */}
         <div className="d-flex align-items-center px-2"
           style={{ borderRight: '1px solid #eee', cursor: 'pointer' }}
           onClick={(e) => { e.stopPropagation(); onToggleCheck() }}>
           <Form.Check type="checkbox" checked={isChecked} onChange={onToggleCheck}
             onClick={(e) => e.stopPropagation()} style={{ cursor: 'pointer' }} />
         </div>
-
-        {/* Delivery Info */}
         <div className="p-2 flex-grow-1">
           <Row className="g-0">
             <Col xs={6}>
               <div><span className="text-muted">CUSTOMER NAME: </span>
                 <span style={{ color: '#e74c3c', fontWeight: 600 }}>{delivery.customerName}</span></div>
               <div><span className="text-muted">ADDRESS: </span>{delivery.customerAddress}</div>
-              <div><span className="text-muted">C INSTRUCT: </span>{(delivery as any).cInstruct || '—'}</div>
+              <div><span className="text-muted">DELIVERY NR: </span><strong>{delivery.deliveryNo}</strong></div>
             </Col>
             <Col xs={6}>
               <div><span className="text-muted">QUARRY: </span>
-                <span style={{ fontWeight: 600 }}>{(delivery as any).quarry || (delivery as any).factoryName || '—'}</span></div>
-              <div><span className="text-muted">QTY: </span>{delivery.itemCount || '—'}</div>
+                <span style={{ fontWeight: 600 }}>{delivery.factoryName || '—'}</span></div>
+              <div><span className="text-muted">QTY: </span>{delivery.itemQuantity || '—'}</div>
               <div><span className="text-muted">PRODUCT: </span>{delivery.deliveryType || '—'}</div>
             </Col>
           </Row>
         </div>
-
-        {/* Action Icons */}
         <div className="d-flex flex-column align-items-center justify-content-center gap-1 px-2"
           style={{ borderLeft: '1px solid #eee' }}>
-          <Button variant="link" size="sm" style={{ color: '#17a2b8', padding: 2 }}>
-            <LuPrinter size={13} />
-          </Button>
-          <Button variant="link" size="sm" style={{ color: '#666', padding: 2 }}>
-            <LuSettings size={13} />
-          </Button>
-          <Button variant="link" size="sm" style={{ color: '#dc3545', padding: 2 }}>
-            <LuTrash2 size={13} />
-          </Button>
+          <Button variant="link" size="sm" style={{ color: '#17a2b8', padding: 2 }}><LuPrinter size={13} /></Button>
+          <Button variant="link" size="sm" style={{ color: '#666', padding: 2 }}><LuSettings size={13} /></Button>
+          <Button variant="link" size="sm" style={{ color: '#dc3545', padding: 2 }}><LuTrash2 size={13} /></Button>
         </div>
       </div>
     </div>
@@ -929,14 +938,12 @@ function DeliveryCard({ delivery, isChecked, onToggleCheck, isDragging, onDragSt
         userSelect: 'none', display: 'flex', alignItems: 'stretch',
         transition: 'opacity 0.15s, border 0.1s, background 0.1s',
       }}>
-      <div
-        className="d-flex align-items-center justify-content-center px-2"
+      <div className="d-flex align-items-center justify-content-center px-2"
         style={{ borderRight: '1px solid #eee', cursor: 'pointer', flexShrink: 0 }}
         onClick={(e) => { e.stopPropagation(); onToggleCheck() }}>
         <Form.Check type="checkbox" checked={isChecked} onChange={onToggleCheck}
           onClick={(e) => e.stopPropagation()} style={{ cursor: 'pointer' }} />
       </div>
-
       <div className="p-2 flex-grow-1">
         <Row className="g-0">
           <Col xs={6}>
@@ -952,10 +959,10 @@ function DeliveryCard({ delivery, isChecked, onToggleCheck, isDragging, onDragSt
             </div>
           </Col>
           <Col xs={6}>
-            <div><span className="text-muted">QUARRY: </span>{(delivery as any).factoryName || '—'}</div>
             <div><span className="text-muted">QTY: </span>{delivery.itemCount || '—'}</div>
             <div><span className="text-muted">PRODUCT: </span>{delivery.deliveryType || '—'}</div>
             <div><span className="text-muted">PO/SVO: </span>{delivery.poSvoNo || '—'}</div>
+            <div><span className="text-muted">SALES ORDER: </span>{delivery.salesOrderNo || '—'}</div>
           </Col>
         </Row>
       </div>
