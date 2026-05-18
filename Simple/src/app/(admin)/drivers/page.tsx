@@ -13,7 +13,7 @@ import {
   type ColumnFiltersState,
 } from '@tanstack/react-table'
 import { Badge, Button, Col, Container, Form, Modal, Row } from 'react-bootstrap'
-import { LuPencil, LuTrash2, LuPlus, LuCar, LuCarFront, LuSave } from 'react-icons/lu'
+import { LuPencil, LuTrash2, LuPlus, LuCar, LuCarFront, LuSave, LuDownload } from 'react-icons/lu'
 import driverService, { type Driver } from '@/services/driverService'
 import vehicleService, { type Vehicle } from '@/services/vehicleService'
 import { getCompanyId } from '@/helpers/config'
@@ -24,6 +24,8 @@ const PLANT_OPTIONS = [
   { id: 'P003', name: 'Acme Depot - DBN' },
   { id: 'PLANT001', name: 'Johannesburg Warehouse' },
 ]
+
+const NAVY = '#2c3e50'
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<Driver[]>([])
@@ -38,18 +40,20 @@ export default function DriversPage() {
   const [deletingDriver, setDeletingDriver] = useState<Driver | null>(null)
   const [saving, setSaving] = useState(false)
 
+  const [showFormModal, setShowFormModal] = useState(false)
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null)
   const [driverForm, setDriverForm] = useState({
     empNo: '', firstName: '', lastName: '',
-    plantId: 'P001',
-    username: '', licenseNumber: '',
+    plantId: 'P001', username: '', licenseNumber: '',
     licenseExpiryDate: '', isActive: true,
   })
 
+  const [showVehicleModal, setShowVehicleModal] = useState(false)
   const [vehicleReg, setVehicleReg] = useState('')
   const [vehicleType, setVehicleType] = useState('')
   const [savingVehicle, setSavingVehicle] = useState(false)
   const [vehicleSearch, setVehicleSearch] = useState('')
+  const [showVehicleList, setShowVehicleList] = useState(false)
 
   const [assigningVehicleId, setAssigningVehicleId] = useState<Record<number, number | null>>({})
   const [savingAssign, setSavingAssign] = useState<number | null>(null)
@@ -61,20 +65,15 @@ export default function DriversPage() {
     try {
       const data = await driverService.getAll()
       setDrivers(data)
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setLoading(false)
-    }
+    } catch (error) { console.error(error) }
+    finally { setLoading(false) }
   }, [])
 
   const loadVehicles = useCallback(async () => {
     try {
       const data = await vehicleService.getAll(companyId)
       setVehicles(data)
-    } catch (error) {
-      console.error(error)
-    }
+    } catch (error) { console.error(error) }
   }, [companyId])
 
   useEffect(() => {
@@ -88,8 +87,7 @@ export default function DriversPage() {
   const resetDriverForm = () => {
     setDriverForm({
       empNo: '', firstName: '', lastName: '',
-      plantId: 'P001',
-      username: '', licenseNumber: '',
+      plantId: 'P001', username: '', licenseNumber: '',
       licenseExpiryDate: '', isActive: true,
     })
     setEditingDriver(null)
@@ -124,11 +122,9 @@ export default function DriversPage() {
       }
       await loadDrivers()
       resetDriverForm()
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setSaving(false)
-    }
+      setShowFormModal(false)
+    } catch (error) { console.error(error) }
+    finally { setSaving(false) }
   }
 
   const handleDeleteDriver = async () => {
@@ -139,11 +135,8 @@ export default function DriversPage() {
       await loadDrivers()
       setShowDeleteModal(false)
       setDeletingDriver(null)
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setSaving(false)
-    }
+    } catch (error) { console.error(error) }
+    finally { setSaving(false) }
   }
 
   const handleAddVehicle = async () => {
@@ -158,11 +151,8 @@ export default function DriversPage() {
       await loadVehicles()
       setVehicleReg('')
       setVehicleType('')
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setSavingVehicle(false)
-    }
+    } catch (error) { console.error(error) }
+    finally { setSavingVehicle(false) }
   }
 
   const handleDeleteVehicle = async (vehicleId: number) => {
@@ -170,9 +160,7 @@ export default function DriversPage() {
     try {
       await vehicleService.delete(companyId, vehicleId)
       await loadVehicles()
-    } catch (error) {
-      console.error(error)
-    }
+    } catch (error) { console.error(error) }
   }
 
   const handleAssignVehicle = async (driverId: number) => {
@@ -192,11 +180,8 @@ export default function DriversPage() {
         delete next[driverId]
         return next
       })
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setSavingAssign(null)
-    }
+    } catch (error) { console.error(error) }
+    finally { setSavingAssign(null) }
   }
 
   const filteredVehicles = vehicles.filter(v =>
@@ -205,20 +190,32 @@ export default function DriversPage() {
 
   const columns = useMemo<ColumnDef<Driver>[]>(() => [
     {
+      id: 'index',
+      header: '#',
+      size: 50,
+      cell: ({ row }) => (
+        <span style={{ color: '#888', fontSize: 12 }}>{row.index + 1}</span>
+      )
+    },
+    {
       accessorKey: 'empNo',
       header: 'Emp No',
+      cell: ({ row }) => (
+        <span style={{ fontWeight: 600, color: NAVY }}>{row.original.empNo}</span>
+      )
     },
     {
       id: 'fullName',
       header: 'Full Name',
       accessorFn: row => `${row.firstName} ${row.lastName}`,
+      cell: ({ row }) => `${row.original.firstName} ${row.original.lastName}`
     },
     {
       accessorKey: 'plantId',
       header: 'Plant',
       cell: ({ row }) => {
         const plant = PLANT_OPTIONS.find(p => p.id === row.original.plantId)
-        return plant ? `${plant.id} - ${plant.name}` : row.original.plantId || '—'
+        return <span style={{ fontSize: 12 }}>{plant ? plant.name : row.original.plantId || '—'}</span>
       }
     },
     {
@@ -239,8 +236,7 @@ export default function DriversPage() {
 
         return (
           <div className="d-flex align-items-center gap-1">
-            <Form.Select
-              size="sm"
+            <Form.Select size="sm"
               style={{ fontSize: 12, minWidth: 130 }}
               value={displayVehicleId ?? ''}
               onChange={(e) => setAssigningVehicleId(prev => ({
@@ -249,21 +245,16 @@ export default function DriversPage() {
               }))}>
               <option value="">— No Vehicle —</option>
               {vehicles.filter(v => v.isActive).map(v => (
-                <option
-                  key={v.id}
-                  value={v.id}
+                <option key={v.id} value={v.id}
                   disabled={!!v.currentDriverId && v.currentDriverId !== driverId}>
                   {v.vehicleReg}
                   {v.currentDriverId && v.currentDriverId !== driverId ? ' ⚠' : ''}
                 </option>
               ))}
             </Form.Select>
-            <Button
-              size="sm"
-              variant="outline-success"
-              style={{ padding: '2px 6px' }}
+            <Button size="sm"
+              style={{ padding: '2px 6px', background: '#17a2b8', border: 'none' }}
               disabled={savingAssign === driverId}
-              title="Save assignment"
               onClick={() => handleAssignVehicle(driverId)}>
               {savingAssign === driverId
                 ? <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10 }} />
@@ -277,7 +268,7 @@ export default function DriversPage() {
       accessorKey: 'isSignedIn',
       header: 'Signed In',
       cell: ({ row }) => (
-        <Badge bg={row.original.isSignedIn ? 'success' : 'secondary'}>
+        <Badge bg={row.original.isSignedIn ? 'success' : 'secondary'} style={{ fontSize: 11 }}>
           {row.original.isSignedIn ? 'Yes' : 'No'}
         </Badge>
       )
@@ -286,7 +277,15 @@ export default function DriversPage() {
       accessorKey: 'isActive',
       header: 'Status',
       cell: ({ row }) => (
-        <Badge bg={row.original.isActive ? 'success' : 'danger'}>
+        <Badge
+          style={{
+            fontSize: 11,
+            background: row.original.isActive ? '#fff3cd' : '#f8d7da',
+            color: row.original.isActive ? '#856404' : '#842029',
+            border: `1px solid ${row.original.isActive ? '#ffc107' : '#f5c2c7'}`,
+            borderRadius: 20,
+            padding: '3px 10px'
+          }}>
           {row.original.isActive ? 'Active' : 'Inactive'}
         </Badge>
       )
@@ -296,7 +295,8 @@ export default function DriversPage() {
       header: 'Actions',
       cell: ({ row }) => (
         <div className="d-flex gap-1">
-          <Button size="sm" variant="outline-primary"
+          <Button size="sm" variant="outline-secondary"
+            style={{ padding: '2px 6px', fontSize: 11 }}
             onClick={() => {
               setEditingDriver(row.original)
               setDriverForm({
@@ -309,12 +309,14 @@ export default function DriversPage() {
                 licenseExpiryDate: row.original.licenseExpiryDate || '',
                 isActive: row.original.isActive,
               })
+              setShowFormModal(true)
             }}>
-            <LuPencil size={12} />
+            <LuPencil size={11} />
           </Button>
           <Button size="sm" variant="outline-danger"
+            style={{ padding: '2px 6px', fontSize: 11 }}
             onClick={() => { setDeletingDriver(row.original); setShowDeleteModal(true) }}>
-            <LuTrash2 size={12} />
+            <LuTrash2 size={11} />
           </Button>
         </div>
       )
@@ -338,394 +340,375 @@ export default function DriversPage() {
   const totalDrivers = drivers.length
   const activeDrivers = drivers.filter(d => d.isActive).length
   const signedInDrivers = drivers.filter(d => d.isSignedIn).length
+  const start = totalDrivers === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1
+  const end = Math.min((pagination.pageIndex + 1) * pagination.pageSize, table.getFilteredRowModel().rows.length)
 
   return (
-    <Container fluid className="py-3">
+    <Container fluid className="py-3" style={{ fontSize: 13 }}>
 
-      {/* Header */}
-      <div className="mb-3">
-        <h4 className="fw-bold d-flex align-items-center gap-2 mb-1">
-          <LuCar size={22} /> Driver Management
-        </h4>
-        <p className="text-muted small mb-0">Manage your drivers and vehicle assignments</p>
-      </div>
-
-      {/* Stats */}
-      <div className="row g-3 mb-3">
-        <div className="col-6 col-md-3">
-          <div className="card shadow-sm text-center py-3">
-            <div className="text-muted small">Total Drivers</div>
-            <div className="fs-3 fw-bold">{totalDrivers}</div>
+      {/* ── Main Card — matches delivery notes style ── */}
+      <div className="card shadow-sm">
+        <div className="card-header d-flex justify-content-between align-items-center py-2">
+          <h6 className="mb-0 fw-semibold">
+            Drivers ({table.getFilteredRowModel().rows.length} total)
+          </h6>
+          <div className="d-flex gap-2">
+            <Button size="sm"
+              style={{ background: '#17a2b8', border: 'none', fontSize: 12 }}
+              onClick={() => setShowVehicleList(true)}>
+              <LuCarFront size={13} className="me-1" />Manage Vehicles
+            </Button>
+            <Button size="sm"
+              style={{ background: NAVY, border: 'none', fontSize: 12 }}
+              onClick={() => { resetDriverForm(); setShowFormModal(true) }}>
+              <LuPlus size={13} className="me-1" />Add Driver
+            </Button>
           </div>
         </div>
-        <div className="col-6 col-md-3">
-          <div className="card shadow-sm text-center py-3">
-            <div className="text-muted small">Active</div>
-            <div className="fs-3 fw-bold text-success">{activeDrivers}</div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="card shadow-sm text-center py-3">
-            <div className="text-muted small">Signed In</div>
-            <div className="fs-3 fw-bold text-primary">{signedInDrivers}</div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="card shadow-sm text-center py-3">
-            <div className="text-muted small">Inactive</div>
-            <div className="fs-3 fw-bold text-danger">{totalDrivers - activeDrivers}</div>
-          </div>
-        </div>
-      </div>
 
-      <Row className="g-3">
+        <div className="card-body p-3">
 
-        {/* ── LEFT: Driver Table ──────────────────────────────────── */}
-        <Col lg={8}>
-          <div className="card shadow-sm">
-            <div className="card-header d-flex justify-content-between align-items-center py-2">
-              <h6 className="mb-0 fw-semibold">
-                Drivers ({table.getFilteredRowModel().rows.length})
-              </h6>
-            </div>
-            <div className="card-body p-3">
-              <div className="mb-3">
-                <Form.Control size="sm" type="text" placeholder="Search drivers..."
-                  value={globalFilter}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
-                  style={{ maxWidth: 280 }} />
-              </div>
+          {/* ── Filters row — matches delivery notes ── */}
+          <Row className="g-2 mb-3">
+            <Col xs={12} md={4}>
+              <Form.Control size="sm" type="text"
+                placeholder="Search by name or emp no..."
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)} />
+            </Col>
+            <Col xs={6} md={3}>
+              <Form.Select size="sm"
+                onChange={(e) => {
+                  if (e.target.value === '') table.getColumn('isActive')?.setFilterValue(undefined)
+                  else table.getColumn('isActive')?.setFilterValue(e.target.value === 'true')
+                }}>
+                <option value="">All Status</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </Form.Select>
+            </Col>
+            <Col xs={6} md={3}>
+              <Form.Select size="sm"
+                onChange={(e) => {
+                  table.getColumn('plantId')?.setFilterValue(e.target.value || undefined)
+                }}>
+                <option value="">All Plants</option>
+                {PLANT_OPTIONS.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </Form.Select>
+            </Col>
+          </Row>
 
-              <div className="table-responsive">
-                <table className="table table-bordered table-striped table-hover table-sm align-middle mb-0">
-                  <thead style={{
-                    backgroundColor: '#ffffff',
-                    color: '#2c3e50',
-                    fontSize: '0.75rem',
-                    borderBottom: '2px solid #dee2e6'
-                  }}>
-                    {table.getHeaderGroups().map(hg => (
-                      <tr key={hg.id}>
-                        {hg.headers.map(h => (
-                          <th key={h.id} className="py-2 px-3 text-uppercase"
-                            style={{
-                              cursor: h.column.getCanSort() ? 'pointer' : 'default',
-                              backgroundColor: '#ffffff',
-                              color: '#2c3e50'
-                            }}
-                            onClick={h.column.getToggleSortingHandler()}>
-                            <div className="d-flex align-items-center gap-1">
-                              {flexRender(h.column.columnDef.header, h.getContext())}
-                              {h.column.getCanSort() && (
-                                <span style={{ opacity: 0.6, fontSize: 10 }}>
-                                  {h.column.getIsSorted() === 'asc' ? '↑'
-                                    : h.column.getIsSorted() === 'desc' ? '↓' : '↕'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
+          {/* ── Table ── */}
+          <div className="table-responsive">
+            <table className="table table-bordered table-hover table-sm align-middle mb-0"
+              style={{ fontSize: 13 }}>
+              <thead>
+                {table.getHeaderGroups().map(hg => (
+                  <tr key={hg.id}>
+                    {hg.headers.map(h => (
+                      <th key={h.id}
+                        className="py-2 px-3 text-uppercase"
+                        style={{
+                          background: NAVY,
+                          color: '#fff',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          cursor: h.column.getCanSort() ? 'pointer' : 'default',
+                          whiteSpace: 'nowrap'
+                        }}
+                        onClick={h.column.getToggleSortingHandler()}>
+                        <div className="d-flex align-items-center gap-1">
+                          {flexRender(h.column.columnDef.header, h.getContext())}
+                          {h.column.getCanSort() && (
+                            <span style={{ opacity: 0.5, fontSize: 10 }}>
+                              {h.column.getIsSorted() === 'asc' ? '↑'
+                                : h.column.getIsSorted() === 'desc' ? '↓' : '↕'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
                     ))}
-                  </thead>
-                  <tbody style={{ fontSize: '0.85rem' }}>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={columns.length} className="text-center py-5">
-                          <div className="spinner-border text-primary" role="status" />
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={columns.length} className="text-center py-5">
+                      <div className="spinner-border text-primary" role="status" />
+                    </td>
+                  </tr>
+                ) : table.getRowModel().rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length} className="text-center py-4 text-muted">
+                      No drivers found
+                    </td>
+                  </tr>
+                ) : (
+                  table.getRowModel().rows.map(row => (
+                    <tr key={row.id}>
+                      {row.getVisibleCells().map(cell => (
+                        <td key={cell.id} className="py-2 px-3">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
-                      </tr>
-                    ) : table.getRowModel().rows.length === 0 ? (
-                      <tr>
-                        <td colSpan={columns.length} className="text-center py-4 text-muted">
-                          No drivers found
-                        </td>
-                      </tr>
-                    ) : (
-                      table.getRowModel().rows.map(row => (
-                        <tr key={row.id}>
-                          {row.getVisibleCells().map(cell => (
-                            <td key={cell.id} className="py-2 px-3">
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </td>
-                          ))}
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-                <small className="text-muted">
-                  Showing {table.getRowModel().rows.length} of{' '}
-                  {table.getFilteredRowModel().rows.length} drivers
-                </small>
-                <div className="d-flex align-items-center gap-2">
-                  <Form.Select size="sm" style={{ width: 100 }}
-                    value={pagination.pageSize}
-                    onChange={(e) => setPagination(p => ({
-                      ...p, pageSize: Number(e.target.value), pageIndex: 0
-                    }))}>
-                    {[10, 20, 50].map(s => (
-                      <option key={s} value={s}>{s} / page</option>
-                    ))}
-                  </Form.Select>
-                  <div className="d-flex gap-1">
-                    <Button variant="outline-secondary" size="sm"
-                      disabled={!table.getCanPreviousPage()}
-                      onClick={() => table.setPageIndex(0)}>«</Button>
-                    <Button variant="outline-secondary" size="sm"
-                      disabled={!table.getCanPreviousPage()}
-                      onClick={() => table.previousPage()}>‹</Button>
-                    <span className="d-flex align-items-center px-2 small">
-                      Page {table.getState().pagination.pageIndex + 1} of{' '}
-                      {table.getPageCount() || 1}
-                    </span>
-                    <Button variant="outline-secondary" size="sm"
-                      disabled={!table.getCanNextPage()}
-                      onClick={() => table.nextPage()}>›</Button>
-                    <Button variant="outline-secondary" size="sm"
-                      disabled={!table.getCanNextPage()}
-                      onClick={() => table.setPageIndex(table.getPageCount() - 1)}>»</Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Col>
-
-        {/* ── RIGHT: Forms + Vehicle List ─────────────────────────── */}
-        <Col lg={4}>
-
-          {/* Add / Edit Driver Form */}
-          <div className="card shadow-sm mb-3">
-            <div className="card-header py-2"
-              style={{ background: '#2c7be5', color: '#fff' }}>
-              <h6 className="mb-0 fw-semibold d-flex align-items-center gap-2">
-                <LuCar size={15} />
-                {editingDriver ? `Edit — ${editingDriver.fullName}` : 'Add New Driver'}
-              </h6>
-            </div>
-            <div className="card-body p-3">
-              <Row className="g-2">
-                <Col xs={6}>
-                  <Form.Label className="small mb-1">
-                    Employee Number <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control size="sm" placeholder="EMP001"
-                    value={driverForm.empNo}
-                    onChange={e => setDriverForm({ ...driverForm, empNo: e.target.value })} />
-                </Col>
-                <Col xs={6}>
-                  <Form.Label className="small mb-1">
-                    First Name <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control size="sm" placeholder="John"
-                    value={driverForm.firstName}
-                    onChange={e => setDriverForm({ ...driverForm, firstName: e.target.value })} />
-                </Col>
-                <Col xs={6}>
-                  <Form.Label className="small mb-1">
-                    Last Name <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control size="sm" placeholder="Smith"
-                    value={driverForm.lastName}
-                    onChange={e => setDriverForm({ ...driverForm, lastName: e.target.value })} />
-                </Col>
-                <Col xs={6}>
-                  <Form.Label className="small mb-1">Plant ID</Form.Label>
-                  <Form.Select size="sm"
-                    value={driverForm.plantId}
-                    onChange={e => setDriverForm({ ...driverForm, plantId: e.target.value })}>
-                    {PLANT_OPTIONS.map(plant => (
-                      <option key={plant.id} value={plant.id}>
-                        {plant.id} - {plant.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Col>
-                <Col xs={6}>
-                  <Form.Label className="small mb-1">Username</Form.Label>
-                  <Form.Control size="sm" placeholder="jsmith"
-                    value={driverForm.username}
-                    onChange={e => setDriverForm({ ...driverForm, username: e.target.value })} />
-                </Col>
-                <Col xs={6}>
-                  <Form.Label className="small mb-1">License Nr</Form.Label>
-                  <Form.Control size="sm" placeholder="LIC123456"
-                    value={driverForm.licenseNumber}
-                    onChange={e => setDriverForm({ ...driverForm, licenseNumber: e.target.value })} />
-                </Col>
-                <Col xs={6}>
-                  <Form.Label className="small mb-1">License Expiry</Form.Label>
-                  <Form.Control size="sm" type="date"
-                    value={driverForm.licenseExpiryDate}
-                    onChange={e => setDriverForm({ ...driverForm, licenseExpiryDate: e.target.value })} />
-                </Col>
-                <Col xs={6} className="d-flex align-items-end pb-1">
-                  <Form.Check type="switch" label="Active"
-                    checked={driverForm.isActive}
-                    onChange={e => setDriverForm({ ...driverForm, isActive: e.target.checked })} />
-                </Col>
-              </Row>
-              <div className="d-flex gap-2 mt-3">
-                {editingDriver && (
-                  <Button size="sm" variant="secondary" onClick={resetDriverForm}>
-                    Cancel
-                  </Button>
+                      ))}
+                    </tr>
+                  ))
                 )}
-                <Button size="sm" variant="primary" className="flex-grow-1"
-                  disabled={saving} onClick={handleSaveDriver}>
-                  <LuPlus size={13} className="me-1" />
-                  {saving ? 'Saving...' : editingDriver ? 'Update Driver' : 'Add Driver'}
-                </Button>
-              </div>
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── Pagination — matches delivery notes ── */}
+          <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+            <small className="text-muted">
+              Showing {start} to {end} of {table.getFilteredRowModel().rows.length} entries
+            </small>
+            <div className="d-flex gap-1">
+              <Button variant="outline-secondary" size="sm"
+                disabled={!table.getCanPreviousPage()}
+                onClick={() => table.setPageIndex(0)}>«</Button>
+              <Button variant="outline-secondary" size="sm"
+                disabled={!table.getCanPreviousPage()}
+                onClick={() => table.previousPage()}>‹</Button>
+              {Array.from({ length: Math.min(5, table.getPageCount()) }, (_, i) => {
+                const pageNum = Math.max(0, pagination.pageIndex - 2) + i
+                if (pageNum >= table.getPageCount()) return null
+                return (
+                  <Button key={pageNum} size="sm"
+                    variant={pageNum === pagination.pageIndex ? 'primary' : 'outline-secondary'}
+                    onClick={() => table.setPageIndex(pageNum)}>
+                    {pageNum + 1}
+                  </Button>
+                )
+              })}
+              <Button variant="outline-secondary" size="sm"
+                disabled={!table.getCanNextPage()}
+                onClick={() => table.nextPage()}>›</Button>
+              <Button variant="outline-secondary" size="sm"
+                disabled={!table.getCanNextPage()}
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}>»</Button>
             </div>
           </div>
 
+          {/* ── Export buttons — matches delivery notes ── */}
+          <div className="d-flex justify-content-center mt-3 gap-2">
+            <Button style={{ background: '#17a2b8', border: 'none', fontSize: 12 }} size="sm">
+              <LuDownload size={13} className="me-1" />Download Report
+            </Button>
+            <Button style={{ background: '#28a745', border: 'none', fontSize: 12 }} size="sm">
+              <LuDownload size={13} className="me-1" />Export to Excel
+            </Button>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ── Add / Edit Driver Modal ── */}
+      <Modal show={showFormModal}
+        onHide={() => { setShowFormModal(false); resetDriverForm() }}
+        centered size="lg">
+        <Modal.Header closeButton
+          style={{ background: NAVY, color: '#fff' }}>
+          <Modal.Title style={{ fontSize: 15 }}>
+            {editingDriver ? `Edit Driver — ${editingDriver.fullName}` : 'Add New Driver'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Row className="g-3">
+            <Col md={6}>
+              <Form.Label style={{ fontSize: 12 }}>Employee Number <span className="text-danger">*</span></Form.Label>
+              <Form.Control size="sm" placeholder="EMP001"
+                value={driverForm.empNo}
+                onChange={e => setDriverForm({ ...driverForm, empNo: e.target.value })} />
+            </Col>
+            <Col md={6}>
+              <Form.Label style={{ fontSize: 12 }}>Username</Form.Label>
+              <Form.Control size="sm" placeholder="jsmith"
+                value={driverForm.username}
+                onChange={e => setDriverForm({ ...driverForm, username: e.target.value })} />
+            </Col>
+            <Col md={6}>
+              <Form.Label style={{ fontSize: 12 }}>First Name <span className="text-danger">*</span></Form.Label>
+              <Form.Control size="sm" placeholder="John"
+                value={driverForm.firstName}
+                onChange={e => setDriverForm({ ...driverForm, firstName: e.target.value })} />
+            </Col>
+            <Col md={6}>
+              <Form.Label style={{ fontSize: 12 }}>Last Name <span className="text-danger">*</span></Form.Label>
+              <Form.Control size="sm" placeholder="Smith"
+                value={driverForm.lastName}
+                onChange={e => setDriverForm({ ...driverForm, lastName: e.target.value })} />
+            </Col>
+            <Col md={6}>
+              <Form.Label style={{ fontSize: 12 }}>Plant</Form.Label>
+              <Form.Select size="sm" value={driverForm.plantId}
+                onChange={e => setDriverForm({ ...driverForm, plantId: e.target.value })}>
+                {PLANT_OPTIONS.map(p => (
+                  <option key={p.id} value={p.id}>{p.id} - {p.name}</option>
+                ))}
+              </Form.Select>
+            </Col>
+            <Col md={6}>
+              <Form.Label style={{ fontSize: 12 }}>License Nr</Form.Label>
+              <Form.Control size="sm" placeholder="LIC123456"
+                value={driverForm.licenseNumber}
+                onChange={e => setDriverForm({ ...driverForm, licenseNumber: e.target.value })} />
+            </Col>
+            <Col md={6}>
+              <Form.Label style={{ fontSize: 12 }}>License Expiry Date</Form.Label>
+              <Form.Control size="sm" type="date"
+                value={driverForm.licenseExpiryDate}
+                onChange={e => setDriverForm({ ...driverForm, licenseExpiryDate: e.target.value })} />
+            </Col>
+            <Col md={6} className="d-flex align-items-end pb-1">
+              <Form.Check type="switch" label="Active Driver"
+                checked={driverForm.isActive}
+                onChange={e => setDriverForm({ ...driverForm, isActive: e.target.checked })} />
+            </Col>
+          </Row>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button size="sm" variant="outline-secondary"
+            onClick={() => { setShowFormModal(false); resetDriverForm() }}>
+            Cancel
+          </Button>
+          <Button size="sm"
+            style={{ background: NAVY, border: 'none' }}
+            disabled={saving}
+            onClick={handleSaveDriver}>
+            {saving ? 'Saving...' : editingDriver ? 'Update Driver' : 'Add Driver'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ── Vehicle Management Modal ── */}
+      <Modal show={showVehicleList}
+        onHide={() => setShowVehicleList(false)}
+        centered size="lg">
+        <Modal.Header closeButton style={{ background: NAVY, color: '#fff' }}>
+          <Modal.Title style={{ fontSize: 15 }}>
+            <LuCarFront size={16} className="me-2" />Vehicle Management
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
           {/* Add Vehicle Form */}
-          <div className="card shadow-sm mb-3">
-            <div className="card-header py-2"
-              style={{ background: '#2c7be5', color: '#fff' }}>
-              <h6 className="mb-0 fw-semibold d-flex align-items-center gap-2">
-                <LuCarFront size={15} />
-                Add Management Vehicle
-              </h6>
-            </div>
-            <div className="card-body p-3">
-              <Row className="g-2">
-                <Col xs={7}>
-                  <Form.Label className="small mb-1">Vehicle Registration</Form.Label>
-                  <Form.Control size="sm" placeholder="ABC 123 GP"
-                    value={vehicleReg}
-                    onChange={e => setVehicleReg(e.target.value.toUpperCase())} />
-                </Col>
-                <Col xs={5}>
-                  <Form.Label className="small mb-1">Type</Form.Label>
-                  <Form.Select size="sm" value={vehicleType}
-                    onChange={e => setVehicleType(e.target.value)}>
-                    <option value="">— Any —</option>
-                    <option value="Truck">Truck</option>
-                    <option value="Tipper">Tipper</option>
-                    <option value="Flatbed">Flatbed</option>
-                    <option value="Tanker">Tanker</option>
-                    <option value="Van">Van</option>
-                  </Form.Select>
-                </Col>
-              </Row>
-              <Button size="sm" variant="primary" className="w-100 mt-3"
-                disabled={savingVehicle || !vehicleReg.trim()}
-                onClick={handleAddVehicle}>
-                <LuPlus size={13} className="me-1" />
-                {savingVehicle ? 'Adding...' : 'Add Vehicle'}
-              </Button>
-            </div>
+          <div className="p-3 mb-3 rounded"
+            style={{ background: '#f8f9fa', border: '1px solid #dee2e6' }}>
+            <h6 className="fw-semibold mb-2" style={{ fontSize: 13 }}>Add New Vehicle</h6>
+            <Row className="g-2 align-items-end">
+              <Col xs={5}>
+                <Form.Label style={{ fontSize: 12 }}>Vehicle Registration</Form.Label>
+                <Form.Control size="sm" placeholder="ABC 123 GP"
+                  value={vehicleReg}
+                  onChange={e => setVehicleReg(e.target.value.toUpperCase())} />
+              </Col>
+              <Col xs={4}>
+                <Form.Label style={{ fontSize: 12 }}>Type</Form.Label>
+                <Form.Select size="sm" value={vehicleType}
+                  onChange={e => setVehicleType(e.target.value)}>
+                  <option value="">— Any —</option>
+                  <option value="Truck">Truck</option>
+                  <option value="Tipper">Tipper</option>
+                  <option value="Flatbed">Flatbed</option>
+                  <option value="Tanker">Tanker</option>
+                  <option value="Van">Van</option>
+                </Form.Select>
+              </Col>
+              <Col xs={3}>
+                <Button size="sm" className="w-100"
+                  style={{ background: '#28a745', border: 'none' }}
+                  disabled={savingVehicle || !vehicleReg.trim()}
+                  onClick={handleAddVehicle}>
+                  <LuPlus size={13} className="me-1" />
+                  {savingVehicle ? 'Adding...' : 'Add'}
+                </Button>
+              </Col>
+            </Row>
           </div>
 
           {/* Vehicle List */}
-          <div className="card shadow-sm">
-            <div className="card-header py-2"
-              style={{ background: '#2c7be5', color: '#fff' }}>
-              <h6 className="mb-0 fw-semibold d-flex align-items-center gap-2">
-                <LuCarFront size={15} />
-                Management Vehicles ({vehicles.length})
-              </h6>
-            </div>
-            <div className="card-body p-3">
-              <Form.Control size="sm" placeholder="Search..."
-                className="mb-2" value={vehicleSearch}
-                onChange={e => setVehicleSearch(e.target.value)} />
-              <div style={{ maxHeight: 280, overflowY: 'auto' }}>
-                <table className="table table-sm table-bordered align-middle mb-0"
-                  style={{ fontSize: '0.78rem' }}>
-                  <thead style={{
-                    background: '#ffffff',
-                    color: '#2c3e50',
-                    borderBottom: '2px solid #dee2e6'
-                  }}>
-                    <tr>
-                      <th className="px-2 py-1">#</th>
-                      <th className="px-2 py-1">Vehicle Reg</th>
-                      <th className="px-2 py-1">Driver</th>
-                      <th className="px-2 py-1">Act</th>
+          <Form.Control size="sm" placeholder="Search vehicles..."
+            className="mb-2" value={vehicleSearch}
+            onChange={e => setVehicleSearch(e.target.value)} />
+
+          <div className="table-responsive">
+            <table className="table table-bordered table-hover table-sm align-middle mb-0"
+              style={{ fontSize: 13 }}>
+              <thead>
+                <tr>
+                  {['#', 'Vehicle Reg', 'Type', 'Assigned Driver', 'Actions'].map(h => (
+                    <th key={h} className="py-2 px-3 text-uppercase"
+                      style={{ background: NAVY, color: '#fff', fontSize: '0.72rem', fontWeight: 600 }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredVehicles.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center text-muted py-3">No vehicles</td>
+                  </tr>
+                ) : (
+                  filteredVehicles.map((v, idx) => (
+                    <tr key={v.id}>
+                      <td className="px-3 text-muted">{idx + 1}</td>
+                      <td className="px-3 fw-semibold" style={{ color: NAVY }}>{v.vehicleReg}</td>
+                      <td className="px-3">{v.vehicleType || '—'}</td>
+                      <td className="px-3">
+                        {v.currentDriverName
+                          ? <span style={{ color: '#28a745', fontWeight: 600 }}>{v.currentDriverName}</span>
+                          : <span className="text-muted">—</span>
+                        }
+                      </td>
+                      <td className="px-3">
+                        <div className="d-flex gap-1">
+                          <Button size="sm" variant="outline-danger"
+                            style={{ padding: '2px 6px' }}
+                            onClick={() => handleDeleteVehicle(v.id)}>
+                            <LuTrash2 size={10} />
+                          </Button>
+                          {v.currentDriverId && (
+                            <Button size="sm" variant="outline-warning"
+                              style={{ padding: '2px 6px', fontSize: 11 }}
+                              onClick={async () => {
+                                await vehicleService.assignDriver(companyId, v.id, null)
+                                await loadVehicles()
+                              }}>
+                              Unassign
+                            </Button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredVehicles.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="text-center text-muted py-3">
-                          No vehicles
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredVehicles.map((v, idx) => (
-                        <tr key={v.id}>
-                          <td className="px-2 text-muted">{idx + 1}</td>
-                          <td className="px-2">
-                            <span className="fw-semibold">{v.vehicleReg}</span>
-                            {v.vehicleType && (
-                              <span className="text-muted ms-1" style={{ fontSize: 10 }}>
-                                ({v.vehicleType})
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-2">
-                            {v.currentDriverName
-                              ? <span className="text-success" style={{ fontSize: 11 }}>
-                                  {v.currentDriverName}
-                                </span>
-                              : <span className="text-muted">—</span>
-                            }
-                          </td>
-                          <td className="px-2">
-                            <div className="d-flex gap-1">
-                              <Button size="sm" variant="danger"
-                                style={{ padding: '1px 5px' }}
-                                onClick={() => handleDeleteVehicle(v.id)}>
-                                <LuTrash2 size={10} />
-                              </Button>
-                              {v.currentDriverId && (
-                                <Button size="sm" variant="warning"
-                                  style={{ padding: '1px 5px' }}
-                                  title="Unassign driver"
-                                  onClick={async () => {
-                                    await vehicleService.assignDriver(companyId, v.id, null)
-                                    await loadVehicles()
-                                  }}>
-                                  <LuCar size={10} />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-
-        </Col>
-      </Row>
-
-      {/* Delete Driver Modal */}
-      <Modal show={showDeleteModal}
-        onHide={() => setShowDeleteModal(false)} centered size="sm">
-        <Modal.Header closeButton>
-          <Modal.Title>Delete Driver</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete{' '}
-          <strong>{deletingDriver?.fullName}</strong>?
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" size="sm"
+          <Button size="sm" variant="outline-secondary" onClick={() => setShowVehicleList(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ── Delete Driver Modal ── */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
+        <Modal.Header closeButton style={{ background: NAVY, color: '#fff' }}>
+          <Modal.Title style={{ fontSize: 15 }}>Delete Driver</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete <strong>{deletingDriver?.fullName}</strong>?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button size="sm" variant="outline-secondary"
             onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-          <Button variant="danger" size="sm" disabled={saving}
-            onClick={handleDeleteDriver}>
+          <Button size="sm" variant="danger" disabled={saving} onClick={handleDeleteDriver}>
             {saving ? 'Deleting...' : 'Delete'}
           </Button>
         </Modal.Footer>
