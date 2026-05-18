@@ -1,4 +1,5 @@
 import httpClient from './api'
+import { getCompanyId } from '@/helpers/config'
 
 export interface DeliveryNoteListItem {
   deliveryNo: string
@@ -29,7 +30,8 @@ export interface DeliveryNoteFilters {
 }
 
 const deliveryNoteService = {
-  getAll: async (companyId: number, filters: DeliveryNoteFilters = {}): Promise<DeliveryNoteListResult> => {
+  getAll: async (filters: DeliveryNoteFilters = {}): Promise<DeliveryNoteListResult> => {
+    const companyId = getCompanyId()
     const params = new URLSearchParams({
       page: String(filters.page ?? 1),
       pageSize: String(filters.pageSize ?? 10),
@@ -45,7 +47,8 @@ const deliveryNoteService = {
     return res.data
   },
 
-  getById: async (companyId: number, deliveryNo: string): Promise<DeliveryNoteListItem> => {
+  getById: async (deliveryNo: string): Promise<DeliveryNoteListItem> => {
+    const companyId = getCompanyId()
     const res = await httpClient.get<DeliveryNoteListItem>(
       `/companies/${companyId}/deliveries/${deliveryNo}`
     )

@@ -1,4 +1,5 @@
-import dashboardApi from './dashboardApi'
+import httpClient from './api'
+import { getCompanyId } from '@/helpers/config'
 import {
   AssignDeliveryRequest,
   AssignDeliveryResponse,
@@ -11,35 +12,57 @@ import {
   UnassignResponse,
 } from '@/types/dispatch'
 
-export const COMPANY_ID = Number(process.env.NEXT_PUBLIC_COMPANY_ID)
-
 export async function fetchUnassignedDeliveries(
-  companyId: number,
   { search = '', page = 1, pageSize = 100 }: { search?: string; page?: number; pageSize?: number } = {}
 ): Promise<UnassignedDeliveriesResponse> {
-  const res = await dashboardApi.get(`/api/companies/${companyId}/dispatch/unassigned`, {
-    params: { search: search || undefined, page, pageSize },
-  })
+  const companyId = getCompanyId()
+  const res = await httpClient.get<UnassignedDeliveriesResponse>(
+    `/companies/${companyId}/dispatch/unassigned`,
+    { params: { search: search || undefined, page, pageSize } }
+  )
   return res.data
 }
 
-export async function fetchDriversWithAssignments(companyId: number): Promise<Driver[]> {
-  const res = await dashboardApi.get(`/api/companies/${companyId}/dispatch/drivers`)
+export async function fetchDriversWithAssignments(): Promise<Driver[]> {
+  const companyId = getCompanyId()
+  const res = await httpClient.get<Driver[]>(
+    `/companies/${companyId}/dispatch/drivers`
+  )
   return res.data
 }
 
-export async function assignDelivery(companyId: number, payload: AssignDeliveryRequest): Promise<AssignDeliveryResponse> {
-  const res = await dashboardApi.post(`/api/companies/${companyId}/dispatch/assign`, payload)
+export async function assignDelivery(payload: AssignDeliveryRequest): Promise<AssignDeliveryResponse> {
+  const companyId = getCompanyId()
+  const res = await httpClient.post<AssignDeliveryResponse>(
+    `/companies/${companyId}/dispatch/assign`,
+    payload
+  )
   return res.data
 }
 
-export async function bulkAssignDeliveries(companyId: number, payload: BulkAssignRequest): Promise<BulkAssignResponse> {
-  const res = await dashboardApi.post(`/api/companies/${companyId}/dispatch/bulk-assign`, payload)
+export async function bulkAssignDeliveries(payload: BulkAssignRequest): Promise<BulkAssignResponse> {
+  const companyId = getCompanyId()
+  const res = await httpClient.post<BulkAssignResponse>(
+    `/companies/${companyId}/dispatch/bulk-assign`,
+    payload
+  )
   return res.data
 }
 
-export async function unassignDelivery(companyId: number, deliveryNo: string): Promise<UnassignResponse> {
-  const res = await dashboardApi.post(`/api/companies/${companyId}/dispatch/unassign/${encodeURIComponent(deliveryNo)}`)
+export async function unassignDelivery(deliveryNo: string): Promise<UnassignResponse> {
+  const companyId = getCompanyId()
+  const res = await httpClient.post<UnassignResponse>(
+    `/companies/${companyId}/dispatch/unassign/${encodeURIComponent(deliveryNo)}`
+  )
+  return res.data
+}
+
+export async function submitDispatch(): Promise<{ shipmentsDispatched: number; deliveriesDispatched: number }> {
+  const companyId = getCompanyId()
+  const res = await httpClient.post(
+    `/companies/${companyId}/dispatch/submit`,
+    { shipmentNos: null }
+  )
   return res.data
 }
 

@@ -5,6 +5,8 @@ export interface Vehicle {
   vehicleReg: string
   trailerReg: string | null
   vehicleType: string | null
+  currentDriverId: number | null
+  currentDriverName: string | null
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -14,11 +16,9 @@ export interface CreateVehicleRequest {
   vehicleReg: string
   trailerReg: string | null
   vehicleType: string | null
-  isActive: boolean
 }
 
 export interface UpdateVehicleRequest {
-  vehicleReg: string
   trailerReg: string | null
   vehicleType: string | null
   isActive: boolean
@@ -39,8 +39,8 @@ const vehicleService = {
     return res.data
   },
 
-  create: async (companyId: number, data: CreateVehicleRequest): Promise<Vehicle> => {
-    const res = await httpClient.post<Vehicle>(
+  create: async (companyId: number, data: CreateVehicleRequest): Promise<any> => {
+    const res = await httpClient.post(
       `/companies/${companyId}/vehicles`,
       data
     )
@@ -57,6 +57,17 @@ const vehicleService = {
   delete: async (companyId: number, id: number): Promise<void> => {
     await httpClient.delete(
       `/companies/${companyId}/vehicles/${id}`
+    )
+  },
+
+  assignDriver: async (
+    companyId: number,
+    vehicleId: number,
+    driverId: number | null
+  ): Promise<void> => {
+    await httpClient.post(
+      `/companies/${companyId}/vehicles/${vehicleId}/assign-driver`,
+      { driverId }
     )
   }
 }

@@ -12,7 +12,7 @@ import 'react-quill-new/dist/quill.bubble.css';
 import 'flatpickr/dist/flatpickr.min.css';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import '@/assets/scss/app.scss';
-import 'devextreme/dist/css/dx.light.css';
+
 export const metadata = {
   title: {
     default: appTitle,
@@ -23,9 +23,11 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="en">
+  return (
+    <html lang="en">
       <body className={`${rubik.variable} ${inter.variable} ${nunito.variable} ${ubuntu.variable} ${jost.variable} ${roboto.variable} ${montserrat.variable} ${ibmPlexSans.variable} ${poppins.variable} ${lato.variable} ${dmSans.variable} ${robotoSlab.variable}`}>
         <AppWrapper>{children}</AppWrapper>
       </body>
-    </html>;
+    </html>
+  );
 }
