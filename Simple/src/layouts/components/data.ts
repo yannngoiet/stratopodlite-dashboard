@@ -37,7 +37,7 @@ export const userDropdownItems = [
   { label: 'Support Center', icon: TbHeadset, url: '#' },
   { isDivider: true },
   { label: 'Lock Screen', icon: TbLock, url: '/auth/lock-screen' },
-  { label: 'Log Out', icon: TbLogout2, url: '#', class: 'text-danger fw-semibold' }
+  { label: 'Log Out', icon: TbLogout2, url: '#', class: 'text-danger fw-semibold', isLogout: true }
 ];
 
 export const menuItems: MenuItemType[] = [

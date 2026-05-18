@@ -1,59 +1,85 @@
-import { Col, Container, Row } from 'react-bootstrap';
-import PageTitle from '@/components/PageTitle';
-import { LuSparkles } from 'react-icons/lu';
-import PromptsUsage from '@/app/(admin)/dashboard/components/PromptsUsage';
-import ActiveUsers from '@/app/(admin)/dashboard/components/ActiveUsers';
-import ResponseAccuracy from '@/app/(admin)/dashboard/components/ResponseAccuracy';
-import TokenUsage from '@/app/(admin)/dashboard/components/TokenUsage';
-import RequestStatistics from '@/app/(admin)/dashboard/components/RequestStatistics';
-import RecentSessions from '@/app/(admin)/dashboard/components/RecentSessions';
-import ModelUsageSummary from '@/app/(admin)/dashboard/components/ModelUsageSummary';
-import APIPerformanceMetrics from '@/app/(admin)/dashboard/components/APIPerformanceMetrics';
-export const metadata = {
-  title: 'Dashboard'
-};
-const Page = () => {
-  return <Container fluid>
-      <PageTitle title="The Ultimate Admin & Dashboard Theme" subtitle="A premium collection of elegant, accessible components and a powerful codebase. Built for modern frameworks. Developer Friendly. Production Ready." badge={{
-      title: 'Medium and Large Business',
-      icon: LuSparkles
-    }} />
+'use client';
 
+import { useEffect, useState } from 'react';
+import { Col, Container, Row } from 'react-bootstrap';
+import { LuTruck } from 'react-icons/lu';
+import dashboardStatsService, { type DashboardStats } from '@/services/dashboardStatsService';
+import DeliveryNotesCard from './components/DeliveryNotesCard';
+import CustomersCard from './components/CustomersCard';
+import StatusBreakdownCard from './components/StatusBreakdownCard';
+import VehiclesCard from './components/VehiclesCard';
+import DeliveryStatistics from './components/DeliveryStatistics';
+import RecentDeliveryNotes from './components/RecentDeliveryNotes';
+
+const getCompanyId = (): number => {
+  if (typeof window === 'undefined') return 1;
+  const user = localStorage.getItem('user');
+  return user ? (JSON.parse(user).companyId ?? 1) : 1;
+};
+
+const empty: DashboardStats = {
+  totalDeliveryNotes: 0,
+  totalCustomers: 0,
+  totalDrivers: 0,
+  totalVehicles: 0,
+  deliveriesByStatus: [],
+  recentDeliveryNotes: [],
+};
+
+export default function DashboardPage() {
+  const [stats, setStats] = useState<DashboardStats>(empty);
+  const [error, setError]  = useState<string | null>(null);
+
+  useEffect(() => {
+    dashboardStatsService
+      .getStats(getCompanyId())
+      .then(setStats)
+      .catch(() => setError('Dashboard API is not running — showing empty data.'));
+  }, []);
+
+  return (
+    <Container fluid>
+      <Row className="justify-content-center py-4">
+        <Col xxl={5} xl={7} className="text-center">
+          <span className="badge badge-default fw-normal shadow px-2 py-1 mb-2 fst-italic fs-xxs">
+            <LuTruck className="me-1" /> Delivery Management
+          </span>
+          <h3 className="fw-bold">STRATOPOD Delivery Dashboard</h3>
+          <p className="fs-md text-muted mb-0">Monitor your deliveries, customers, drivers and fleet in real time.</p>
+        </Col>
+      </Row>
+
+      {error && <div className="alert alert-warning mb-3">{error}</div>}
+
+      {/* ── Row 1: 4 stat cards ── */}
       <Row className="row-cols-xxl-4 row-cols-md-2 row-cols-1">
         <Col>
-          <PromptsUsage />
+          <DeliveryNotesCard total={stats.totalDeliveryNotes} />
         </Col>
-
         <Col>
-          <ActiveUsers />
+          <CustomersCard total={stats.totalCustomers} totalDrivers={stats.totalDrivers} />
         </Col>
-
         <Col>
-          <ResponseAccuracy />
+          <StatusBreakdownCard statuses={stats.deliveriesByStatus} />
         </Col>
-
         <Col>
-          <TokenUsage />
+          <VehiclesCard total={stats.totalVehicles} />
         </Col>
       </Row>
 
+      {/* ── Row 2: wide chart ── */}
       <Row>
         <Col cols={12}>
-          <RequestStatistics />
+          <DeliveryStatistics total={stats.totalDeliveryNotes} totalCustomers={stats.totalCustomers} />
         </Col>
       </Row>
 
+      {/* ── Row 3: recent delivery notes ── */}
       <Row>
-        <Col xxl={6}>
-          <RecentSessions />
-        </Col>
-
-        <Col xxl={6}>
-          <ModelUsageSummary />
-
-          <APIPerformanceMetrics />
+        <Col xxl={12}>
+          <RecentDeliveryNotes notes={stats.recentDeliveryNotes} total={stats.totalDeliveryNotes} />
         </Col>
       </Row>
-    </Container>;
-};
-export default Page;
+    </Container>
+  );
+}

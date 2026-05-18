@@ -42,7 +42,7 @@ const deliveryNoteService = {
     })
 
     const res = await httpClient.get<DeliveryNoteListResult>(
-      `/companies/${companyId}/deliveries/list?${params}`
+      `/api/companies/${companyId}/deliveries/list?${params}`
     )
     return res.data
   },
@@ -50,7 +50,7 @@ const deliveryNoteService = {
   getById: async (deliveryNo: string): Promise<DeliveryNoteListItem> => {
     const companyId = getCompanyId()
     const res = await httpClient.get<DeliveryNoteListItem>(
-      `/companies/${companyId}/deliveries/${deliveryNo}`
+      `/api/companies/${companyId}/deliveries/${deliveryNo}`
     )
     return res.data
   }
