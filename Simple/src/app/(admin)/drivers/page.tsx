@@ -18,6 +18,13 @@ import driverService, { type Driver } from '@/services/driverService'
 import vehicleService, { type Vehicle } from '@/services/vehicleService'
 import { getCompanyId } from '@/helpers/config'
 
+const PLANT_OPTIONS = [
+  { id: 'P001', name: 'Acme Head Office - JHB' },
+  { id: 'P002', name: 'Acme Depot - CPT' },
+  { id: 'P003', name: 'Acme Depot - DBN' },
+  { id: 'PLANT001', name: 'Johannesburg Warehouse' },
+]
+
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -27,26 +34,23 @@ export default function DriversPage() {
   const [globalFilter, setGlobalFilter] = useState('')
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
 
-  // Delete modal
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletingDriver, setDeletingDriver] = useState<Driver | null>(null)
   const [saving, setSaving] = useState(false)
 
-  // Driver form (right panel — used for both add and edit)
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null)
   const [driverForm, setDriverForm] = useState({
     empNo: '', firstName: '', lastName: '',
-    plantId: '', username: '', licenseNumber: '',
+    plantId: 'P001',
+    username: '', licenseNumber: '',
     licenseExpiryDate: '', isActive: true,
   })
 
-  // Vehicle form (right panel)
   const [vehicleReg, setVehicleReg] = useState('')
   const [vehicleType, setVehicleType] = useState('')
   const [savingVehicle, setSavingVehicle] = useState(false)
   const [vehicleSearch, setVehicleSearch] = useState('')
 
-  // Inline vehicle assignment per driver row
   const [assigningVehicleId, setAssigningVehicleId] = useState<Record<number, number | null>>({})
   const [savingAssign, setSavingAssign] = useState<number | null>(null)
 
@@ -84,7 +88,8 @@ export default function DriversPage() {
   const resetDriverForm = () => {
     setDriverForm({
       empNo: '', firstName: '', lastName: '',
-      plantId: '', username: '', licenseNumber: '',
+      plantId: 'P001',
+      username: '', licenseNumber: '',
       licenseExpiryDate: '', isActive: true,
     })
     setEditingDriver(null)
@@ -175,16 +180,13 @@ export default function DriversPage() {
     setSavingAssign(driverId)
     try {
       const current = getDriverVehicle(driverId)
-      // Unassign from current vehicle first
       if (current && current.id !== newVehicleId) {
         await vehicleService.assignDriver(companyId, current.id, null)
       }
-      // Assign to new vehicle
       if (newVehicleId) {
         await vehicleService.assignDriver(companyId, newVehicleId, driverId)
       }
       await loadVehicles()
-      // Clear pending state for this driver
       setAssigningVehicleId(prev => {
         const next = { ...prev }
         delete next[driverId]
@@ -214,6 +216,10 @@ export default function DriversPage() {
     {
       accessorKey: 'plantId',
       header: 'Plant',
+      cell: ({ row }) => {
+        const plant = PLANT_OPTIONS.find(p => p.id === row.original.plantId)
+        return plant ? `${plant.id} - ${plant.name}` : row.original.plantId || '—'
+      }
     },
     {
       accessorKey: 'licenseNumber',
@@ -297,7 +303,7 @@ export default function DriversPage() {
                 empNo: row.original.empNo,
                 firstName: row.original.firstName,
                 lastName: row.original.lastName,
-                plantId: row.original.plantId,
+                plantId: row.original.plantId || 'P001',
                 username: row.original.username || '',
                 licenseNumber: row.original.licenseNumber || '',
                 licenseExpiryDate: row.original.licenseExpiryDate || '',
@@ -392,12 +398,21 @@ export default function DriversPage() {
 
               <div className="table-responsive">
                 <table className="table table-bordered table-striped table-hover table-sm align-middle mb-0">
-                  <thead style={{ backgroundColor: '#2c3e50', color: '#fff', fontSize: '0.75rem' }}>
+                  <thead style={{
+                    backgroundColor: '#ffffff',
+                    color: '#2c3e50',
+                    fontSize: '0.75rem',
+                    borderBottom: '2px solid #dee2e6'
+                  }}>
                     {table.getHeaderGroups().map(hg => (
                       <tr key={hg.id}>
                         {hg.headers.map(h => (
                           <th key={h.id} className="py-2 px-3 text-uppercase"
-                            style={{ cursor: h.column.getCanSort() ? 'pointer' : 'default' }}
+                            style={{
+                              cursor: h.column.getCanSort() ? 'pointer' : 'default',
+                              backgroundColor: '#ffffff',
+                              color: '#2c3e50'
+                            }}
                             onClick={h.column.getToggleSortingHandler()}>
                             <div className="d-flex align-items-center gap-1">
                               {flexRender(h.column.columnDef.header, h.getContext())}
@@ -521,9 +536,15 @@ export default function DriversPage() {
                 </Col>
                 <Col xs={6}>
                   <Form.Label className="small mb-1">Plant ID</Form.Label>
-                  <Form.Control size="sm" placeholder="PLT001"
+                  <Form.Select size="sm"
                     value={driverForm.plantId}
-                    onChange={e => setDriverForm({ ...driverForm, plantId: e.target.value })} />
+                    onChange={e => setDriverForm({ ...driverForm, plantId: e.target.value })}>
+                    {PLANT_OPTIONS.map(plant => (
+                      <option key={plant.id} value={plant.id}>
+                        {plant.id} - {plant.name}
+                      </option>
+                    ))}
+                  </Form.Select>
                 </Col>
                 <Col xs={6}>
                   <Form.Label className="small mb-1">Username</Form.Label>
@@ -619,7 +640,11 @@ export default function DriversPage() {
               <div style={{ maxHeight: 280, overflowY: 'auto' }}>
                 <table className="table table-sm table-bordered align-middle mb-0"
                   style={{ fontSize: '0.78rem' }}>
-                  <thead style={{ background: '#2c3e50', color: '#fff' }}>
+                  <thead style={{
+                    background: '#ffffff',
+                    color: '#2c3e50',
+                    borderBottom: '2px solid #dee2e6'
+                  }}>
                     <tr>
                       <th className="px-2 py-1">#</th>
                       <th className="px-2 py-1">Vehicle Reg</th>

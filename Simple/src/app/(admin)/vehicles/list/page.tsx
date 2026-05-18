@@ -277,14 +277,23 @@ export default function VehiclesPage() {
           {/* Table */}
           <div className="table-responsive">
             <table className="table table-bordered table-striped table-hover table-sm align-middle mb-0">
-              <thead style={{ backgroundColor: '#2c3e50', color: '#fff', fontSize: '0.75rem' }}>
+              <thead style={{
+                backgroundColor: '#ffffff',
+                color: '#2c3e50',
+                fontSize: '0.75rem',
+                borderBottom: '2px solid #dee2e6'
+              }}>
                 {table.getHeaderGroups().map(hg => (
                   <tr key={hg.id}>
                     {hg.headers.map(h => (
                       <th
                         key={h.id}
                         className="py-2 px-3 text-uppercase"
-                        style={{ cursor: h.column.getCanSort() ? 'pointer' : 'default' }}
+                        style={{
+                          cursor: h.column.getCanSort() ? 'pointer' : 'default',
+                          backgroundColor: '#ffffff',
+                          color: '#2c3e50'
+                        }}
                         onClick={h.column.getToggleSortingHandler()}
                       >
                         <div className="d-flex align-items-center gap-1">
@@ -343,11 +352,15 @@ export default function VehiclesPage() {
                               </div>
                               <div className="col-6 col-md-4">
                                 <div className="text-muted">Created</div>
-                                <div className="fw-medium">{new Date(row.original.createdAt).toLocaleString('en-ZA')}</div>
+                                <div className="fw-medium">
+                                  {new Date(row.original.createdAt).toLocaleString('en-ZA')}
+                                </div>
                               </div>
                               <div className="col-6 col-md-4">
                                 <div className="text-muted">Last Updated</div>
-                                <div className="fw-medium">{new Date(row.original.updatedAt).toLocaleString('en-ZA')}</div>
+                                <div className="fw-medium">
+                                  {new Date(row.original.updatedAt).toLocaleString('en-ZA')}
+                                </div>
                               </div>
                               <div className="col-6 col-md-4">
                                 <div className="text-muted">Status</div>
@@ -369,14 +382,17 @@ export default function VehiclesPage() {
           {/* Pagination */}
           <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
             <small className="text-muted">
-              Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} vehicles
+              Showing {table.getRowModel().rows.length} of{' '}
+              {table.getFilteredRowModel().rows.length} vehicles
             </small>
             <div className="d-flex align-items-center gap-2">
               <Form.Select
                 size="sm"
                 style={{ width: 100 }}
                 value={pagination.pageSize}
-                onChange={(e) => setPagination(p => ({ ...p, pageSize: Number(e.target.value), pageIndex: 0 }))}
+                onChange={(e) => setPagination(p => ({
+                  ...p, pageSize: Number(e.target.value), pageIndex: 0
+                }))}
               >
                 {[10, 20, 50].map(size => (
                   <option key={size} value={size}>{size} / page</option>
@@ -390,7 +406,8 @@ export default function VehiclesPage() {
                   disabled={!table.getCanPreviousPage()}
                   onClick={() => table.previousPage()}>‹</Button>
                 <span className="d-flex align-items-center px-2 small">
-                  Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                  Page {table.getState().pagination.pageIndex + 1} of{' '}
+                  {table.getPageCount() || 1}
                 </span>
                 <Button variant="outline-secondary" size="sm"
                   disabled={!table.getCanNextPage()}
@@ -405,7 +422,9 @@ export default function VehiclesPage() {
       </div>
 
       {/* Add/Edit Modal */}
-      <Modal show={showModal} onHide={() => { setShowModal(false); setEditingVehicle(null); resetForm() }} centered>
+      <Modal show={showModal}
+        onHide={() => { setShowModal(false); setEditingVehicle(null); resetForm() }}
+        centered>
         <Modal.Header closeButton>
           <Modal.Title>{editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</Modal.Title>
         </Modal.Header>
@@ -413,9 +432,7 @@ export default function VehiclesPage() {
           <Form.Group className="mb-3">
             <Form.Label>Vehicle Registration <span className="text-danger">*</span></Form.Label>
             <Form.Control
-              size="sm"
-              type="text"
-              placeholder="ABC 123 GP"
+              size="sm" type="text" placeholder="ABC 123 GP"
               value={formData.vehicleReg}
               onChange={(e) => setFormData({ ...formData, vehicleReg: e.target.value.toUpperCase() })}
             />
@@ -423,20 +440,15 @@ export default function VehiclesPage() {
           <Form.Group className="mb-3">
             <Form.Label>Trailer Registration</Form.Label>
             <Form.Control
-              size="sm"
-              type="text"
-              placeholder="TRL 456 GP"
+              size="sm" type="text" placeholder="TRL 456 GP"
               value={formData.trailerReg}
               onChange={(e) => setFormData({ ...formData, trailerReg: e.target.value.toUpperCase() })}
             />
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>Vehicle Type</Form.Label>
-            <Form.Select
-              size="sm"
-              value={formData.vehicleType}
-              onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-            >
+            <Form.Select size="sm" value={formData.vehicleType}
+              onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}>
               <option value="">Select type...</option>
               <option value="Truck">Truck</option>
               <option value="Tipper">Tipper</option>
@@ -458,19 +470,16 @@ export default function VehiclesPage() {
             onClick={() => { setShowModal(false); setEditingVehicle(null); resetForm() }}>
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={saving}
-            onClick={editingVehicle ? handleUpdate : handleCreate}
-          >
+          <Button variant="primary" size="sm" disabled={saving}
+            onClick={editingVehicle ? handleUpdate : handleCreate}>
             {saving ? 'Saving...' : editingVehicle ? 'Update' : 'Create'}
           </Button>
         </Modal.Footer>
       </Modal>
 
       {/* Delete Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
+      <Modal show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)} centered size="sm">
         <Modal.Header closeButton>
           <Modal.Title>Delete Vehicle</Modal.Title>
         </Modal.Header>
@@ -478,7 +487,8 @@ export default function VehiclesPage() {
           Are you sure you want to delete <strong>{deletingVehicle?.vehicleReg}</strong>?
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" size="sm" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+          <Button variant="secondary" size="sm"
+            onClick={() => setShowDeleteModal(false)}>Cancel</Button>
           <Button variant="danger" size="sm" disabled={saving} onClick={handleDelete}>
             {saving ? 'Deleting...' : 'Delete'}
           </Button>

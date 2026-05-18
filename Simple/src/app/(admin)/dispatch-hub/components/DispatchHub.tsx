@@ -75,6 +75,14 @@ interface DeliveryCardProps {
   onDragEnd: () => void
 }
 
+// Static Plant Options - Based on your database
+const PLANT_OPTIONS = [
+  { id: 'P001', name: 'Acme Head Office - JHB' },
+  { id: 'P002', name: 'Acme Depot - CPT' },
+  { id: 'P003', name: 'Acme Depot - DBN' },
+  { id: 'PLANT001', name: 'Johannesburg Warehouse' },
+]
+
 const DispatchHub = () => {
   const [deliveryDate, setDeliveryDate] = useState(() => new Date().toISOString().split('T')[0])
   const [drivers, setDrivers] = useState<Driver[]>([])
@@ -100,6 +108,23 @@ const DispatchHub = () => {
   const [pendingNewShipmentDriver, setPendingNewShipmentDriver] = useState<{ driverId: number; vehicleReg: string } | null>(null)
   const [availableVehicles, setAvailableVehicles] = useState<Vehicle[]>([])
   const [submitting, setSubmitting] = useState(false)
+  
+  // Driver Modal States
+  const [showDriverModal, setShowDriverModal] = useState(false)
+  const [newDriver, setNewDriver] = useState({
+    empNo: '',
+    firstName: '',
+    lastName: '',
+    plantId: 'P001',
+    username: '',
+    licenseNumber: '',
+    licenseExpiryDate: '',
+    isActive: true
+  })
+  const [creatingDriver, setCreatingDriver] = useState(false)
+
+  // Optional: Show/Hide Submit Dispatch button (default: false)
+  const [showSubmitDispatch, setShowSubmitDispatch] = useState(false)
 
   const loadDeliveries = async () => {
     setDeliveriesLoading(true)
@@ -221,21 +246,26 @@ const DispatchHub = () => {
   }
 
   const cleanDelivery = (d: any) => {
+    if (!d) return null
     const copy = { ...d }
     delete copy._driverId
     delete copy._shipmentNo
     return copy
   }
 
-  const getDraggedList = () =>
-    (draggedDelivery as BulkDrag)?._bulk
-      ? (draggedDelivery as BulkDrag).deliveries.map(cleanDelivery)
-      : [cleanDelivery(draggedDelivery)]
+  const getDraggedList = () => {
+    if (!draggedDelivery) return []
+    return (draggedDelivery as BulkDrag)?._bulk
+      ? (draggedDelivery as BulkDrag).deliveries.map(cleanDelivery).filter(Boolean)
+      : [cleanDelivery(draggedDelivery)].filter(Boolean)
+  }
 
-  const getDraggedNos = (): string[] =>
-    (draggedDelivery as BulkDrag)?._bulk
+  const getDraggedNos = (): string[] => {
+    if (!draggedDelivery) return []
+    return (draggedDelivery as BulkDrag)?._bulk
       ? (draggedDelivery as BulkDrag).deliveries.map((d) => d.deliveryNo)
       : [(draggedDelivery as any).deliveryNo]
+  }
 
   const removeFromSource = (currentDrivers: Driver[], currentGroups: LocationGroup[]) => {
     const nos = new Set(getDraggedNos())
@@ -277,14 +307,62 @@ const DispatchHub = () => {
     }
   }
 
-  const onDropOnShipment = async (driverId: number, shipmentNo: string | null, vehicleId: number | null = null) => {
-    if (!draggedDelivery) return
-    setDragOverTarget(null)
-    if (dragSource === 'driver' && !(draggedDelivery as BulkDrag)._bulk && (draggedDelivery as any)._shipmentNo === shipmentNo) {
-      setDraggedDelivery(null); setDragSource(null); return
+  const handleCreateDriver = async () => {
+    setCreatingDriver(true)
+    try {
+      const driverService = await import('@/services/driverService')
+      await driverService.default.create({
+        empNo: newDriver.empNo,
+        firstName: newDriver.firstName,
+        lastName: newDriver.lastName,
+        plantId: newDriver.plantId,
+        username: newDriver.username || null,
+        licenseNumber: newDriver.licenseNumber || null,
+        licenseExpiryDate: newDriver.licenseExpiryDate || null,
+        isActive: newDriver.isActive
+      })
+      showToast(`Driver ${newDriver.firstName} ${newDriver.lastName} created successfully!`)
+      setShowDriverModal(false)
+      resetDriverForm()
+      loadDrivers()
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to create driver'
+      showToast(errorMsg, 'danger')
+      console.error('Create driver error:', err)
+    } finally {
+      setCreatingDriver(false)
     }
+  }
+
+  const resetDriverForm = () => {
+    setNewDriver({
+      empNo: '',
+      firstName: '',
+      lastName: '',
+      plantId: 'P001',
+      username: '',
+      licenseNumber: '',
+      licenseExpiryDate: '',
+      isActive: true
+    })
+  }
+
+  const onDropOnShipment = async (driverId: number, shipmentNo: string | null, vehicleId: number | null = null) => {
+    if (!draggedDelivery) {
+      showToast('No delivery selected', 'warning')
+      return
+    }
+    setDragOverTarget(null)
+    
     const incoming = getDraggedList()
     const deliveryNos = getDraggedNos()
+    
+    if (deliveryNos.length === 0) {
+      showToast('No deliveries to assign', 'warning')
+      return
+    }
+    
+    // Optimistic update
     const { updatedDrivers, updatedGroups } = removeFromSource(drivers, deliveryGroups)
     setDrivers(updatedDrivers.map((d) => {
       if (d.driverId !== driverId) return d
@@ -293,27 +371,42 @@ const DispatchHub = () => {
     if (dragSource === 'unassigned') setDeliveryGroups(updatedGroups)
     setSelectedDeliveries(new Set()); setSelectedAssigned(new Set())
     setDraggedDelivery(null); setDragSource(null)
+    
     try {
       if (deliveryNos.length === 1) {
-        await assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId: vehicleId ?? 0 })
+        await assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId: vehicleId ?? null })
       } else {
-        await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId: vehicleId ?? 0 })
+        await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId: vehicleId ?? null })
       }
-      const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0].deliveryNo
-      showToast(`${label} added to shipment ${shipmentNo}`)
+      const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0]?.deliveryNo || 'delivery'
+      showToast(`${label} added to shipment ${shipmentNo || 'new shipment'}`)
       refreshAll()
-    } catch (err: any) { showToast(err.message, 'danger'); refreshAll() }
+    } catch (err: any) { 
+      console.error('Assign error:', err)
+      showToast(err.response?.data?.message || err.message, 'danger')
+      refreshAll() 
+    }
   }
 
-  // ── Core shipment creation logic ──────────────────────────────────────────
   const proceedWithNewShipment = async (
     driverId: number,
     vehicleReg: string,
     vehicleId: number
   ) => {
+    if (!draggedDelivery) {
+      showToast('No delivery selected', 'warning')
+      return
+    }
+    
     setDragOverTarget(null)
     const incoming = getDraggedList()
     const deliveryNos = getDraggedNos()
+    
+    if (deliveryNos.length === 0) {
+      showToast('No deliveries to assign', 'warning')
+      return
+    }
+    
     const { updatedDrivers, updatedGroups } = removeFromSource(drivers, deliveryGroups)
 
     setDrivers(updatedDrivers.map((d) => {
@@ -339,10 +432,14 @@ const DispatchHub = () => {
       } else {
         result = await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId })
       }
-      const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0].deliveryNo
+      const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0]?.deliveryNo || 'delivery'
       showToast(`Shipment ${result.shipmentNo} created — ${label}`)
       refreshAll()
-    } catch (err: any) { showToast(err.message, 'danger'); refreshAll() }
+    } catch (err: any) { 
+      console.error('Create shipment error:', err)
+      showToast(err.response?.data?.message || err.message, 'danger')
+      refreshAll() 
+    }
 
     setPendingNewShipmentDriver(null)
     setSelectedVehicleIdForDriver(null)
@@ -353,20 +450,45 @@ const DispatchHub = () => {
     vehicleReg: string,
     vehicleId: number | null = null
   ) => {
-    if (!draggedDelivery) return
+    if (!draggedDelivery) {
+      showToast('No delivery selected', 'warning')
+      return
+    }
+
+    const deliveryNos = getDraggedNos()
+    if (deliveryNos.length === 0) {
+      showToast('No deliveries to assign', 'warning')
+      return
+    }
 
     if (!vehicleId) {
       const driver = drivers.find(d => d.driverId === driverId)
       if (driver?.assignedVehicleId) {
-        // Driver has pre-assigned vehicle — skip modal
+        // Check if the assigned vehicle is available
+        const assignedVehicle = availableVehicles.find(v => v.id === driver.assignedVehicleId)
+        if (assignedVehicle?.currentDriverId && assignedVehicle.currentDriverId !== driverId) {
+          showToast(`Vehicle ${assignedVehicle.vehicleReg} is already assigned to another driver. Please select a different vehicle.`, 'danger')
+          setPendingNewShipmentDriver({ driverId, vehicleReg })
+          setShowVehicleModal(true)
+          return
+        }
+        
         await proceedWithNewShipment(
           driverId,
-          driver.assignedVehicleReg ?? 'N/A',
+          driver.assignedVehicleReg ?? vehicleReg,
           driver.assignedVehicleId
         )
         return
       }
-      // No vehicle assigned → open modal
+      setPendingNewShipmentDriver({ driverId, vehicleReg })
+      setShowVehicleModal(true)
+      return
+    }
+
+    // Check if the selected vehicle is available
+    const selectedVehicle = availableVehicles.find(v => v.id === vehicleId)
+    if (selectedVehicle?.currentDriverId && selectedVehicle.currentDriverId !== driverId) {
+      showToast(`Vehicle ${selectedVehicle.vehicleReg} is already assigned to another driver. Please select a different vehicle.`, 'danger')
       setPendingNewShipmentDriver({ driverId, vehicleReg })
       setShowVehicleModal(true)
       return
@@ -380,10 +502,23 @@ const DispatchHub = () => {
       showToast('Please select a vehicle', 'warning')
       return
     }
-    const vehicle = availableVehicles.find(v => v.id === selectedVehicleIdForDriver)
+    
+    // Check if vehicle is already assigned to another driver
+    const selectedVehicle = availableVehicles.find(v => v.id === selectedVehicleIdForDriver)
+    
+    if (!selectedVehicle) {
+      showToast('Selected vehicle not found', 'error')
+      return
+    }
+    
+    if (selectedVehicle.currentDriverId && selectedVehicle.currentDriverId !== pendingNewShipmentDriver.driverId) {
+      showToast(`Vehicle ${selectedVehicle.vehicleReg} is already assigned to another driver. Please select a different vehicle.`, 'danger')
+      return
+    }
+    
     await proceedWithNewShipment(
       pendingNewShipmentDriver.driverId,
-      vehicle?.vehicleReg ?? 'N/A',
+      selectedVehicle.vehicleReg,
       selectedVehicleIdForDriver
     )
   }
@@ -401,14 +536,54 @@ const DispatchHub = () => {
       const label = deliveryNos.length > 1 ? `${deliveryNos.length} deliveries` : `Delivery ${deliveryNos[0]}`
       showToast(`${label} returned to unassigned`, 'warning')
       refreshAll()
-    } catch (err: any) { showToast(err.message, 'danger'); refreshAll() }
+    } catch (err: any) { 
+      showToast(err.message, 'danger')
+      refreshAll() 
+    }
   }
 
   const isDropTarget = draggedDelivery !== null
 
   return (
-    <div style={{ position: 'relative', fontSize: 13 }}>
-      <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <div style={{ position: 'relative', fontSize: '13px', minWidth: '1024px', overflowX: 'auto' }}>
+      <style>{`
+        .spin { animation: spin 1s linear infinite; } 
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Fix zoom issues */
+        @media screen and (max-width: 1400px) {
+          .driver-avatar, .driver-avatar-text {
+            width: 48px !important;
+            height: 48px !important;
+            font-size: 20px !important;
+          }
+          .vehicle-photo {
+            width: 60px !important;
+            min-height: 60px !important;
+          }
+        }
+        
+        @media screen and (max-width: 1200px) {
+          .driver-avatar, .driver-avatar-text {
+            width: 40px !important;
+            height: 40px !important;
+            font-size: 16px !important;
+          }
+          .vehicle-photo {
+            width: 50px !important;
+            min-height: 50px !important;
+          }
+        }
+        
+        /* Hide scrollbar but keep functionality */
+        ::-webkit-scrollbar {
+          display: none;
+        }
+        * {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
 
       {toast && (
         <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 9999, minWidth: 300 }}
@@ -417,7 +592,149 @@ const DispatchHub = () => {
         </div>
       )}
 
-      {/* Vehicle Selection Modal */}
+      {/* Add Driver Modal */}
+      <Modal show={showDriverModal} onHide={() => { setShowDriverModal(false); resetDriverForm() }} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title style={{ fontSize: 16 }}>Add New Driver</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Row className="g-2">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontSize: 12 }}>Employee Number *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    value={newDriver.empNo}
+                    onChange={(e) => setNewDriver({ ...newDriver, empNo: e.target.value })}
+                    placeholder="EMP011"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontSize: 12 }}>Username</Form.Label>
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    value={newDriver.username}
+                    onChange={(e) => setNewDriver({ ...newDriver, username: e.target.value })}
+                    placeholder="username"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="g-2">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontSize: 12 }}>First Name *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    value={newDriver.firstName}
+                    onChange={(e) => setNewDriver({ ...newDriver, firstName: e.target.value })}
+                    placeholder="Johannes"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontSize: 12 }}>Last Name *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    value={newDriver.lastName}
+                    onChange={(e) => setNewDriver({ ...newDriver, lastName: e.target.value })}
+                    placeholder="Burg"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="g-2">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontSize: 12 }}>Plant ID *</Form.Label>
+                  <Form.Select
+                    size="sm"
+                    value={newDriver.plantId}
+                    onChange={(e) => setNewDriver({ ...newDriver, plantId: e.target.value })}
+                    required
+                  >
+                    {PLANT_OPTIONS.map(plant => (
+                      <option key={plant.id} value={plant.id}>
+                        {plant.id} - {plant.name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                  <Form.Text className="text-muted" style={{ fontSize: 10 }}>
+                    Select the driver's assigned plant/location
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontSize: 12 }}>License Number</Form.Label>
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    value={newDriver.licenseNumber}
+                    onChange={(e) => setNewDriver({ ...newDriver, licenseNumber: e.target.value })}
+                    placeholder="LIC123456"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="g-2">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontSize: 12 }}>License Expiry Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    size="sm"
+                    value={newDriver.licenseExpiryDate}
+                    onChange={(e) => setNewDriver({ ...newDriver, licenseExpiryDate: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label style={{ fontSize: 12 }}>Status</Form.Label>
+                  <Form.Select
+                    size="sm"
+                    value={newDriver.isActive ? 'active' : 'inactive'}
+                    onChange={(e) => setNewDriver({ ...newDriver, isActive: e.target.value === 'active' })}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button size="sm" variant="secondary" onClick={() => { setShowDriverModal(false); resetDriverForm() }}>
+            Cancel
+          </Button>
+          <Button 
+            size="sm" 
+            variant="primary" 
+            onClick={handleCreateDriver}
+            disabled={creatingDriver || !newDriver.empNo || !newDriver.firstName || !newDriver.lastName}
+          >
+            {creatingDriver ? 'Creating...' : 'Add Driver'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Vehicle Selection Modal - Only show available vehicles */}
       <Modal show={showVehicleModal} onHide={() => {
         setShowVehicleModal(false)
         setPendingNewShipmentDriver(null)
@@ -434,11 +751,14 @@ const DispatchHub = () => {
               value={selectedVehicleIdForDriver || ''}
               onChange={(e) => setSelectedVehicleIdForDriver(Number(e.target.value))}>
               <option value="">Select vehicle...</option>
-              {availableVehicles.map(vehicle => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.vehicleReg}{vehicle.vehicleType ? ` — ${vehicle.vehicleType}` : ''}
-                </option>
-              ))}
+              {availableVehicles
+                .filter(v => !v.currentDriverId || v.currentDriverId === pendingNewShipmentDriver?.driverId)
+                .map(vehicle => (
+                  <option key={vehicle.id} value={vehicle.id}>
+                    {vehicle.vehicleReg}{vehicle.vehicleType ? ` — ${vehicle.vehicleType}` : ''}
+                    {vehicle.currentDriverId && vehicle.currentDriverId !== pendingNewShipmentDriver?.driverId ? ' (Assigned to another driver)' : ' (Available)'}
+                  </option>
+                ))}
             </Form.Select>
           </Form.Group>
         </Modal.Body>
@@ -448,7 +768,11 @@ const DispatchHub = () => {
             setPendingNewShipmentDriver(null)
             setSelectedVehicleIdForDriver(null)
           }}>Cancel</Button>
-          <Button size="sm" variant="primary" onClick={handleCreateShipment}>
+          <Button 
+            size="sm" 
+            variant="primary" 
+            onClick={handleCreateShipment}
+            disabled={!selectedVehicleIdForDriver}>
             Create Shipment
           </Button>
         </Modal.Footer>
@@ -464,6 +788,14 @@ const DispatchHub = () => {
               <strong style={{ fontSize: 14 }}>Drivers</strong>
             </div>
             <div className="d-flex align-items-center gap-2">
+              <Button 
+                size="sm" 
+                variant="success" 
+                onClick={() => setShowDriverModal(true)}
+                style={{ fontSize: 11 }}
+              >
+                + Add Driver
+              </Button>
               <Form.Control type="date" size="sm" value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
                 style={{ fontSize: 12, width: 140 }} />
@@ -473,13 +805,16 @@ const DispatchHub = () => {
               <Button size="sm" style={{ background: '#17a2b8', border: 'none', fontSize: 12 }}>
                 <LuPrinter size={13} className="me-1" />PRINT ALL
               </Button>
-              <Button
-                size="sm"
-                style={{ background: '#28a745', border: 'none', fontSize: 12 }}
-                disabled={submitting}
-                onClick={handleSubmitDispatch}>
-                {submitting ? 'Submitting...' : 'SUBMIT DISPATCH'}
-              </Button>
+              {/* Optional SUBMIT DISPATCH button - can be toggled */}
+              {showSubmitDispatch && (
+                <Button
+                  size="sm"
+                  style={{ background: '#28a745', border: 'none', fontSize: 12 }}
+                  disabled={submitting}
+                  onClick={handleSubmitDispatch}>
+                  {submitting ? 'Submitting...' : 'SUBMIT DISPATCH'}
+                </Button>
+              )}
             </div>
           </div>
 
@@ -544,13 +879,16 @@ const DispatchHub = () => {
               <Button size="sm" variant="outline-secondary" onClick={loadDeliveries} disabled={deliveriesLoading}>
                 <LuRefreshCw size={13} className={deliveriesLoading ? 'spin' : ''} />
               </Button>
-              <Button
-                size="sm"
-                style={{ background: '#28a745', border: 'none', fontSize: 12 }}
-                disabled={submitting}
-                onClick={handleSubmitDispatch}>
-                {submitting ? 'Submitting...' : 'SUBMIT DISPATCH'}
-              </Button>
+              {/* Optional SUBMIT DISPATCH button in right panel - can be toggled */}
+              {showSubmitDispatch && (
+                <Button
+                  size="sm"
+                  style={{ background: '#28a745', border: 'none', fontSize: 12 }}
+                  disabled={submitting}
+                  onClick={handleSubmitDispatch}>
+                  {submitting ? 'Submitting...' : 'SUBMIT DISPATCH'}
+                </Button>
+              )}
               <Form.Control type="date" size="sm" value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
                 style={{ fontSize: 12, width: 140 }} />
@@ -699,31 +1037,30 @@ function DriverCard({
     <div className="mb-2" style={{ border: '1px solid #d0dbe8', borderRadius: 4, background: '#fff' }}>
       <div className="d-flex align-items-stretch" style={{ borderBottom: '1px solid #eee' }}>
 
-        {/* Index */}
         <div className="d-flex align-items-center justify-content-center"
           style={{ width: 30, background: '#f5f5f5', borderRight: '1px solid #eee', fontSize: 13, fontWeight: 700, color: '#555' }}>
           {index}
         </div>
 
-        {/* Driver Avatar */}
         <div className="d-flex align-items-center justify-content-center px-3"
           style={{ borderRight: '1px solid #eee', flexShrink: 0 }}>
           {driver.photoUrl ? (
             <img src={driver.photoUrl} alt={driver.fullName}
+              className="driver-avatar"
               style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid #2c3e50' }} />
           ) : (
-            <div style={{
-              width: 56, height: 56, borderRadius: '50%',
-              background: driver.fullName ? '#2c3e50' : '#ccc',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 24, fontWeight: 700, border: '2px solid #2c3e50'
-            }}>
+            <div className="driver-avatar-text"
+              style={{
+                width: 56, height: 56, borderRadius: '50%',
+                background: driver.fullName ? '#2c3e50' : '#ccc',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: 24, fontWeight: 700, border: '2px solid #2c3e50'
+              }}>
               {driver.fullName ? driver.fullName.charAt(0).toUpperCase() : '?'}
             </div>
           )}
         </div>
 
-        {/* Print Icon */}
         <div className="d-flex align-items-start justify-content-center pt-2 px-1"
           style={{ borderRight: '1px solid #eee' }}>
           <Button variant="link" size="sm" style={{ color: '#17a2b8', padding: 2 }}>
@@ -731,7 +1068,6 @@ function DriverCard({
           </Button>
         </div>
 
-        {/* Driver Info + Shipments */}
         <div className="flex-grow-1 p-2">
           <div style={{ fontWeight: 700, fontSize: 15, color: '#2c3e50' }}>
             {driver.fullName || 'Unassigned Driver'}
@@ -773,8 +1109,7 @@ function DriverCard({
           />
         </div>
 
-        {/* Vehicle Photo */}
-        <div style={{ width: 80, minHeight: 80, borderLeft: '1px solid #eee', overflow: 'hidden', flexShrink: 0 }}>
+        <div className="vehicle-photo" style={{ width: 80, minHeight: 80, borderLeft: '1px solid #eee', overflow: 'hidden', flexShrink: 0 }}>
           {driver.vehiclePhotoUrl ? (
             <img src={driver.vehiclePhotoUrl} alt="Vehicle"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -794,7 +1129,6 @@ function DriverCard({
 
 const SHIPMENT_COLORS = ['#0d6efd', '#28a745', '#6f42c1', '#fd7e14', '#20c997']
 
-// ── Shipment Block ────────────────────────────────────────────────────────────
 function ShipmentBlock({
   shipment, driverId, index, isDropTarget, dragOverTarget,
   setDragOverTarget, onDropOnShipment, onDragStartDelivery,
@@ -851,7 +1185,6 @@ function ShipmentBlock({
   )
 }
 
-// ── New Shipment Block ────────────────────────────────────────────────────────
 function NewShipmentBlock({ driverId, vehicleReg, vehicleId, isDropTarget, dragOverTarget, setDragOverTarget, onDropOnNewShipment }: NewShipmentBlockProps) {
   const targetKey = `new-shipment-${driverId}`
   const isHovered = dragOverTarget === targetKey
@@ -876,7 +1209,6 @@ function NewShipmentBlock({ driverId, vehicleReg, vehicleId, isDropTarget, dragO
   )
 }
 
-// ── Assigned Delivery Card ────────────────────────────────────────────────────
 function AssignedDeliveryCard({ delivery, isChecked, onToggleCheck, onDragStart, onDragEnd }: AssignedDeliveryCardProps) {
   return (
     <div
@@ -923,7 +1255,6 @@ function AssignedDeliveryCard({ delivery, isChecked, onToggleCheck, onDragStart,
   )
 }
 
-// ── Unassigned Delivery Card ──────────────────────────────────────────────────
 function DeliveryCard({ delivery, isChecked, onToggleCheck, isDragging, onDragStart, onDragEnd }: DeliveryCardProps) {
   return (
     <div
