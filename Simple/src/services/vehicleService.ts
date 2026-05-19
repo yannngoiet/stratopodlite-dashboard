@@ -27,21 +27,21 @@ export interface UpdateVehicleRequest {
 const vehicleService = {
   getAll: async (companyId: number): Promise<Vehicle[]> => {
     const res = await httpClient.get<Vehicle[]>(
-      `/companies/${companyId}/vehicles`
+      `/api/companies/${companyId}/vehicles`
     )
     return res.data
   },
 
   getById: async (companyId: number, id: number): Promise<Vehicle> => {
     const res = await httpClient.get<Vehicle>(
-      `/companies/${companyId}/vehicles/${id}`
+      `/api/companies/${companyId}/vehicles/${id}`
     )
     return res.data
   },
 
   create: async (companyId: number, data: CreateVehicleRequest): Promise<any> => {
     const res = await httpClient.post(
-      `/companies/${companyId}/vehicles`,
+      `/api/companies/${companyId}/vehicles`,
       data
     )
     return res.data
@@ -49,14 +49,14 @@ const vehicleService = {
 
   update: async (companyId: number, id: number, data: UpdateVehicleRequest): Promise<void> => {
     await httpClient.put(
-      `/companies/${companyId}/vehicles/${id}`,
+      `/api/companies/${companyId}/vehicles/${id}`,
       data
     )
   },
 
   delete: async (companyId: number, id: number): Promise<void> => {
     await httpClient.delete(
-      `/companies/${companyId}/vehicles/${id}`
+      `/api/companies/${companyId}/vehicles/${id}`
     )
   },
 
@@ -66,7 +66,7 @@ const vehicleService = {
     driverId: number | null
   ): Promise<void> => {
     await httpClient.post(
-      `/companies/${companyId}/vehicles/${vehicleId}/assign-driver`,
+      `/api/companies/${companyId}/vehicles/${vehicleId}/assign-driver`,
       { driverId }
     )
   }
