@@ -33,20 +33,44 @@ export async function fetchDriversWithAssignments(): Promise<Driver[]> {
 
 export async function assignDelivery(payload: AssignDeliveryRequest): Promise<AssignDeliveryResponse> {
   const companyId = getCompanyId()
+  // Clean the payload - ensure vehicleId is null if not provided
+  const cleanPayload = {
+    deliveryNo: payload.deliveryNo,
+    driverId: payload.driverId,
+    vehicleId: payload.vehicleId === 0 ? null : (payload.vehicleId ?? null)
+  }
+
+  console.log('Assign delivery payload:', cleanPayload)
+
   const res = await httpClient.post<AssignDeliveryResponse>(
     `/api/companies/${companyId}/dispatch/assign`,
-    payload
+    cleanPayload
   )
   return res.data
 }
 
 export async function bulkAssignDeliveries(payload: BulkAssignRequest): Promise<BulkAssignResponse> {
   const companyId = getCompanyId()
-  const res = await httpClient.post<BulkAssignResponse>(
-    `/api/companies/${companyId}/dispatch/bulk-assign`,
-    payload
-  )
-  return res.data
+
+  // Clean the payload - ensure vehicleId is null if not provided
+  const cleanPayload = {
+    deliveryNos: payload.deliveryNos,
+    driverId: payload.driverId,
+    vehicleId: payload.vehicleId === 0 ? null : (payload.vehicleId ?? null)
+  }
+
+  console.log('Bulk assign payload:', cleanPayload)
+
+  try {
+    const res = await httpClient.post<BulkAssignResponse>(
+      `/api/companies/${companyId}/dispatch/bulk-assign`,
+      cleanPayload
+    )
+    return res.data
+  } catch (error: any) {
+    console.error('Bulk assign error response:', error.response?.data)
+    throw error
+  }
 }
 
 export async function unassignDelivery(deliveryNo: string): Promise<UnassignResponse> {

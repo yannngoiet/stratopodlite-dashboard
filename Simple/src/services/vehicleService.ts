@@ -16,9 +16,11 @@ export interface CreateVehicleRequest {
   vehicleReg: string
   trailerReg: string | null
   vehicleType: string | null
+  isActive?: boolean        // ← add
 }
 
 export interface UpdateVehicleRequest {
+  vehicleReg: string        // ← added
   trailerReg: string | null
   vehicleType: string | null
   isActive: boolean

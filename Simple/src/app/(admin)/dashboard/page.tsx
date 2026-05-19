@@ -11,12 +11,6 @@ import VehiclesCard from './components/VehiclesCard';
 import DeliveryStatistics from './components/DeliveryStatistics';
 import RecentDeliveryNotes from './components/RecentDeliveryNotes';
 
-const getCompanyId = (): number => {
-  if (typeof window === 'undefined') return 1;
-  const user = localStorage.getItem('user');
-  return user ? (JSON.parse(user).companyId ?? 1) : 1;
-};
-
 const empty: DashboardStats = {
   totalDeliveryNotes: 0,
   totalCustomers: 0,
@@ -28,11 +22,11 @@ const empty: DashboardStats = {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>(empty);
-  const [error, setError]  = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     dashboardStatsService
-      .getStats(getCompanyId())
+      .getStats()                    // ← removed getCompanyId() argument
       .then(setStats)
       .catch(() => setError('Dashboard API is not running — showing empty data.'));
   }, []);
@@ -45,7 +39,9 @@ export default function DashboardPage() {
             <LuTruck className="me-1" /> Delivery Management
           </span>
           <h3 className="fw-bold">STRATOPOD Delivery Dashboard</h3>
-          <p className="fs-md text-muted mb-0">Monitor your deliveries, customers, drivers and fleet in real time.</p>
+          <p className="fs-md text-muted mb-0">
+            Monitor your deliveries, customers, drivers and fleet in real time.
+          </p>
         </Col>
       </Row>
 
@@ -70,14 +66,20 @@ export default function DashboardPage() {
       {/* ── Row 2: wide chart ── */}
       <Row>
         <Col cols={12}>
-          <DeliveryStatistics total={stats.totalDeliveryNotes} totalCustomers={stats.totalCustomers} />
+          <DeliveryStatistics
+            total={stats.totalDeliveryNotes}
+            totalCustomers={stats.totalCustomers}
+          />
         </Col>
       </Row>
 
       {/* ── Row 3: recent delivery notes ── */}
       <Row>
         <Col xxl={12}>
-          <RecentDeliveryNotes notes={stats.recentDeliveryNotes} total={stats.totalDeliveryNotes} />
+          <RecentDeliveryNotes
+            notes={stats.recentDeliveryNotes}
+            total={stats.totalDeliveryNotes}
+          />
         </Col>
       </Row>
     </Container>
