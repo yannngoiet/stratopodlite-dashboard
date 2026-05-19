@@ -104,7 +104,7 @@ const DispatchHub = () => {
   const [toast, setToast] = useState<Toast | null>(null)
   const [showVehicleModal, setShowVehicleModal] = useState(false)
   const [selectedVehicleIdForDriver, setSelectedVehicleIdForDriver] = useState<number | null>(null)
-  const [pendingNewShipmentDriver, setPendingNewShipmentDriver] = useState<{ driverId: number; vehicleReg: string } | null>(null)
+  const [pendingNewShipmentDriver, setPendingNewShipmentDriver] = useState<{ driverId: number; vehicleReg: string; deliveryNos: string[]; incoming: any[] } | null>(null)
   const [availableVehicles, setAvailableVehicles] = useState<Vehicle[]>([])
   const [submitting, setSubmitting] = useState(false)
 
@@ -409,7 +409,8 @@ const DispatchHub = () => {
         await proceedWithNewShipment(driverId, driver.assignedVehicleReg ?? vehicleReg, driver.assignedVehicleId)
         return
       }
-      setPendingNewShipmentDriver({ driverId, vehicleReg })
+      // Save deliveries NOW before onDragEnd clears draggedDelivery
+      setPendingNewShipmentDriver({ driverId, vehicleReg, deliveryNos: getDraggedNos(), incoming: getDraggedList() })
       setShowVehicleModal(true)
       return
     }
@@ -421,12 +422,42 @@ const DispatchHub = () => {
       showToast('Please select a vehicle', 'warning')
       return
     }
+    const { driverId, deliveryNos, incoming } = pendingNewShipmentDriver
     const vehicle = availableVehicles.find(v => v.id === selectedVehicleIdForDriver)
-    await proceedWithNewShipment(
-      pendingNewShipmentDriver.driverId,
-      vehicle?.vehicleReg ?? 'N/A',
-      selectedVehicleIdForDriver
-    )
+    const vehicleReg = vehicle?.vehicleReg ?? 'N/A'
+    const vehicleId = selectedVehicleIdForDriver
+
+    setShowVehicleModal(false)
+    setDrivers(prev => prev.map(d => {
+      if (d.driverId !== driverId) return d
+      return { ...d, shipments: [...d.shipments, { shipmentNo: null, status: 'Assigning...', statusId: 0, assignedExecutionDate: null, vehicleId, vehicleReg, deliveries: incoming }] }
+    }))
+    if (dragSource === 'unassigned') {
+      const nos = new Set(deliveryNos)
+      setDeliveryGroups(prev => prev.map(g => ({
+        ...g,
+        factories: g.factories.map(f => ({ ...f, deliveries: f.deliveries.filter(d => !nos.has(d.deliveryNo)) }))
+      })))
+    }
+    setSelectedDeliveries(new Set()); setSelectedAssigned(new Set())
+    setDraggedDelivery(null); setDragSource(null)
+    setPendingNewShipmentDriver(null)
+    setSelectedVehicleIdForDriver(null)
+
+    try {
+      let result: any
+      if (deliveryNos.length === 1) {
+        result = await assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId })
+      } else {
+        result = await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId })
+      }
+      const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0]?.deliveryNo || 'delivery'
+      showToast(`Shipment ${result.shipmentNo} created — ${label}`)
+      refreshAll()
+    } catch (err: any) {
+      showToast(err.message || 'Failed to create shipment', 'danger')
+      refreshAll()
+    }
   }
 
   const onDropOnUnassigned = async () => {
