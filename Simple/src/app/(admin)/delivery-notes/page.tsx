@@ -11,35 +11,27 @@ import { Container, Form, Button, Row, Col, Badge } from 'react-bootstrap';
 import { LuSearch, LuRefreshCw, LuDownload } from 'react-icons/lu';
 import deliveryNoteService, { type DeliveryNoteListItem } from '@/services/deliveryNoteService';
 
-const getCompanyId = (): number => {
-  if (typeof window === 'undefined') return 0
-  const user = localStorage.getItem('user')
-  if (user) {
-    const parsed = JSON.parse(user)
-    return parsed.companyId ?? 0
-  }
-  return 0
-}
-
 const getStatusVariant = (status: string | null) => {
   switch (status) {
-    case 'AVAILABLE': return 'success'
-    case 'SIGNED': return 'primary'
-    case 'PENDING': return 'warning'
-    case 'Completed': return 'success'
-    case 'Pending': return 'warning'
-    default: return 'secondary'
+    case 'Pending':          return 'warning'
+    case 'InProgress':       return 'primary'
+    case 'Arrived':          return 'info'
+    case 'Offloading':       return 'info'
+    case 'OffloadingComplete': return 'info'
+    case 'Departed':         return 'primary'
+    case 'Completed':        return 'success'
+    case 'BackAtDepot':      return 'success'
+    case 'EndOfDay':         return 'secondary'
+    case 'Cancelled':        return 'danger'
+    default:                 return 'secondary'
   }
 }
 
 const formatDate = (date: string | null) => {
   if (!date) return '-'
   return new Date(date).toLocaleString('en-ZA', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
   })
 }
 
@@ -49,10 +41,7 @@ const columns: ColumnDef<DeliveryNoteListItem>[] = [
     cell: ({ row }) => row.index + 1,
     size: 50
   },
-  {
-    accessorKey: 'deliveryNo',
-    header: 'Delivery Nr'
-  },
+  { accessorKey: 'deliveryNo', header: 'Delivery Nr' },
   {
     accessorKey: 'shipmentNo',
     header: 'Shipment Nr',
@@ -95,35 +84,34 @@ const columns: ColumnDef<DeliveryNoteListItem>[] = [
 ]
 
 const Page = () => {
-  const [data, setData] = useState<DeliveryNoteListItem[]>([])
-  const [loading, setLoading] = useState(false)
+  const [data, setData]             = useState<DeliveryNoteListItem[]>([])
+  const [loading, setLoading]       = useState(false)
   const [totalCount, setTotalCount] = useState(0)
-  const [page, setPage] = useState(1)
-  const [pageSize] = useState(10)
+  const [page, setPage]             = useState(1)
+  const [pageSize]                  = useState(10)
   const [totalPages, setTotalPages] = useState(0)
 
-  const [deliveryNo, setDeliveryNo] = useState('')
-  const [customerName, setCustomerName] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [deliveryNo, setDeliveryNo]       = useState('')
+  const [customerName, setCustomerName]   = useState('')
+  const [dateFrom, setDateFrom]           = useState('')
+  const [dateTo, setDateTo]               = useState('')
 
   const fetchData = useCallback(async (
-    currentPage = 1,
+    currentPage       = 1,
     currentDeliveryNo = '',
-    currentCustomerName = '',
-    currentDateFrom = '',
-    currentDateTo = ''
+    currentCustomer   = '',
+    currentDateFrom   = '',
+    currentDateTo     = ''
   ) => {
     setLoading(true)
     try {
-      const companyId = getCompanyId()
-      const result = await deliveryNoteService.getAll(companyId, {
-        page: currentPage,
+      const result = await deliveryNoteService.getAll({
+        page:         currentPage,
         pageSize,
-        deliveryNo: currentDeliveryNo,
-        customerName: currentCustomerName,
-        dateFrom: currentDateFrom,
-        dateTo: currentDateTo
+        deliveryNo:   currentDeliveryNo  || undefined,
+        customerName: currentCustomer    || undefined,
+        dateFrom:     currentDateFrom    || undefined,
+        dateTo:       currentDateTo      || undefined,
       })
       setData(result.items)
       setTotalCount(result.totalCount)
@@ -135,9 +123,7 @@ const Page = () => {
     }
   }, [pageSize])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  useEffect(() => { fetchData() }, [fetchData])
 
   const handleSearch = () => {
     setPage(1)
@@ -167,55 +153,39 @@ const Page = () => {
   })
 
   const start = totalCount === 0 ? 0 : (page - 1) * pageSize + 1
-  const end = Math.min(page * pageSize, totalCount)
+  const end   = Math.min(page * pageSize, totalCount)
 
   return (
     <Container fluid className="py-3">
       <div className="card shadow-sm">
         <div className="card-header d-flex justify-content-between align-items-center py-2">
           <h6 className="mb-0 fw-semibold">
-            Top {totalCount} Delivery Notes ordered by Date Loaded
+            Delivery Notes ({totalCount} total)
           </h6>
         </div>
 
         <div className="card-body p-3">
-          {/* Filters Row */}
+          {/* Filters */}
           <Row className="g-2 mb-3 align-items-center">
             <Col xs={12} md={3}>
-              <Form.Control
-                size="sm"
-                type="text"
-                placeholder="Delivery Nr"
+              <Form.Control size="sm" type="text" placeholder="Delivery Nr"
                 value={deliveryNo}
                 onChange={e => setDeliveryNo(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              />
+                onKeyDown={e => e.key === 'Enter' && handleSearch()} />
             </Col>
             <Col xs={12} md={3}>
-              <Form.Control
-                size="sm"
-                type="text"
-                placeholder="Customer Name"
+              <Form.Control size="sm" type="text" placeholder="Customer Name"
                 value={customerName}
                 onChange={e => setCustomerName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              />
+                onKeyDown={e => e.key === 'Enter' && handleSearch()} />
             </Col>
             <Col xs={6} md={2}>
-              <Form.Control
-                size="sm"
-                type="date"
-                value={dateFrom}
-                onChange={e => setDateFrom(e.target.value)}
-              />
+              <Form.Control size="sm" type="date" value={dateFrom}
+                onChange={e => setDateFrom(e.target.value)} />
             </Col>
             <Col xs={6} md={2}>
-              <Form.Control
-                size="sm"
-                type="date"
-                value={dateTo}
-                onChange={e => setDateTo(e.target.value)}
-              />
+              <Form.Control size="sm" type="date" value={dateTo}
+                onChange={e => setDateTo(e.target.value)} />
             </Col>
             <Col xs={12} md={2} className="d-flex gap-2">
               <Button size="sm" variant="primary" onClick={handleSearch} disabled={loading}>
@@ -230,11 +200,12 @@ const Page = () => {
           {/* Table */}
           <div className="table-responsive">
             <table className="table table-bordered table-striped table-hover table-sm align-middle mb-0">
-              <thead style={{ backgroundColor: '#2c3e50', color: '#fff', fontSize: '0.75rem' }}>
+              <thead style={{ backgroundColor: '#2c3e50' }}>
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map(header => (
-                      <th key={header.id} className="py-2 px-3 text-uppercase">
+                      <th key={header.id} className="py-2 px-3 text-uppercase"
+                        style={{ color: '#fff', fontWeight: 600, fontSize: '0.75rem', backgroundColor: '#2c3e50' }}>
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </th>
                     ))}
@@ -271,7 +242,7 @@ const Page = () => {
             </table>
           </div>
 
-          {/* Pagination Row */}
+          {/* Pagination */}
           <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
             <small className="text-muted">
               {totalCount > 0
@@ -289,12 +260,9 @@ const Page = () => {
                 const pageNum = Math.max(1, page - 2) + i
                 if (pageNum > totalPages) return null
                 return (
-                  <Button
-                    key={pageNum}
-                    size="sm"
+                  <Button key={pageNum} size="sm"
                     variant={pageNum === page ? 'primary' : 'outline-secondary'}
-                    onClick={() => handlePageChange(pageNum)}
-                  >
+                    onClick={() => handlePageChange(pageNum)}>
                     {pageNum}
                   </Button>
                 )
@@ -308,7 +276,7 @@ const Page = () => {
             </div>
           </div>
 
-          {/* Export Buttons */}
+          {/* Export */}
           <div className="d-flex justify-content-center mt-3 gap-2">
             <Button variant="info" size="sm" className="text-white">
               <LuDownload className="me-1" />Download Report
