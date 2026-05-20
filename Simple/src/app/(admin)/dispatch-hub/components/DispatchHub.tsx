@@ -403,8 +403,13 @@ const DispatchHub = () => {
 
   const onDropOnNewShipment = async (driverId: number, vehicleReg: string, vehicleId: number | null = null) => {
     if (!draggedDelivery) return
+    const driver = drivers.find(d => d.driverId === driverId)
+    if (driver && driver.shipments.some(s => s.statusId === 1)) {
+      showToast(`${driver.fullName} already has a pending shipment. Submit Dispatch first, or drop the delivery onto the existing shipment.`, 'warning')
+      setDraggedDelivery(null); setDragSource(null)
+      return
+    }
     if (!vehicleId) {
-      const driver = drivers.find(d => d.driverId === driverId)
       if (driver?.assignedVehicleId) {
         await proceedWithNewShipment(driverId, driver.assignedVehicleReg ?? vehicleReg, driver.assignedVehicleId)
         return
@@ -913,15 +918,17 @@ function DriverCard({
             />
           ))}
 
-          <NewShipmentBlock
-            driverId={driver.driverId}
-            vehicleReg={driver.shipments?.[0]?.vehicleReg ?? driver.assignedVehicleReg ?? 'N/A'}
-            vehicleId={driver.shipments?.[0]?.vehicleId ?? driver.assignedVehicleId ?? null}
-            isDropTarget={isDropTarget}
-            dragOverTarget={dragOverTarget}
-            setDragOverTarget={setDragOverTarget}
-            onDropOnNewShipment={onDropOnNewShipment}
-          />
+          {!driver.shipments.some(s => s.statusId === 1) && (
+            <NewShipmentBlock
+              driverId={driver.driverId}
+              vehicleReg={driver.assignedVehicleReg ?? 'N/A'}
+              vehicleId={driver.assignedVehicleId ?? null}
+              isDropTarget={isDropTarget}
+              dragOverTarget={dragOverTarget}
+              setDragOverTarget={setDragOverTarget}
+              onDropOnNewShipment={onDropOnNewShipment}
+            />
+          )}
         </div>
 
         {/* ── Vehicle Photo — Option A: Landscape banner ── */}
