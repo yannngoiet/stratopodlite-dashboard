@@ -195,7 +195,7 @@ const DispatchHub = () => {
   const toggleSelect = (deliveryNo: string) => {
     setSelectedDeliveries((prev) => {
       const next = new Set(prev)
-      next.has(deliveryNo) ? next.delete(deliveryNo) : next.add(deliveryNo)
+      if (next.has(deliveryNo)) { next.delete(deliveryNo) } else { next.add(deliveryNo) }
       return next
     })
   }
@@ -203,7 +203,7 @@ const DispatchHub = () => {
   const toggleSelectAssigned = (deliveryNo: string) => {
     setSelectedAssigned((prev) => {
       const next = new Set(prev)
-      next.has(deliveryNo) ? next.delete(deliveryNo) : next.add(deliveryNo)
+      if (next.has(deliveryNo)) { next.delete(deliveryNo) } else { next.add(deliveryNo) }
       return next
     })
   }
