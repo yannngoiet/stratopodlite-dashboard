@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write './src/**/*.{ts,tsx,js,jsx}'"
@@ -75,6 +75,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@netlify/plugin-nextjs": "^5.15.11",
     "@types/devextreme": "^16.2.0",
     "@types/file-saver": "^2.0.7",
     "@types/jquery": "^3.5.32",
