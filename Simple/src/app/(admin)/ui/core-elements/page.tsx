@@ -1,3 +1,5 @@
+'use client'
+
 import { Container } from 'react-bootstrap';
 import { LuLayoutGrid } from 'react-icons/lu';
 import PageTitle from '@/components/PageTitle';

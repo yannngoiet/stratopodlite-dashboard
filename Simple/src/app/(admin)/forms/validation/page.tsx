@@ -1,3 +1,5 @@
+'use client'
+
 import { Col, Container, Row } from 'react-bootstrap';
 import { LuShieldCheck } from 'react-icons/lu';
 import PageTitle from '@/components/PageTitle';

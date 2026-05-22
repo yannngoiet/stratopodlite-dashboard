@@ -1,3 +1,5 @@
+'use client'
+
 import { Col, Container, Row } from 'react-bootstrap';
 import PageTitle from '@/components/PageTitle';
 import { LuTable } from 'react-icons/lu';

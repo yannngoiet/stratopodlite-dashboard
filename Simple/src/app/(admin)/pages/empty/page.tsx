@@ -1,3 +1,5 @@
+'use client'
+
 import { Container } from 'react-bootstrap';
 import PageTitle from '@/components/PageTitle';
 import { LuBookOpen } from 'react-icons/lu';

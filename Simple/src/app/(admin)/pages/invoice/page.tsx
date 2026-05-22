@@ -1,3 +1,5 @@
+'use client'
+
 import { Button, Card, CardBody, Col, Container, Row, Table } from 'react-bootstrap';
 import { LuReceiptText } from 'react-icons/lu';
 import PageTitle from '@/components/PageTitle';
