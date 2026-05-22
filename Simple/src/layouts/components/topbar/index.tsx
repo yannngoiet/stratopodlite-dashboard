@@ -3,12 +3,15 @@
 import { useLayoutContext } from '@/context/useLayoutContext';
 import UserProfile from '@/layouts/components/topbar/components/UserProfile';
 import Link from 'next/link';
-import { Container } from 'react-bootstrap';
-import { LuMenu } from 'react-icons/lu';
+import { Container, Spinner } from 'react-bootstrap';
+import { LuMenu, LuLink } from 'react-icons/lu';
 import { appName } from '@/helpers';
+import { useState } from 'react';
+import xeroService from '@/services/xeroService';
 
 const Topbar = () => {
   const { changeSideNavSize, showBackdrop } = useLayoutContext();
+  const [connecting, setConnecting] = useState(false);
 
   const toggleSideNav = () => {
     const html = document.documentElement;
@@ -18,6 +21,16 @@ const Topbar = () => {
       showBackdrop();
     } else {
       changeSideNavSize(currentSize === 'collapse' ? 'default' : 'collapse');
+    }
+  };
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      const url = await xeroService.getAuthorizeUrl();
+      window.open(url, '_blank');
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -39,6 +52,26 @@ const Topbar = () => {
         </div>
 
         <div className="d-flex align-items-center gap-2">
+          <button
+            onClick={handleConnect}
+            disabled={connecting}
+            style={{
+              background: '#13B5EA',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '0.45rem 1.1rem',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: '#fff',
+              cursor: connecting ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            {connecting ? <Spinner size="sm" /> : <LuLink size={15} />}
+            {connecting ? 'Connecting...' : 'Connect'}
+          </button>
           <UserProfile />
         </div>
       </Container>

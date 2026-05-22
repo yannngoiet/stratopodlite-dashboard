@@ -26,7 +26,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     dashboardStatsService
-      .getStats()                    // ← removed getCompanyId() argument
+      .getStats()
       .then(setStats)
       .catch(() => setError('Dashboard API is not running — showing empty data.'));
   }, []);
@@ -39,7 +39,7 @@ export default function DashboardPage() {
             <LuTruck className="me-1" /> Delivery Management
           </span>
           <h3 className="fw-bold">STRATOPOD Delivery Dashboard</h3>
-          <p className="fs-md text-muted mb-0">
+          <p className="fs-md text-muted mb-2">
             Monitor your deliveries, customers, drivers and fleet in real time.
           </p>
         </Col>

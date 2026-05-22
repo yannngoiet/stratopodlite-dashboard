@@ -1,12 +1,13 @@
 'use client';
 
 import { userDropdownItems } from '@/layouts/components/data';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
 import { Dropdown, DropdownDivider, DropdownItem, DropdownMenu, DropdownToggle } from 'react-bootstrap';
-import user2 from '@/assets/images/users/user-2.jpg';
+
+const getInitials = (fullName: string) =>
+  fullName.trim().split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
 const UserProfile = () => {
   const router = useRouter();
@@ -33,7 +34,14 @@ const UserProfile = () => {
     <div className="topbar-item nav-user">
       <Dropdown align="end">
         <DropdownToggle as="a" className="topbar-link dropdown-toggle drop-arrow-none px-2 d-flex align-items-center gap-2" style={{ cursor: 'pointer', textDecoration: 'none' }}>
-          <Image src={user2.src} width={32} height={32} className="rounded-circle" alt="user-image" />
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #2d5a27, #192319)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontWeight: 700, fontSize: '0.72rem', flexShrink: 0
+          }}>
+            {name ? getInitials(name) : '?'}
+          </div>
           <span style={{ color: '#333', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>{name || email}</span>
         </DropdownToggle>
         <DropdownMenu>
