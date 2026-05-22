@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuSparkles } from 'react-icons/lu';
+import { LuTruck } from 'react-icons/lu';
 import { appName } from '@/helpers';
 const AppLogo = () => {
   return <>
@@ -7,7 +7,7 @@ const AppLogo = () => {
         <span className="d-flex justify-content-start align-items-center gap-1">
           <span className="avatar avatar-xs rounded-circle text-bg-dark">
             <span className="avatar-title">
-              <LuSparkles className="fs-md" />
+              <LuTruck className="fs-md" />
             </span>
           </span>
           <span className="logo-text text-body fw-bold fs-xl">{appName}</span>
@@ -17,7 +17,7 @@ const AppLogo = () => {
         <span className="d-flex justify-content-start align-items-center gap-1">
           <span className="avatar avatar-xs rounded-circle text-bg-dark">
             <span className="avatar-title">
-              <LuSparkles className="fs-md" />
+              <LuTruck className="fs-md" />
             </span>
           </span>
           <span className="logo-text text-white fw-bold fs-xl">{appName}</span>
