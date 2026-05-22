@@ -8,7 +8,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const nextConfig = {
   reactStrictMode: false,
-  output: 'standalone',
+  // ← output: 'standalone' REMOVED
   
   turbopack: {},
 
@@ -45,7 +45,6 @@ const nextConfig = {
       };
     }
 
-    // Remove resolve-url-loader from sass/scss rules
     config.module.rules.forEach((rule) => {
       if (rule.oneOf) {
         rule.oneOf.forEach((oneOf) => {
