@@ -6,21 +6,12 @@ import Link from 'next/link';
 import { Container, Spinner } from 'react-bootstrap';
 import { LuMenu, LuLink } from 'react-icons/lu';
 import { appName } from '@/helpers';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import xeroService from '@/services/xeroService';
 
 const Topbar = () => {
   const { changeSideNavSize, showBackdrop } = useLayoutContext();
   const [connecting, setConnecting] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
-  useEffect(() => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const parsed = JSON.parse(user);
-      setIsSuperAdmin(parsed.role === 'SUPER_ADMIN');
-    }
-  }, []);
 
   const toggleSideNav = () => {
     const html = document.documentElement;
@@ -61,28 +52,26 @@ const Topbar = () => {
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          {isSuperAdmin && (
-            <button
-              onClick={handleConnect}
-              disabled={connecting}
-              style={{
-                background: '#13B5EA',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.45rem 1.1rem',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                color: '#fff',
-                cursor: connecting ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-              }}
-            >
-              {connecting ? <Spinner size="sm" /> : <LuLink size={15} />}
-              {connecting ? 'Connecting...' : 'Connect'}
-            </button>
-          )}
+          <button
+            onClick={handleConnect}
+            disabled={connecting}
+            style={{
+              background: '#13B5EA',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '0.45rem 1.1rem',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: '#fff',
+              cursor: connecting ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            {connecting ? <Spinner size="sm" /> : <LuLink size={15} />}
+            {connecting ? 'Connecting...' : 'Connect'}
+          </button>
           <UserProfile />
         </div>
       </Container>

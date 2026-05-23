@@ -10,7 +10,6 @@ import StatusBreakdownCard from './components/StatusBreakdownCard';
 import VehiclesCard from './components/VehiclesCard';
 import DeliveryStatistics from './components/DeliveryStatistics';
 import RecentDeliveryNotes from './components/RecentDeliveryNotes';
-import XeroSyncDialog from './components/XeroSyncDialog';
 
 const empty: DashboardStats = {
   totalDeliveryNotes: 0,
@@ -24,41 +23,6 @@ const empty: DashboardStats = {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>(empty);
   const [error, setError] = useState<string | null>(null);
-  const [xeroDialog, setXeroDialog] = useState<{ companyId: number; companyName: string } | null>(null);
-
-  // Runs in the Xero callback tab — signals parent then closes itself
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const xero = params.get('xero');
-    if (xero === 'connected') {
-      const companyId = parseInt(params.get('companyId') ?? '0', 10);
-      const companyName = params.get('companyName') ?? '';
-      localStorage.setItem('xero_callback', JSON.stringify({ companyId, companyName }));
-      if (window.opener) {
-        window.close();
-      } else {
-        setXeroDialog({ companyId, companyName });
-        window.history.replaceState({}, '', '/dashboard');
-      }
-    }
-  }, []);
-
-  // Runs in the parent tab — listens for the callback tab's signal
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'xero_callback' && e.newValue) {
-        try {
-          const { companyId, companyName } = JSON.parse(e.newValue);
-          setXeroDialog({ companyId, companyName });
-        } catch {
-          // ignore malformed payload
-        }
-        localStorage.removeItem('xero_callback');
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
 
   useEffect(() => {
     dashboardStatsService
@@ -69,14 +33,6 @@ export default function DashboardPage() {
 
   return (
     <Container fluid>
-      {xeroDialog && (
-        <XeroSyncDialog
-          companyId={xeroDialog.companyId}
-          fallbackName={xeroDialog.companyName}
-          onClose={() => setXeroDialog(null)}
-        />
-      )}
-
       <Row className="justify-content-center py-4">
         <Col xxl={5} xl={7} className="text-center">
           <span className="badge badge-default fw-normal shadow px-2 py-1 mb-2 fst-italic fs-xxs">
