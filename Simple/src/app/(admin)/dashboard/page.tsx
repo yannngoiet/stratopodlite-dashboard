@@ -10,7 +10,7 @@ import StatusBreakdownCard from './components/StatusBreakdownCard';
 import VehiclesCard from './components/VehiclesCard';
 import DeliveryStatistics from './components/DeliveryStatistics';
 import RecentDeliveryNotes from './components/RecentDeliveryNotes';
-import XeroSyncDialog from './components/XeroSyncDialog';
+import XeroSyncDialog, { type XeroCompanyResult } from './components/XeroSyncDialog';
 
 const empty: DashboardStats = {
   totalDeliveryNotes: 0,
@@ -24,20 +24,25 @@ const empty: DashboardStats = {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>(empty);
   const [error, setError] = useState<string | null>(null);
-  const [xeroDialog, setXeroDialog] = useState<{ companyId: number; companyName: string } | null>(null);
+  const [xeroCompanies, setXeroCompanies] = useState<XeroCompanyResult[] | null>(null);
 
   // Runs in the Xero callback tab — signals parent then closes itself
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const xero = params.get('xero');
     if (xero === 'connected') {
-      const companyId = parseInt(params.get('companyId') ?? '0', 10);
-      const companyName = params.get('companyName') ?? '';
-      localStorage.setItem('xero_callback', JSON.stringify({ companyId, companyName }));
+      const payload = params.get('payload') ?? '';
+      let companies: XeroCompanyResult[] = [];
+      try {
+        companies = JSON.parse(atob(payload));
+      } catch {
+        // ignore malformed payload
+      }
+      localStorage.setItem('xero_callback', JSON.stringify({ companies }));
       if (window.opener) {
         window.close();
       } else {
-        setXeroDialog({ companyId, companyName });
+        setXeroCompanies(companies);
         window.history.replaceState({}, '', '/dashboard');
       }
     }
@@ -48,8 +53,8 @@ export default function DashboardPage() {
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'xero_callback' && e.newValue) {
         try {
-          const { companyId, companyName } = JSON.parse(e.newValue);
-          setXeroDialog({ companyId, companyName });
+          const { companies } = JSON.parse(e.newValue);
+          setXeroCompanies(companies);
         } catch {
           // ignore malformed payload
         }
@@ -69,11 +74,10 @@ export default function DashboardPage() {
 
   return (
     <Container fluid>
-      {xeroDialog && (
+      {xeroCompanies && (
         <XeroSyncDialog
-          companyId={xeroDialog.companyId}
-          fallbackName={xeroDialog.companyName}
-          onClose={() => setXeroDialog(null)}
+          companies={xeroCompanies}
+          onClose={() => setXeroCompanies(null)}
         />
       )}
       <Row className="justify-content-center py-4">
