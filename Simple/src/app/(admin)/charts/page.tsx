@@ -1,3 +1,5 @@
+'use client'
+
 import PageTitle from '@/components/PageTitle';
 import { LuChartBar } from 'react-icons/lu';
 import { Container } from 'react-bootstrap';

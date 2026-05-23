@@ -1,3 +1,5 @@
+'use client'
+
 import { iconItems } from '@/app/(admin)/icons/tabler/data';
 import { Button, Card, CardBody, CardHeader, Col, Container, Row } from 'react-bootstrap';
 import { TbAd2, TbBell, TbCamera, TbChartPie2, TbCloud, TbCreditCard, TbDeviceDesktop, TbDeviceGamepad, TbDeviceTablet, TbDeviceWatch, TbLock, TbMail, TbPhone, TbStar, TbUser } from 'react-icons/tb';

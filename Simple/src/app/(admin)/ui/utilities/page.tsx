@@ -1,3 +1,5 @@
+'use client'
+
 import ComponentCard from '@/components/ComponentCard';
 import Image from 'next/image';
 import { Col, Container, Row } from 'react-bootstrap';

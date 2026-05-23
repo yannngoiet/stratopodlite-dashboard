@@ -1,3 +1,5 @@
+'use client'
+
 import { Card, CardBody, CardFooter, Col, Container, Row } from 'react-bootstrap';
 import { LuCreditCard } from 'react-icons/lu';
 import PageTitle from '@/components/PageTitle';

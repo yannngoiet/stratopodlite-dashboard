@@ -1,3 +1,5 @@
+'use client'
+
 import { Button, Card, CardBody, CardHeader, Col, Container, Row } from 'react-bootstrap';
 import { iconItems } from '@/app/(admin)/icons/lucide/data';
 import { LuAirplay, LuBadgeDollarSign, LuBell, LuCamera, LuCheck, LuCircleCheck, LuCloud, LuDatabase, LuFileText, LuGamepad2, LuHeart, LuLock, LuMonitor, LuPhone, LuStar, LuTablet, LuTrees, LuTriangleAlert, LuUser, LuWatch } from 'react-icons/lu';

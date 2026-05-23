@@ -5,32 +5,73 @@
  * Version: 3.0.0
 */
 
+// Core files - NOTE the tilde (~) for node_modules resolution
+@import "~bootstrap/scss/functions";
 
-// Core files
-@import "bootstrap/scss/functions";
-@import "bootstrap/scss/variables";
+// Bootstrap's own variables must come first
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/variables-dark";
 
+// Then your custom overrides layer on top
 @import "variables";
 @import "variables-dark";
 
-@import "bootstrap/scss/bootstrap";
+// Bootstrap core components with tilde
+@import "~bootstrap/scss/maps";
+@import "~bootstrap/scss/mixins";
+@import "~bootstrap/scss/root";
+@import "~bootstrap/scss/utilities";
+@import "~bootstrap/scss/reboot";
+@import "~bootstrap/scss/type";
+@import "~bootstrap/scss/images";
+@import "~bootstrap/scss/containers";
+@import "~bootstrap/scss/grid";
+@import "~bootstrap/scss/tables";
+@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/buttons";
+@import "~bootstrap/scss/transitions";
+@import "~bootstrap/scss/dropdown";
+@import "~bootstrap/scss/button-group";
+@import "~bootstrap/scss/nav";
+@import "~bootstrap/scss/navbar";
+@import "~bootstrap/scss/card";
+@import "~bootstrap/scss/accordion";
+@import "~bootstrap/scss/breadcrumb";
+@import "~bootstrap/scss/pagination";
+@import "~bootstrap/scss/badge";
+@import "~bootstrap/scss/alert";
+@import "~bootstrap/scss/progress";
+@import "~bootstrap/scss/list-group";
+@import "~bootstrap/scss/close";
+@import "~bootstrap/scss/toasts";
+@import "~bootstrap/scss/modal";
+@import "~bootstrap/scss/tooltip";
+@import "~bootstrap/scss/popover";
+@import "~bootstrap/scss/carousel";
+@import "~bootstrap/scss/spinners";
+@import "~bootstrap/scss/offcanvas";
+@import "~bootstrap/scss/placeholders";
+@import "~bootstrap/scss/helpers";
 
+// Utilities API (must be last Bootstrap import)
+@import "~bootstrap/scss/utilities/api";
+
+// Your theme imports - these stay the same (no tilde needed)
 @import "config/root";
-@import "config/theme-shadcn";         // Default Theme // Please do not remove
-@import "config/theme-ghibli";         // Ghibli Theme
-@import "config/theme-corporate";      // Corporate Theme
-@import "config/theme-slack";          // Slack Theme
-@import "config/theme-material";       // Material Theme
-@import "config/theme-spotify";        // Spotify Theme
-@import "config/theme-saas";           // Saas Theme
-@import "config/theme-flat";           // Flat Theme
-@import "config/theme-nature";         // Nature Theme
-@import "config/theme-pastel";         // Pastel Theme
-@import "config/theme-vintage";        // Vintage Theme
-@import "config/theme-caffieine";      // Caffieine Theme
-@import "config/theme-leafline";       // Leafline Theme
-@import "config/theme-redshift";       // Redshift Theme
-
+@import "config/theme-shadcn";
+@import "config/theme-ghibli";
+@import "config/theme-corporate";
+@import "config/theme-slack";
+@import "config/theme-material";
+@import "config/theme-spotify";
+@import "config/theme-saas";
+@import "config/theme-flat";
+@import "config/theme-nature";
+@import "config/theme-pastel";
+@import "config/theme-vintage";
+@import "config/theme-caffieine";
+@import "config/theme-leafline";
+@import "config/theme-redshift";
 
 // Structure
 @import "structure/topbar";
@@ -62,7 +103,6 @@
 @import "components/widgets";
 @import "components/list-group";
 
-
 // Pages
 @import "pages/authentication";
 @import "pages/chat";
@@ -71,7 +111,6 @@
 @import "pages/outlook";
 @import "pages/pin-board";
 @import "pages/timeline";
-
 
 // Plugins
 @import "plugins/calendar";
