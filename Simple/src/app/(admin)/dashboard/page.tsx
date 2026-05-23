@@ -26,26 +26,27 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [xeroCompanies, setXeroCompanies] = useState<XeroCompanyResult[] | null>(null);
 
-  // Runs in the Xero callback tab — signals parent then closes itself
+  // Runs in the Xero callback tab — fetches company status then signals parent
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const xero = params.get('xero');
-    if (xero === 'connected') {
-      const payload = params.get('payload') ?? '';
-      let companies: XeroCompanyResult[] = [];
-      try {
-        companies = JSON.parse(atob(payload));
-      } catch {
-        // ignore malformed payload
-      }
-      localStorage.setItem('xero_callback', JSON.stringify({ companies }));
-      if (window.opener) {
-        window.close();
-      } else {
-        setXeroCompanies(companies);
-        window.history.replaceState({}, '', '/dashboard');
-      }
-    }
+    if (params.get('xero') !== 'connected') return;
+
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'https://localhost:7272';
+    fetch(`${apiBase}/api/xero-auth/companies-status`)
+      .then(r => r.json())
+      .then((companies: XeroCompanyResult[]) => {
+        localStorage.setItem('xero_callback', JSON.stringify({ companies }));
+        if (window.opener) {
+          window.close();
+        } else {
+          setXeroCompanies(companies);
+          window.history.replaceState({}, '', '/dashboard');
+        }
+      })
+      .catch(() => {
+        localStorage.setItem('xero_callback', JSON.stringify({ companies: [] }));
+        if (window.opener) window.close();
+      });
   }, []);
 
   // Runs in the parent tab — listens for the callback tab's signal
