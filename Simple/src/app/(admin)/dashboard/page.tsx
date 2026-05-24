@@ -26,35 +26,54 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [xeroCompanies, setXeroCompanies] = useState<XeroCompanyResult[] | null>(null);
 
-  // Runs in the Xero callback tab — fetches company status then signals parent
+  // Runs in the Xero callback tab — reads companies from URL payload then signals parent
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('xero') !== 'connected') return;
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'https://localhost:7272';
-    fetch(`${apiBase}/api/xero-auth/companies-status`)
-      .then(r => r.json())
-      .then((companies: XeroCompanyResult[]) => {
-        localStorage.setItem('xero_callback', JSON.stringify({ companies }));
-        if (window.opener) {
-          window.close();
-        } else {
-          setXeroCompanies(companies);
-          window.history.replaceState({}, '', '/dashboard');
-        }
-      })
-      .catch(() => {
-        localStorage.setItem('xero_callback', JSON.stringify({ companies: [] }));
-        if (window.opener) window.close();
-      });
+    const rawPayload = params.get('payload') ?? '';
+    console.log('[Xero popup] payload length:', rawPayload.length, '| raw:', rawPayload);
+
+    let companies: XeroCompanyResult[] = [];
+    try {
+      const decoded = atob(rawPayload);
+      companies = JSON.parse(decoded);
+      console.log('[Xero popup] decoded companies:', companies.length, companies);
+    } catch (err) {
+      console.error('[Xero popup] decode failed:', err);
+    }
+
+    // BroadcastChannel is reliable — fires even if same value as before
+    const channel = new BroadcastChannel('xero_callback');
+    channel.postMessage({ companies });
+    channel.close();
+    console.log('[Xero popup] broadcast sent, companies:', companies.length);
+
+    if (window.opener) {
+      window.close();
+    } else {
+      setXeroCompanies(companies);
+      window.history.replaceState({}, '', '/dashboard');
+    }
   }, []);
 
   // Runs in the parent tab — listens for the callback tab's signal
+  useEffect(() => {
+    const channel = new BroadcastChannel('xero_callback');
+    channel.onmessage = (e: MessageEvent<{ companies: XeroCompanyResult[] }>) => {
+      console.log('[Xero] parent received companies:', e.data.companies.length, e.data.companies);
+      setXeroCompanies(e.data.companies);
+    };
+    return () => channel.close();
+  }, []);
+
+  // Legacy localStorage fallback (kept for safety)
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'xero_callback' && e.newValue) {
         try {
           const { companies } = JSON.parse(e.newValue);
+          console.log('[Xero] localStorage fallback received companies:', companies.length);
           setXeroCompanies(companies);
         } catch {
           // ignore malformed payload

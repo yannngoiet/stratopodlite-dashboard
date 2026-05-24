@@ -28,6 +28,46 @@ const emptyForm: FormState = { firstName: '', lastName: '', username: '', email:
 
 type Step = 'overview' | 'form' | 'done';
 
+function CompanyRow({ company, createdFor, onCreateUser }: {
+  company: XeroCompanyResult;
+  createdFor: Set<number>;
+  onCreateUser: (c: XeroCompanyResult) => void;
+}) {
+  return (
+    <div
+      className="d-flex align-items-center gap-3 rounded p-3 mb-2"
+      style={{ background: '#f8f9fa', border: '1px solid #e9ecef' }}
+    >
+      <div style={{
+        width: 38, height: 38, borderRadius: '8px', flexShrink: 0,
+        background: 'linear-gradient(135deg, #13B5EA, #0d8ab5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <LuBuilding2 size={18} color="#fff" />
+      </div>
+      <div className="flex-fill">
+        <div className="fw-semibold" style={{ fontSize: '0.9rem' }}>{company.companyName}</div>
+        <div className="d-flex align-items-center gap-2 mt-1">
+          {company.isNew ? (
+            <Badge bg="success" style={{ fontSize: '0.68rem' }}>New</Badge>
+          ) : (
+            <Badge bg="secondary" style={{ fontSize: '0.68rem' }}>Already Synced</Badge>
+          )}
+          {createdFor.has(company.companyId) && (
+            <Badge bg="info" style={{ fontSize: '0.68rem' }}>User Created</Badge>
+          )}
+        </div>
+      </div>
+      {company.isNew && !createdFor.has(company.companyId) && (
+        <Button size="sm" variant="primary" onClick={() => onCreateUser(company)}
+          style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+          Create User
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function XeroSyncDialog({ companies, onClose }: Props) {
   const [step, setStep] = useState<Step>('overview');
   const [selectedCompany, setSelectedCompany] = useState<XeroCompanyResult | null>(null);
@@ -88,40 +128,6 @@ export default function XeroSyncDialog({ companies, onClose }: Props) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const CompanyRow = ({ company }: { company: XeroCompanyResult }) => (
-    <div
-      className="d-flex align-items-center gap-3 rounded p-3 mb-2"
-      style={{ background: '#f8f9fa', border: '1px solid #e9ecef' }}
-    >
-      <div style={{
-        width: 38, height: 38, borderRadius: '8px', flexShrink: 0,
-        background: 'linear-gradient(135deg, #13B5EA, #0d8ab5)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <LuBuilding2 size={18} color="#fff" />
-      </div>
-      <div className="flex-fill">
-        <div className="fw-semibold" style={{ fontSize: '0.9rem' }}>{company.companyName}</div>
-        <div className="d-flex align-items-center gap-2 mt-1">
-          {company.isNew ? (
-            <Badge bg="success" style={{ fontSize: '0.68rem' }}>New</Badge>
-          ) : (
-            <Badge bg="secondary" style={{ fontSize: '0.68rem' }}>Already Synced</Badge>
-          )}
-          {createdFor.has(company.companyId) && (
-            <Badge bg="info" style={{ fontSize: '0.68rem' }}>User Created</Badge>
-          )}
-        </div>
-      </div>
-      {company.isNew && !createdFor.has(company.companyId) && (
-        <Button size="sm" variant="primary" onClick={() => handleCreateUser(company)}
-          style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
-          Create User
-        </Button>
-      )}
-    </div>
-  );
-
   return (
     <Modal show onHide={onClose} centered backdrop="static">
 
@@ -147,7 +153,9 @@ export default function XeroSyncDialog({ companies, onClose }: Props) {
                   : `${newCompanies.length} new companies connected. Create logins for the admins?`}
               </p>
             )}
-            {companies.map(c => <CompanyRow key={c.companyId} company={c} />)}
+            {companies.map(c => (
+              <CompanyRow key={c.companyId} company={c} createdFor={createdFor} onCreateUser={handleCreateUser} />
+            ))}
           </Modal.Body>
           <Modal.Footer className="border-0">
             <Button variant="primary" onClick={onClose}>Done</Button>
