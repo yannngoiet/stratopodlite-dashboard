@@ -4,7 +4,7 @@ import authService from '@/services/authService'
 
 export const useAuth = () => {
   const router = useRouter()
-  const [error, setError] = useState<string | null>(null)
+  const [error,   setError]   = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const login = async (usernameOrEmail: string, password: string): Promise<void> => {
@@ -20,7 +20,14 @@ export const useAuth = () => {
         return
       }
 
+      // TODO: re-enable force password change later
+      // if (data.mustChangePassword) {
+      //   router.push('/auth/change-password')
+      //   return
+      // }
+
       router.push('/dashboard')
+
     } catch {
       setError('Invalid username or password.')
     } finally {
