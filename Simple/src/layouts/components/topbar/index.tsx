@@ -4,21 +4,31 @@ import { useLayoutContext } from '@/context/useLayoutContext';
 import UserProfile from '@/layouts/components/topbar/components/UserProfile';
 import Link from 'next/link';
 import { Container, Spinner } from 'react-bootstrap';
-import { LuMenu, LuLink } from 'react-icons/lu';
+import { LuMenu, LuLink, LuUnlink } from 'react-icons/lu';
 import { appName } from '@/helpers';
 import { useState, useEffect } from 'react';
 import xeroService from '@/services/xeroService';
 
 const Topbar = () => {
   const { changeSideNavSize, showBackdrop } = useLayoutContext();
-  const [connecting, setConnecting] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [connecting,    setConnecting]    = useState(false);
+  const [isSuperAdmin,  setIsSuperAdmin]  = useState(false);
+  const [companyId,     setCompanyId]     = useState<number | null>(null);
+  const [xeroConnected, setXeroConnected] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const parsed = JSON.parse(user);
-      setIsSuperAdmin(parsed.role === 'SUPER_ADMIN');
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      const user = JSON.parse(stored);
+      setIsSuperAdmin(user.role === 'SUPER_ADMIN');
+      setCompanyId(user.companyId);
+
+      // ── Check if Xero is already connected ───────────────────
+      if (user.companyId) {
+        xeroService.getStatus(user.companyId)
+          .then(connected => setXeroConnected(connected))
+          .catch(() => setXeroConnected(false));
+      }
     }
   }, []);
 
@@ -33,11 +43,25 @@ const Topbar = () => {
     }
   };
 
+  // ── Connect Xero ───────────────────────────────────────────────
   const handleConnect = async () => {
+    if (!companyId) return;
     setConnecting(true);
     try {
-      const url = await xeroService.getAuthorizeUrl();
-      window.open(url, '_blank');
+      const url = await xeroService.getAuthorizeUrl(companyId);
+      window.location.href = url;  // ← redirect same tab
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  // ── Disconnect Xero ────────────────────────────────────────────
+  const handleDisconnect = async () => {
+    if (!companyId) return;
+    setConnecting(true);
+    try {
+      await xeroService.disconnect(companyId);
+      setXeroConnected(false);
     } finally {
       setConnecting(false);
     }
@@ -62,26 +86,51 @@ const Topbar = () => {
 
         <div className="d-flex align-items-center gap-2">
           {isSuperAdmin && (
-            <button
-              onClick={handleConnect}
-              disabled={connecting}
-              style={{
-                background: '#13B5EA',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.45rem 1.1rem',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                color: '#fff',
-                cursor: connecting ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-              }}
-            >
-              {connecting ? <Spinner size="sm" /> : <LuLink size={15} />}
-              {connecting ? 'Connecting...' : 'Connect'}
-            </button>
+            xeroConnected ? (
+              // ── Already connected — show disconnect button ─────
+              <button
+                onClick={handleDisconnect}
+                disabled={connecting}
+                style={{
+                  background: '#e53e3e',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0.45rem 1.1rem',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  color: '#fff',
+                  cursor: connecting ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                {connecting ? <Spinner size="sm" /> : <LuUnlink size={15} />}
+                {connecting ? 'Disconnecting...' : 'Disconnect Xero'}
+              </button>
+            ) : (
+              // ── Not connected — show connect button ────────────
+              <button
+                onClick={handleConnect}
+                disabled={connecting}
+                style={{
+                  background: '#13B5EA',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0.45rem 1.1rem',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  color: '#fff',
+                  cursor: connecting ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                {connecting ? <Spinner size="sm" /> : <LuLink size={15} />}
+                {connecting ? 'Connecting...' : 'Connect Xero'}
+              </button>
+            )
           )}
           <UserProfile />
         </div>
