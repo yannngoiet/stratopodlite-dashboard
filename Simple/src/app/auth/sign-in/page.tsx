@@ -2,17 +2,17 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { LuTruck, LuMail, LuLock, LuBuilding2 } from 'react-icons/lu';
+import { LuTruck, LuUser, LuLock, LuBuilding2 } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 
 const Page = () => {
   const { login, error, loading } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  const [password,        setPassword]        = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await login(email, password);
+    await login(usernameOrEmail, password);
   };
 
   return (
@@ -41,12 +41,8 @@ const Page = () => {
           <LuTruck size={38} color="#fff" />
         </div>
         <p style={{
-          color: '#444',
-          fontSize: '0.78rem',
-          fontWeight: 600,
-          letterSpacing: '2px',
-          textTransform: 'uppercase',
-          margin: 0,
+          color: '#444', fontSize: '0.78rem', fontWeight: 600,
+          letterSpacing: '2px', textTransform: 'uppercase', margin: 0,
         }}>
           Electronic Proof of Delivery
         </p>
@@ -54,11 +50,8 @@ const Page = () => {
 
       {/* Card */}
       <div style={{
-        background: '#fff',
-        borderRadius: '6px',
-        padding: '2rem',
-        width: '100%',
-        maxWidth: '380px',
+        background: '#fff', borderRadius: '6px', padding: '2rem',
+        width: '100%', maxWidth: '380px',
         boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
       }}>
         <p style={{ textAlign: 'center', color: '#888', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
@@ -66,13 +59,18 @@ const Page = () => {
         </p>
 
         <form onSubmit={handleSubmit}>
-          {/* Username */}
-          <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '1rem', overflow: 'hidden' }}>
+
+          {/* Username or Email */}
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            border: '1px solid #ddd', borderRadius: '4px',
+            marginBottom: '1rem', overflow: 'hidden',
+          }}>
             <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder="Username or email"
+              value={usernameOrEmail}
+              onChange={e => setUsernameOrEmail(e.target.value)}
               required
               style={{
                 flex: 1, border: 'none', outline: 'none',
@@ -80,17 +78,21 @@ const Page = () => {
               }}
             />
             <span style={{ padding: '0 0.75rem', color: '#aaa' }}>
-              <LuMail size={16} />
+              <LuUser size={16} />
             </span>
           </div>
 
           {/* Password */}
-          <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '1rem', overflow: 'hidden' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            border: '1px solid #ddd', borderRadius: '4px',
+            marginBottom: '1rem', overflow: 'hidden',
+          }}>
             <input
               type="password"
               placeholder="••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               required
               style={{
                 flex: 1, border: 'none', outline: 'none',
@@ -117,13 +119,10 @@ const Page = () => {
               type="submit"
               disabled={loading}
               style={{
-                background: '#1a1a1a',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
+                background: '#1a1a1a', color: '#fff',
+                border: 'none', borderRadius: '4px',
                 padding: '0.5rem 1.5rem',
-                fontWeight: 600,
-                fontSize: '0.875rem',
+                fontWeight: 600, fontSize: '0.875rem',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.7 : 1,
               }}
@@ -132,16 +131,8 @@ const Page = () => {
             </button>
           </div>
 
-          {/* Sign Up */}
-          <div style={{ textAlign: 'center', marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
-            <span style={{ fontSize: '0.82rem', color: '#888' }}>Don&apos;t have an account? </span>
-            <Link href="/auth/sign-up" style={{ fontSize: '0.82rem', color: '#1a1a1a', fontWeight: 600, textDecoration: 'none' }}>
-              Sign Up
-            </Link>
-          </div>
-
-          {/* Register Company */}
-          <div style={{ marginTop: '0.75rem', borderTop: '1px solid #eee', paddingTop: '0.75rem' }}>
+          {/* Register new company */}
+          <div style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
             <Link href="/auth/register-company" style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
               border: '1px solid #ddd', borderRadius: '4px',
@@ -150,9 +141,10 @@ const Page = () => {
               textDecoration: 'none', background: '#fafafa',
             }}>
               <LuBuilding2 size={14} />
-              Register your company
+              Register a new company
             </Link>
           </div>
+
         </form>
       </div>
 

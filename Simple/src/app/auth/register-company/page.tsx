@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LuTruck, LuBuilding, LuUser, LuMail, LuLock, LuPhone } from 'react-icons/lu';
+import authService from '@/services/authService';
 
 const COMPANY_TYPES = ['ORGANISATION', 'SUPPLIER', 'CUSTOMER', 'PARTNER'];
 
@@ -16,12 +17,12 @@ const Page = () => {
   const [companyType, setCompanyType] = useState('ORGANISATION');
 
   // ── Step 2 — Admin User ────────────────────────────────────────
-  const [firstName,   setFirstName]   = useState('');
-  const [lastName,    setLastName]    = useState('');
-  const [username,    setUsername]    = useState('');
-  const [email,       setEmail]       = useState('');
-  const [password,    setPassword]    = useState('');
-  const [phone,       setPhone]       = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName,  setLastName]  = useState('');
+  const [username,  setUsername]  = useState('');
+  const [email,     setEmail]     = useState('');
+  const [password,  setPassword]  = useState('');
+  const [phone,     setPhone]     = useState('');
 
   const [error,   setError]   = useState('');
   const [success, setSuccess] = useState('');
@@ -52,33 +53,22 @@ const Page = () => {
 
     setLoading(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? '';
-      const res = await fetch(`${apiBase}/api/companies`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          companyName:      companyName.trim(),
-          companyType,
-          adminFirstName:   firstName.trim(),
-          adminLastName:    lastName.trim(),
-          adminUsername:    username.trim(),
-          adminEmail:       email.trim(),
-          adminPassword:    password,
-          adminPhoneNumber: phone.trim() || undefined,
-        }),
+      await authService.registerCompany({
+        companyName:      companyName.trim(),
+        companyType,
+        adminFirstName:   firstName.trim(),
+        adminLastName:    lastName.trim(),
+        adminUsername:    username.trim(),
+        adminEmail:       email.trim(),
+        adminPassword:    password,
+        adminPhoneNumber: phone.trim() || undefined,
       });
-
-      const body = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setError(body.message || `Registration failed (${res.status}).`);
-        return;
-      }
 
       setSuccess('Company registered successfully!');
       setTimeout(() => router.push('/auth/sign-in'), 1500);
-    } catch {
-      setError('Could not reach the server. Please try again.');
+
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not reach the server. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -268,7 +258,7 @@ const Page = () => {
                 style={{
                   background: 'none', border: 'none', padding: 0,
                   fontSize: '0.82rem', color: '#1a1a1a',
-                  cursor: 'pointer', textDecoration: 'none',
+                  cursor: 'pointer',
                 }}
               >
                 Back
