@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { LuTruck, LuMail, LuLock } from 'react-icons/lu';
+import { LuTruck, LuMail, LuLock, LuBuilding2 } from 'react-icons/lu';
 import { useAuth } from '@/hooks/useAuth';
 
 const Page = () => {
@@ -130,6 +130,28 @@ const Page = () => {
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+          </div>
+
+          {/* Sign Up */}
+          <div style={{ textAlign: 'center', marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
+            <span style={{ fontSize: '0.82rem', color: '#888' }}>Don&apos;t have an account? </span>
+            <Link href="/auth/sign-up" style={{ fontSize: '0.82rem', color: '#1a1a1a', fontWeight: 600, textDecoration: 'none' }}>
+              Sign Up
+            </Link>
+          </div>
+
+          {/* Register Company */}
+          <div style={{ marginTop: '0.75rem', borderTop: '1px solid #eee', paddingTop: '0.75rem' }}>
+            <Link href="/auth/register-company" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+              border: '1px solid #ddd', borderRadius: '4px',
+              padding: '0.45rem 1rem',
+              fontSize: '0.82rem', color: '#555', fontWeight: 500,
+              textDecoration: 'none', background: '#fafafa',
+            }}>
+              <LuBuilding2 size={14} />
+              Register your company
+            </Link>
           </div>
         </form>
       </div>
