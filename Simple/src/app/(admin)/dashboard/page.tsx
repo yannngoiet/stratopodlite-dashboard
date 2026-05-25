@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
-import { LuTruck } from 'react-icons/lu';
 import dashboardStatsService, { type DashboardStats } from '@/services/dashboardStatsService';
 import DeliveryNotesCard from './components/DeliveryNotesCard';
 import CustomersCard from './components/CustomersCard';
@@ -10,7 +9,7 @@ import StatusBreakdownCard from './components/StatusBreakdownCard';
 import VehiclesCard from './components/VehiclesCard';
 import DeliveryStatistics from './components/DeliveryStatistics';
 import RecentDeliveryNotes from './components/RecentDeliveryNotes';
-import XeroSyncDialog from './components/XeroSyncDialog';
+import XeroSyncDialog, { type XeroCompanyResult } from './components/XeroSyncDialog';
 
 const empty: DashboardStats = {
   totalDeliveryNotes: 0,
@@ -24,32 +23,59 @@ const empty: DashboardStats = {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>(empty);
   const [error, setError] = useState<string | null>(null);
-  const [xeroDialog, setXeroDialog] = useState<{ companyId: number; companyName: string } | null>(null);
+  const [xeroCompanies, setXeroCompanies] = useState<XeroCompanyResult[] | null>(null);
+  const [companyName, setCompanyName] = useState('STRATOPOD');
+  const [companyType, setCompanyType] = useState('');
 
-  // Runs in the Xero callback tab — signals parent then closes itself
+  // Runs in the Xero callback tab — reads companies from URL payload then signals parent
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const xero = params.get('xero');
-    if (xero === 'connected') {
-      const companyId = parseInt(params.get('companyId') ?? '0', 10);
-      const companyName = params.get('companyName') ?? '';
-      localStorage.setItem('xero_callback', JSON.stringify({ companyId, companyName }));
-      if (window.opener) {
-        window.close();
-      } else {
-        setXeroDialog({ companyId, companyName });
-        window.history.replaceState({}, '', '/dashboard');
-      }
+    if (params.get('xero') !== 'connected') return;
+
+    const rawPayload = params.get('payload') ?? '';
+    console.log('[Xero popup] payload length:', rawPayload.length, '| raw:', rawPayload);
+
+    let companies: XeroCompanyResult[] = [];
+    try {
+      const decoded = atob(rawPayload);
+      companies = JSON.parse(decoded);
+      console.log('[Xero popup] decoded companies:', companies.length, companies);
+    } catch (err) {
+      console.error('[Xero popup] decode failed:', err);
+    }
+
+    // BroadcastChannel is reliable — fires even if same value as before
+    const channel = new BroadcastChannel('xero_callback');
+    channel.postMessage({ companies });
+    channel.close();
+    console.log('[Xero popup] broadcast sent, companies:', companies.length);
+
+    if (window.opener) {
+      window.close();
+    } else {
+      setXeroCompanies(companies);
+      window.history.replaceState({}, '', '/dashboard');
     }
   }, []);
 
   // Runs in the parent tab — listens for the callback tab's signal
   useEffect(() => {
+    const channel = new BroadcastChannel('xero_callback');
+    channel.onmessage = (e: MessageEvent<{ companies: XeroCompanyResult[] }>) => {
+      console.log('[Xero] parent received companies:', e.data.companies.length, e.data.companies);
+      setXeroCompanies(e.data.companies);
+    };
+    return () => channel.close();
+  }, []);
+
+  // Legacy localStorage fallback (kept for safety)
+  useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'xero_callback' && e.newValue) {
         try {
-          const { companyId, companyName } = JSON.parse(e.newValue);
-          setXeroDialog({ companyId, companyName });
+          const { companies } = JSON.parse(e.newValue);
+          console.log('[Xero] localStorage fallback received companies:', companies.length);
+          setXeroCompanies(companies);
         } catch {
           // ignore malformed payload
         }
@@ -67,23 +93,32 @@ export default function DashboardPage() {
       .catch(() => setError('Dashboard API is not running — showing empty data.'));
   }, []);
 
+  useEffect(() => {
+    const user = localStorage.getItem('user')
+    if (user) {
+      const parsed = JSON.parse(user)
+      if (parsed.companyName) setCompanyName(parsed.companyName)
+      if (parsed.companyType) setCompanyType(parsed.companyType)
+    }
+  }, []);
+
   return (
     <Container fluid>
-      {xeroDialog && (
+      {xeroCompanies && (
         <XeroSyncDialog
-          companyId={xeroDialog.companyId}
-          fallbackName={xeroDialog.companyName}
-          onClose={() => setXeroDialog(null)}
+          companies={xeroCompanies}
+          onClose={() => setXeroCompanies(null)}
         />
       )}
       <Row className="justify-content-center py-4">
         <Col xxl={5} xl={7} className="text-center">
           <span className="badge badge-default fw-normal shadow px-2 py-1 mb-2 fst-italic fs-xxs">
-            <LuTruck className="me-1" /> Delivery Management
+            {companyType && <span className="fw-semibold">{companyType} </span>}
+            {/* <LuTruck className="me-1" /> Delivery Management */}
           </span>
-          <h3 className="fw-bold">STRATOPOD Delivery Dashboard</h3>
+          <h3 className="fw-bold">{companyName} - Delivery Dashboard</h3>
           <p className="fs-md text-muted mb-2">
-            Monitor your deliveries, customers, drivers and fleet in real time.
+            Monitor your deliveries, customers, drivers and status.
           </p>
         </Col>
       </Row>
