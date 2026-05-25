@@ -1,63 +1,54 @@
 'use client';
 
-import { Card, CardBody, CardFooter } from 'react-bootstrap';
+import { Card, CardBody } from 'react-bootstrap';
 import { LuCar } from 'react-icons/lu';
-import { TbArrowUp } from 'react-icons/tb';
+import { TbTruck, TbTruckOff } from 'react-icons/tb';
 import CountUpClient from '@/components/client-wrapper/CountUpClient';
-import ChartJSClient from '@/components/client-wrapper/ChartJSClient';
-import { Filler, LineController, LineElement, PointElement } from 'chart.js';
-import { getColor } from '@/helpers/chart';
-
-const vehicleLineChart = () => ({
-  data: {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [{
-      data: [2, 4, 3, 5, 4, 6, 5],
-      backgroundColor: getColor('chart-primary-rgb', 0.1),
-      borderColor: getColor('chart-primary'),
-      tension: 0.4,
-      fill: true,
-      pointRadius: 0,
-      borderWidth: 2,
-    }],
-  },
-  options: {
-    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-    scales: {
-      x: { display: false, grid: { display: false } },
-      y: { display: false, grid: { display: false } },
-    },
-  },
-});
 
 const VehiclesCard = ({ total }: { total: number }) => (
   <Card className="card-h-100">
-    <CardBody>
-      <div className="d-flex justify-content-between align-items-start mb-3">
-        <h5 className="text-uppercase">Vehicles</h5>
+    <CardBody className="d-flex flex-column">
+      <div className="d-flex justify-content-between align-items-start mb-2">
+        <h5 className="text-uppercase mb-0">Vehicles</h5>
         <LuCar className="text-muted fs-24 svg-sw-10" />
       </div>
-      <div className="mb-3">
-        <ChartJSClient type="line" getOptions={vehicleLineChart} plugins={[LineController, LineElement, PointElement, Filler]} height="16px" />
+
+      <div className="d-flex flex-column align-items-center justify-content-center flex-grow-1 py-2">
+        {/* Icon */}
+        <div style={{
+          width: 56, height: 56, borderRadius: '50%',
+          background: total > 0 ? 'rgba(13,110,253,0.1)' : 'rgba(108,117,125,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 10,
+        }}>
+          {total > 0
+            ? <TbTruck size={28} color="#0d6efd" />
+            : <TbTruckOff size={28} color="#6c757d" />}
+        </div>
+
+        {/* Big number */}
+        <div style={{ fontSize: 36, fontWeight: 700, lineHeight: 1, color: total > 0 ? '#0d6efd' : '#6c757d' }}>
+          {total > 0
+            ? <CountUpClient end={total} duration={2} enableScrollSpy scrollSpyOnce />
+            : '0'}
+        </div>
+        <div className="text-muted mt-1" style={{ fontSize: 12 }}>
+          {total === 1 ? 'vehicle registered' : 'vehicles registered'}
+        </div>
       </div>
-      <div className="d-flex justify-content-between">
+
+      {/* Bottom stats row */}
+      <div className="d-flex justify-content-between pt-2" style={{ borderTop: '1px solid #f0f0f0' }}>
         <div>
-          <span className="text-muted">Fleet Size</span>
-          <div className="fw-semibold">
-            <CountUpClient end={total} duration={2} enableScrollSpy scrollSpyOnce /> vehicles
-          </div>
+          <div className="text-muted" style={{ fontSize: 11 }}>Fleet Size</div>
+          <div className="fw-semibold" style={{ fontSize: 13 }}>{total}</div>
         </div>
         <div className="text-end">
-          <span className="text-muted">Active</span>
-          <div className="fw-semibold">
-            {total} <TbArrowUp />
-          </div>
+          <div className="text-muted" style={{ fontSize: 11 }}>Active</div>
+          <div className="fw-semibold text-success" style={{ fontSize: 13 }}>{total}</div>
         </div>
       </div>
     </CardBody>
-    <CardFooter className="text-muted text-center">
-      Total fleet: <strong>{total}</strong> vehicles registered
-    </CardFooter>
   </Card>
 );
 

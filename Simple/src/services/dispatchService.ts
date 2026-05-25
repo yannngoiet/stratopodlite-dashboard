@@ -81,11 +81,20 @@ export async function unassignDelivery(deliveryNo: string): Promise<UnassignResp
   return res.data
 }
 
-export async function submitDispatch(): Promise<{ shipmentsDispatched: number; deliveriesDispatched: number }> {
+export interface SubmitDispatchItem {
+  deliveryNo: string
+  driverId: number
+  vehicleId: number | null
+  shipmentNo: string | null
+}
+
+export async function submitDispatch(
+  items: SubmitDispatchItem[]
+): Promise<{ shipmentsDispatched: number; deliveriesDispatched: number }> {
   const companyId = getCompanyId()
   const res = await httpClient.post(
     `/api/companies/${companyId}/dispatch/submit`,
-    { shipmentNos: null }
+    { items }
   )
   return res.data
 }

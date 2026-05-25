@@ -1,6 +1,8 @@
 export interface UserDto {
   id: number
   companyId: number
+  companyName: string
+  companyType: string
   username: string
   email: string
   firstName: string

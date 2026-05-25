@@ -5,7 +5,7 @@ import { Badge, Button, Col, Collapse, Form, InputGroup, Modal, Row } from 'reac
 import { LuChevronDown, LuChevronRight, LuFilter, LuPrinter, LuRefreshCw, LuSearch, LuSettings, LuTrash2, LuUsers } from 'react-icons/lu'
 import { TbPackage, TbTruck } from 'react-icons/tb'
 import { AssignedDelivery, Driver, LocationGroup, Shipment, UnassignedDelivery } from '@/types/dispatch'
-import { assignDelivery, bulkAssignDeliveries, fetchDriversWithAssignments, fetchUnassignedDeliveries, groupDeliveriesByFactory, submitDispatch, unassignDelivery } from '@/services/dispatchService'
+import { assignDelivery, bulkAssignDeliveries, fetchDriversWithAssignments, fetchUnassignedDeliveries, groupDeliveriesByFactory, submitDispatch, unassignDelivery, type SubmitDispatchItem } from '@/services/dispatchService'
 import vehicleService, { type Vehicle } from '@/services/vehicleService'
 import { getCompanyId } from '@/helpers/config'
 
@@ -160,7 +160,7 @@ const DispatchHub = () => {
 
   const showToast = (message: string, type = 'success') => {
     setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
+    setTimeout(() => setToast(null), 5000)
   }
 
   const toggleLocation = (loc: string) => setCollapsedLocations((prev) => ({ ...prev, [loc]: !prev[loc] }))
@@ -284,9 +284,26 @@ const DispatchHub = () => {
   const refreshAll = () => { loadDeliveries(); loadDrivers() }
 
   const handleSubmitDispatch = async () => {
+    // Build list of items from current driver state
+    const items: SubmitDispatchItem[] = drivers.flatMap(driver =>
+      driver.shipments.flatMap(shipment =>
+        shipment.deliveries.map(delivery => ({
+          deliveryNo: delivery.deliveryNo,
+          driverId: driver.driverId,
+          vehicleId: shipment.vehicleId ?? null,
+          shipmentNo: shipment.shipmentNo,
+        }))
+      )
+    )
+
+    if (items.length === 0) {
+      showToast('No deliveries assigned to dispatch.', 'warning')
+      return
+    }
+
     setSubmitting(true)
     try {
-      const result = await submitDispatch()
+      const result = await submitDispatch(items)
       showToast(`${result.shipmentsDispatched} shipments dispatched with ${result.deliveriesDispatched} deliveries`)
       refreshAll()
     } catch (err: any) {
@@ -492,8 +509,9 @@ const DispatchHub = () => {
 
       {toast && (
         <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 9999, minWidth: 300 }}
-          className={`alert alert-${toast.type} shadow py-2 px-3 mb-0`}>
+          className={`alert alert-${toast.type} alert-dismissible shadow py-2 px-3 mb-0`}>
           {toast.message}
+          <button type="button" className="btn-close" style={{ fontSize: 11 }} onClick={() => setToast(null)} />
         </div>
       )}
 

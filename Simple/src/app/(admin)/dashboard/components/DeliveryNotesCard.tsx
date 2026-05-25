@@ -1,57 +1,54 @@
 'use client';
 
-import { Card, CardBody, CardFooter } from 'react-bootstrap';
+import { Card, CardBody } from 'react-bootstrap';
 import { LuTruck } from 'react-icons/lu';
+import { TbFileText, TbFileOff } from 'react-icons/tb';
 import CountUpClient from '@/components/client-wrapper/CountUpClient';
-import ChartJSClient from '@/components/client-wrapper/ChartJSClient';
-import { BarController, BarElement, CategoryScale, LinearScale } from 'chart.js';
-import { getColor } from '@/helpers/chart';
-
-const deliveryBarChart = () => ({
-  data: {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [{
-      data: [3, 5, 4, 7, 6, 8, 5],
-      backgroundColor: getColor('chart-primary'),
-      borderRadius: 4,
-      borderSkipped: false,
-    }],
-  },
-  options: {
-    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-    scales: {
-      x: { display: false, grid: { display: false } },
-      y: { display: false, grid: { display: false } },
-    },
-  },
-});
 
 const DeliveryNotesCard = ({ total }: { total: number }) => (
   <Card className="card-h-100">
-    <CardBody>
-      <div className="d-flex justify-content-between align-items-start mb-3">
-        <h5 className="text-uppercase">Delivery Notes</h5>
+    <CardBody className="d-flex flex-column">
+      <div className="d-flex justify-content-between align-items-start mb-2">
+        <h5 className="text-uppercase mb-0">Delivery Notes</h5>
         <LuTruck className="text-muted fs-24 svg-sw-10" />
       </div>
-      <div className="mb-3">
-        <ChartJSClient type="bar" getOptions={deliveryBarChart} plugins={[BarController, BarElement, CategoryScale, LinearScale]} height="18px" />
+
+      <div className="d-flex flex-column align-items-center justify-content-center flex-grow-1 py-2">
+        {/* Icon */}
+        <div style={{
+          width: 56, height: 56, borderRadius: '50%',
+          background: total > 0 ? 'rgba(25,135,84,0.1)' : 'rgba(108,117,125,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 10,
+        }}>
+          {total > 0
+            ? <TbFileText size={28} color="#198754" />
+            : <TbFileOff size={28} color="#6c757d" />}
+        </div>
+
+        {/* Big number */}
+        <div style={{ fontSize: 36, fontWeight: 700, lineHeight: 1, color: total > 0 ? '#198754' : '#6c757d' }}>
+          {total > 0
+            ? <CountUpClient end={total} duration={2} enableScrollSpy scrollSpyOnce />
+            : '0'}
+        </div>
+        <div className="text-muted mt-1" style={{ fontSize: 12 }}>
+          {total === 1 ? 'delivery note' : 'delivery notes'} in system
+        </div>
       </div>
-      <div className="d-flex justify-content-between">
+
+      {/* Bottom stats row */}
+      <div className="d-flex justify-content-between pt-2" style={{ borderTop: '1px solid #f0f0f0' }}>
         <div>
-          <span className="text-muted">Total</span>
-          <div className="fw-semibold">
-            <CountUpClient end={total} duration={2} enableScrollSpy scrollSpyOnce /> notes
-          </div>
+          <div className="text-muted" style={{ fontSize: 11 }}>Total</div>
+          <div className="fw-semibold" style={{ fontSize: 13 }}>{total}</div>
         </div>
         <div className="text-end">
-          <span className="text-muted">In System</span>
-          <div className="fw-semibold">{total}</div>
+          <div className="text-muted" style={{ fontSize: 11 }}>In System</div>
+          <div className="fw-semibold text-success" style={{ fontSize: 13 }}>{total}</div>
         </div>
       </div>
     </CardBody>
-    <CardFooter className="text-muted text-center">
-      All delivery notes in the system
-    </CardFooter>
   </Card>
 );
 

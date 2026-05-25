@@ -36,9 +36,9 @@ const deliveryTrendChart = () => ({
 });
 
 const DeliveryStatistics = ({ total, totalCustomers }: { total: number; totalCustomers: number }) => (
-  <Card>
-    <CardBody>
-      <Row className="align-items-center">
+  <Card style={{ overflow: 'hidden' }}>
+    <CardBody style={{ paddingBottom: '0.75rem' }}>
+      <Row className="align-items-center" style={{ minHeight: 0 }}>
         <Col xl={3} md={6}>
           <div className="text-center">
             <p className="mb-4"><LuTruck /> Delivery Notes</p>
@@ -60,7 +60,7 @@ const DeliveryStatistics = ({ total, totalCustomers }: { total: number; totalCus
           </div>
         </Col>
         <Col xl={6}>
-          <div className="w-100" style={{ height: '240px' }}>
+          <div className="w-100" style={{ height: '200px', maxHeight: '200px', overflow: 'hidden', position: 'relative' }}>
             <ChartJSClient type="line" getOptions={deliveryTrendChart} plugins={[LineController, LineElement, PointElement, Filler]} />
           </div>
         </Col>

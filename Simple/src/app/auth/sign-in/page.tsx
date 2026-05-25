@@ -7,12 +7,12 @@ import { useAuth } from '@/hooks/useAuth';
 
 const Page = () => {
   const { login, error, loading } = useAuth();
-  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await login(usernameOrEmail, password);
+    await login(email, password);
   };
 
   return (
@@ -69,10 +69,10 @@ const Page = () => {
           {/* Username */}
           <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '1rem', overflow: 'hidden' }}>
             <input
-              type="text"
-              placeholder="Username or email"
-              value={usernameOrEmail}
-              onChange={(e) => setUsernameOrEmail(e.target.value)}
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               style={{
                 flex: 1, border: 'none', outline: 'none',

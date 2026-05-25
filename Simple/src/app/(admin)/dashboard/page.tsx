@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
-import { LuTruck } from 'react-icons/lu';
 import dashboardStatsService, { type DashboardStats } from '@/services/dashboardStatsService';
 import DeliveryNotesCard from './components/DeliveryNotesCard';
 import CustomersCard from './components/CustomersCard';
@@ -25,6 +24,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>(empty);
   const [error, setError] = useState<string | null>(null);
   const [xeroCompanies, setXeroCompanies] = useState<XeroCompanyResult[] | null>(null);
+  const [companyName, setCompanyName] = useState('STRATOPOD');
+  const [companyType, setCompanyType] = useState('');
 
   // Runs in the Xero callback tab — reads companies from URL payload then signals parent
   useEffect(() => {
@@ -92,6 +93,15 @@ export default function DashboardPage() {
       .catch(() => setError('Dashboard API is not running — showing empty data.'));
   }, []);
 
+  useEffect(() => {
+    const user = localStorage.getItem('user')
+    if (user) {
+      const parsed = JSON.parse(user)
+      if (parsed.companyName) setCompanyName(parsed.companyName)
+      if (parsed.companyType) setCompanyType(parsed.companyType)
+    }
+  }, []);
+
   return (
     <Container fluid>
       {xeroCompanies && (
@@ -103,11 +113,12 @@ export default function DashboardPage() {
       <Row className="justify-content-center py-4">
         <Col xxl={5} xl={7} className="text-center">
           <span className="badge badge-default fw-normal shadow px-2 py-1 mb-2 fst-italic fs-xxs">
-            <LuTruck className="me-1" /> Delivery Management
+            {companyType && <span className="fw-semibold">{companyType} </span>}
+            {/* <LuTruck className="me-1" /> Delivery Management */}
           </span>
-          <h3 className="fw-bold">STRATOPOD Delivery Dashboard</h3>
+          <h3 className="fw-bold">{companyName} - Delivery Dashboard</h3>
           <p className="fs-md text-muted mb-2">
-            Monitor your deliveries, customers, drivers and fleet in real time.
+            Monitor your deliveries, customers, drivers and status.
           </p>
         </Col>
       </Row>
