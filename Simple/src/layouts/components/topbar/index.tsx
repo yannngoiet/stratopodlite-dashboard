@@ -4,7 +4,7 @@ import { useLayoutContext } from '@/context/useLayoutContext';
 import UserProfile from '@/layouts/components/topbar/components/UserProfile';
 import Link from 'next/link';
 import { Container, Spinner } from 'react-bootstrap';
-import { LuMenu, LuLink, LuUnlink } from 'react-icons/lu';
+import { LuMenu, LuLink } from 'react-icons/lu';
 import { appName } from '@/helpers';
 import { useState, useEffect } from 'react';
 import xeroService from '@/services/xeroService';
@@ -55,18 +55,6 @@ const Topbar = () => {
     }
   };
 
-  // ── Disconnect Xero ────────────────────────────────────────────
-  const handleDisconnect = async () => {
-    if (!companyId) return;
-    setConnecting(true);
-    try {
-      await xeroService.disconnect(companyId);
-      setXeroConnected(false);
-    } finally {
-      setConnecting(false);
-    }
-  };
-
   return (
     <header className="app-topbar">
       <Container fluid className="topbar-menu">
@@ -86,51 +74,26 @@ const Topbar = () => {
 
         <div className="d-flex align-items-center gap-2">
           {isSuperAdmin && (
-            xeroConnected ? (
-              // ── Already connected — show disconnect button ─────
-              <button
-                onClick={handleDisconnect}
-                disabled={connecting}
-                style={{
-                  background: '#e53e3e',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '0.45rem 1.1rem',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  color: '#fff',
-                  cursor: connecting ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                }}
-              >
-                {connecting ? <Spinner size="sm" /> : <LuUnlink size={15} />}
-                {connecting ? 'Disconnecting...' : 'Disconnect Xero'}
-              </button>
-            ) : (
-              // ── Not connected — show connect button ────────────
-              <button
-                onClick={handleConnect}
-                disabled={connecting}
-                style={{
-                  background: '#13B5EA',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '0.45rem 1.1rem',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  color: '#fff',
-                  cursor: connecting ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                }}
-              >
-                {connecting ? <Spinner size="sm" /> : <LuLink size={15} />}
-                {connecting ? 'Connecting...' : 'Connect Xero'}
-              </button>
-            )
+            <button
+              onClick={handleConnect}
+              disabled={connecting}
+              style={{
+                background: '#13B5EA',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0.45rem 1.1rem',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                color: '#fff',
+                cursor: connecting ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+              }}
+            >
+              {connecting ? <Spinner size="sm" /> : <LuLink size={15} />}
+              {connecting ? 'Connecting...' : 'Connect Xero'}
+            </button>
           )}
           <UserProfile />
         </div>
