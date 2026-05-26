@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Col, Container, Row } from 'react-bootstrap';
+import { Alert, Col, Container, Row } from 'react-bootstrap';
+import { LuCheck } from 'react-icons/lu';
 import dashboardStatsService, { type DashboardStats } from '@/services/dashboardStatsService';
 import DeliveryNotesCard from './components/DeliveryNotesCard';
 import CustomersCard from './components/CustomersCard';
@@ -9,7 +10,6 @@ import StatusBreakdownCard from './components/StatusBreakdownCard';
 import VehiclesCard from './components/VehiclesCard';
 import DeliveryStatistics from './components/DeliveryStatistics';
 import RecentDeliveryNotes from './components/RecentDeliveryNotes';
-import XeroSyncDialog, { type XeroCompanyResult } from './components/XeroSyncDialog';
 
 const empty: DashboardStats = {
   totalDeliveryNotes: 0,
@@ -23,37 +23,29 @@ const empty: DashboardStats = {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>(empty);
   const [error, setError] = useState<string | null>(null);
-  const [xeroCompanies, setXeroCompanies] = useState<XeroCompanyResult[] | null>(null);
+  const [xeroSuccess, setXeroSuccess] = useState(false);
+  const [xeroAlreadyConnected, setXeroAlreadyConnected] = useState(false);
   const [companyName, setCompanyName] = useState('STRATOPOD');
   const [companyType, setCompanyType] = useState('');
 
-  // Runs in the Xero callback tab — reads companies from URL payload then signals parent
+  // Runs in the Xero callback tab — signals parent then closes
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('xero') !== 'connected') return;
+    const xeroParam = params.get('xero');
 
-    const rawPayload = params.get('payload') ?? '';
-    console.log('[Xero popup] payload length:', rawPayload.length, '| raw:', rawPayload);
+    if (xeroParam === 'connected') {
+      const channel = new BroadcastChannel('xero_callback');
+      channel.postMessage({ connected: true });
+      channel.close();
 
-    let companies: XeroCompanyResult[] = [];
-    try {
-      const decoded = atob(rawPayload);
-      companies = JSON.parse(decoded);
-      console.log('[Xero popup] decoded companies:', companies.length, companies);
-    } catch (err) {
-      console.error('[Xero popup] decode failed:', err);
-    }
-
-    // BroadcastChannel is reliable — fires even if same value as before
-    const channel = new BroadcastChannel('xero_callback');
-    channel.postMessage({ companies });
-    channel.close();
-    console.log('[Xero popup] broadcast sent, companies:', companies.length);
-
-    if (window.opener) {
-      window.close();
-    } else {
-      setXeroCompanies(companies);
+      if (window.opener) {
+        window.close();
+      } else {
+        setXeroSuccess(true);
+        window.history.replaceState({}, '', '/dashboard');
+      }
+    } else if (xeroParam === 'already_connected') {
+      setXeroAlreadyConnected(true);
       window.history.replaceState({}, '', '/dashboard');
     }
   }, []);
@@ -61,10 +53,7 @@ export default function DashboardPage() {
   // Runs in the parent tab — listens for the callback tab's signal
   useEffect(() => {
     const channel = new BroadcastChannel('xero_callback');
-    channel.onmessage = (e: MessageEvent<{ companies: XeroCompanyResult[] }>) => {
-      console.log('[Xero] parent received companies:', e.data.companies.length, e.data.companies);
-      setXeroCompanies(e.data.companies);
-    };
+    channel.onmessage = () => setXeroSuccess(true);
     return () => channel.close();
   }, []);
 
@@ -72,13 +61,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'xero_callback' && e.newValue) {
-        try {
-          const { companies } = JSON.parse(e.newValue);
-          console.log('[Xero] localStorage fallback received companies:', companies.length);
-          setXeroCompanies(companies);
-        } catch {
-          // ignore malformed payload
-        }
+        setXeroSuccess(true);
         localStorage.removeItem('xero_callback');
       }
     };
@@ -104,11 +87,27 @@ export default function DashboardPage() {
 
   return (
     <Container fluid>
-      {xeroCompanies && (
-        <XeroSyncDialog
-          companies={xeroCompanies}
-          onClose={() => setXeroCompanies(null)}
-        />
+      {xeroSuccess && (
+        <Alert
+          variant="success"
+          dismissible
+          onClose={() => setXeroSuccess(false)}
+          className="d-flex align-items-center gap-2 mb-3"
+        >
+          <LuCheck size={18} />
+          <strong>Xero connected successfully!</strong>
+        </Alert>
+      )}
+      {xeroAlreadyConnected && (
+        <Alert
+          variant="info"
+          dismissible
+          onClose={() => setXeroAlreadyConnected(false)}
+          className="d-flex align-items-center gap-2 mb-3"
+        >
+          <LuCheck size={18} />
+          <strong>This Xero organisation is already connected.</strong>
+        </Alert>
       )}
       <Row className="justify-content-center py-4">
         <Col xxl={5} xl={7} className="text-center">

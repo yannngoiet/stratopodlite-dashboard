@@ -1,10 +1,6 @@
-import axios from 'axios'
+import httpClient from './api'
 
-const xeroApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_XERO_API_URL,
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-})
+const xeroApi = httpClient
 
 const xeroService = {
 
