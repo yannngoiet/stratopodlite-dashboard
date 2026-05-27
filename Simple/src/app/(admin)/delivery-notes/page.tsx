@@ -8,7 +8,7 @@ import {
   type ColumnDef,
 } from '@tanstack/react-table';
 import { Container, Form, Button, Row, Col, Badge } from 'react-bootstrap';
-import { LuSearch, LuRefreshCw, LuDownload } from 'react-icons/lu';
+import { LuSearch, LuRefreshCw, LuDownload, LuEye } from 'react-icons/lu';
 import deliveryNoteService, { type DeliveryNoteListItem } from '@/services/deliveryNoteService';
 
 const getStatusVariant = (status: string | null) => {
@@ -80,6 +80,28 @@ const columns: ColumnDef<DeliveryNoteListItem>[] = [
     accessorKey: 'updatedAt',
     header: 'Last Updated',
     cell: ({ row }) => formatDate(row.original.updatedAt)
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => (
+      <div className="d-flex gap-1">
+        <Button
+          size="sm"
+          variant="outline-primary"
+          title="View Details"
+          onClick={() => alert(`Preview: ${row.original.deliveryNo}`)}>
+          <LuEye size={14} />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline-success"
+          title="Download"
+          onClick={() => alert(`Download: ${row.original.deliveryNo}`)}>
+          <LuDownload size={14} />
+        </Button>
+      </div>
+    )
   }
 ]
 

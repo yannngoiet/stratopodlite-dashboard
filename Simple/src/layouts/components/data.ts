@@ -162,6 +162,11 @@ export const menuItems: MenuItemType[] = [
         key: 'config-status-codes',
         label: 'Status Codes',
         url: '/configuration/status-codes'
+      },
+      {
+        key: 'config-templates',
+        label: 'Templates',
+        url: '/configuration/templates'
       }
     ]
   }
