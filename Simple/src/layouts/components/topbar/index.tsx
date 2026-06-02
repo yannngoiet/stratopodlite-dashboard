@@ -53,7 +53,7 @@ const Topbar = () => {
     } finally {
       setConnecting(false);
     }
-  };
+  }; 
 
   return (
     <header className="app-topbar">

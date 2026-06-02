@@ -7,23 +7,26 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { Container, Form, Button, Row, Col, Badge } from 'react-bootstrap';
+import { Container, Form, Button, Row, Col, Badge, Spinner } from 'react-bootstrap';
 import { LuSearch, LuRefreshCw, LuDownload, LuEye } from 'react-icons/lu';
 import deliveryNoteService, { type DeliveryNoteListItem } from '@/services/deliveryNoteService';
+import { getCompanyId } from '@/helpers/config';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 const getStatusVariant = (status: string | null) => {
   switch (status) {
-    case 'Pending':          return 'warning'
-    case 'InProgress':       return 'primary'
-    case 'Arrived':          return 'info'
-    case 'Offloading':       return 'info'
-    case 'OffloadingComplete': return 'info'
-    case 'Departed':         return 'primary'
-    case 'Completed':        return 'success'
-    case 'BackAtDepot':      return 'success'
-    case 'EndOfDay':         return 'secondary'
-    case 'Cancelled':        return 'danger'
-    default:                 return 'secondary'
+    case 'Pending':              return 'warning'
+    case 'InProgress':           return 'primary'
+    case 'Arrived':              return 'info'
+    case 'Offloading':           return 'info'
+    case 'OffloadingComplete':   return 'info'
+    case 'Departed':             return 'primary'
+    case 'Completed':            return 'success'
+    case 'BackAtDepot':          return 'success'
+    case 'EndOfDay':             return 'secondary'
+    case 'Cancelled':            return 'danger'
+    default:                     return 'secondary'
   }
 }
 
@@ -35,89 +38,130 @@ const formatDate = (date: string | null) => {
   })
 }
 
-const columns: ColumnDef<DeliveryNoteListItem>[] = [
-  {
-    header: '#',
-    cell: ({ row }) => row.index + 1,
-    size: 50
-  },
-  { accessorKey: 'deliveryNo', header: 'Delivery Nr' },
-  {
-    accessorKey: 'shipmentNo',
-    header: 'Shipment Nr',
-    cell: ({ row }) => row.original.shipmentNo ?? '-'
-  },
-  {
-    accessorKey: 'customerName',
-    header: 'Customer Name',
-    cell: ({ row }) => row.original.customerName ?? '-'
-  },
-  {
-    accessorKey: 'invoiceNo',
-    header: 'Invoice Nr',
-    cell: ({ row }) => row.original.invoiceNo ?? '-'
-  },
-  {
-    accessorKey: 'purchaseOrderNo',
-    header: 'Order Nr',
-    cell: ({ row }) => row.original.purchaseOrderNo ?? '-'
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => (
-      <Badge bg={getStatusVariant(row.original.status)}>
-        {row.original.status ?? '-'}
-      </Badge>
-    )
-  },
-  {
-    accessorKey: 'createdAt',
-    header: 'Date Loaded',
-    cell: ({ row }) => formatDate(row.original.createdAt)
-  },
-  {
-    accessorKey: 'updatedAt',
-    header: 'Last Updated',
-    cell: ({ row }) => formatDate(row.original.updatedAt)
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    cell: ({ row }) => (
-      <div className="d-flex gap-1">
-        <Button
-          size="sm"
-          variant="outline-primary"
-          title="View Details"
-          onClick={() => alert(`Preview: ${row.original.deliveryNo}`)}>
-          <LuEye size={14} />
-        </Button>
-        <Button
-          size="sm"
-          variant="outline-success"
-          title="Download"
-          onClick={() => alert(`Download: ${row.original.deliveryNo}`)}>
-          <LuDownload size={14} />
-        </Button>
-      </div>
-    )
-  }
-]
-
 const Page = () => {
+  const companyId = getCompanyId();
+
   const [data, setData]             = useState<DeliveryNoteListItem[]>([])
   const [loading, setLoading]       = useState(false)
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage]             = useState(1)
   const [pageSize]                  = useState(10)
   const [totalPages, setTotalPages] = useState(0)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
-  const [deliveryNo, setDeliveryNo]       = useState('')
-  const [customerName, setCustomerName]   = useState('')
-  const [dateFrom, setDateFrom]           = useState('')
-  const [dateTo, setDateTo]               = useState('')
+  const [deliveryNo, setDeliveryNo]     = useState('')
+  const [customerName, setCustomerName] = useState('')
+  const [dateFrom, setDateFrom]         = useState('')
+  const [dateTo, setDateTo]             = useState('')
 
+  // ── Download PDF ───────────────────────────────────────────────────────────
+  const handleDownloadPdf = async (dn: string) => {
+    setDownloadingId(dn)
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/companies/${companyId}/deliveries/${dn}/download-pdf`
+      )
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err?.message ?? `Failed to generate PDF for ${dn}`)
+        return
+      }
+
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `DeliveryNote_${dn}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error(err)
+      alert('An error occurred while generating the PDF.')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
+  // ── Columns ────────────────────────────────────────────────────────────────
+  const columns: ColumnDef<DeliveryNoteListItem>[] = [
+    {
+      header: '#',
+      cell: ({ row }) => row.index + 1,
+      size: 50
+    },
+    { accessorKey: 'deliveryNo',      header: 'Delivery Nr' },
+    {
+      accessorKey: 'shipmentNo',
+      header: 'Shipment Nr',
+      cell: ({ row }) => row.original.shipmentNo ?? '-'
+    },
+    {
+      accessorKey: 'customerName',
+      header: 'Customer Name',
+      cell: ({ row }) => row.original.customerName ?? '-'
+    },
+    {
+      accessorKey: 'invoiceNo',
+      header: 'Invoice Nr',
+      cell: ({ row }) => row.original.invoiceNo ?? '-'
+    },
+    {
+      accessorKey: 'purchaseOrderNo',
+      header: 'Order Nr',
+      cell: ({ row }) => row.original.purchaseOrderNo ?? '-'
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => (
+        <Badge bg={getStatusVariant(row.original.status)}>
+          {row.original.status ?? '-'}
+        </Badge>
+      )
+    },
+    {
+      accessorKey: 'createdAt',
+      header: 'Date Loaded',
+      cell: ({ row }) => formatDate(row.original.createdAt)
+    },
+    {
+      accessorKey: 'updatedAt',
+      header: 'Last Updated',
+      cell: ({ row }) => formatDate(row.original.updatedAt)
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const dn = row.original.deliveryNo
+        const isDownloading = downloadingId === dn
+        return (
+          <div className="d-flex gap-1">
+            <Button
+              size="sm"
+              variant="outline-primary"
+              title="View Details"
+              onClick={() => alert(`Preview: ${dn}`)}>
+              <LuEye size={14} />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline-success"
+              title="Download PDF"
+              disabled={isDownloading}
+              onClick={() => handleDownloadPdf(dn)}>
+              {isDownloading
+                ? <Spinner size="sm" />
+                : <LuDownload size={14} />}
+            </Button>
+          </div>
+        )
+      }
+    }
+  ]
+
+  // ── Fetch data ─────────────────────────────────────────────────────────────
   const fetchData = useCallback(async (
     currentPage       = 1,
     currentDeliveryNo = '',
@@ -130,10 +174,10 @@ const Page = () => {
       const result = await deliveryNoteService.getAll({
         page:         currentPage,
         pageSize,
-        deliveryNo:   currentDeliveryNo  || undefined,
-        customerName: currentCustomer    || undefined,
-        dateFrom:     currentDateFrom    || undefined,
-        dateTo:       currentDateTo      || undefined,
+        deliveryNo:   currentDeliveryNo || undefined,
+        customerName: currentCustomer   || undefined,
+        dateFrom:     currentDateFrom   || undefined,
+        dateTo:       currentDateTo     || undefined,
       })
       setData(result.items)
       setTotalCount(result.totalCount)
