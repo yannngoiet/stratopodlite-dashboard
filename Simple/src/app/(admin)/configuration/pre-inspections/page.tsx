@@ -109,7 +109,7 @@ const Page = () => {
       const companyId = getCompanyId()
       const token = getToken()
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/companies/${1}/pre-inspections`,
+        `${process.env.NEXT_PUBLIC_API_URL}/companies/${companyId}/pre-inspections`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -185,7 +185,7 @@ const Page = () => {
     try {
       const companyId = getCompanyId()
       const token = getToken()
-      const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/companies/${1}/pre-inspections`
+      const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/companies/${companyId}/pre-inspections`
       const isEdit = !!selectedItem
       const url = isEdit ? `${baseUrl}/${selectedItem!.id}` : baseUrl
       const res = await fetch(url, {
@@ -221,7 +221,7 @@ const Page = () => {
       const companyId = getCompanyId()
       const token = getToken()
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/companies/${1}/pre-inspections/${selectedItem.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/companies/${companyId}/pre-inspections/${selectedItem.id}`,
         {
           method: 'DELETE',
           headers: {
