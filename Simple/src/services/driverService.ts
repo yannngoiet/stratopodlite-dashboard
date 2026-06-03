@@ -23,6 +23,7 @@ export interface CreateDriverRequest {
   lastName: string
   plantId: string
   username: string | null
+  password: string
   licenseNumber: string | null
   licenseExpiryDate: string | null
   isActive: boolean

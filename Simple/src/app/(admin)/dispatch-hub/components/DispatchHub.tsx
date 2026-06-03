@@ -112,8 +112,8 @@ const DispatchHub = () => {
   const [showDriverModal, setShowDriverModal] = useState(false)
   const [newDriver, setNewDriver] = useState({
     empNo: '', firstName: '', lastName: '',
-    plantId: 'P001', username: '', licenseNumber: '',
-    licenseExpiryDate: '', isActive: true
+    plantId: 'P001', username: '', password: '',
+    licenseNumber: '', licenseExpiryDate: '', isActive: true
   })
   const [creatingDriver, setCreatingDriver] = useState(false)
 
@@ -314,6 +314,7 @@ const DispatchHub = () => {
   }
 
   const handleCreateDriver = async () => {
+    if (!newDriver.empNo.trim() || !newDriver.firstName.trim() || !newDriver.lastName.trim() || !newDriver.username.trim() || !newDriver.password.trim()) return
     setCreatingDriver(true)
     try {
       const driverService = await import('@/services/driverService')
@@ -323,6 +324,7 @@ const DispatchHub = () => {
         lastName: newDriver.lastName,
         plantId: newDriver.plantId,
         username: newDriver.username || null,
+        password: newDriver.password,
         licenseNumber: newDriver.licenseNumber || null,
         licenseExpiryDate: newDriver.licenseExpiryDate || null,
         isActive: newDriver.isActive
@@ -341,8 +343,8 @@ const DispatchHub = () => {
   const resetDriverForm = () => {
     setNewDriver({
       empNo: '', firstName: '', lastName: '',
-      plantId: 'P001', username: '', licenseNumber: '',
-      licenseExpiryDate: '', isActive: true
+      plantId: 'P001', username: '', password: '',
+      licenseNumber: '', licenseExpiryDate: '', isActive: true
     })
   }
 
@@ -529,10 +531,16 @@ const DispatchHub = () => {
                 onChange={(e) => setNewDriver({ ...newDriver, empNo: e.target.value })} />
             </Col>
             <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Username</Form.Label>
+              <Form.Label style={{ fontSize: 12 }}>Username <span className="text-danger">*</span></Form.Label>
               <Form.Control size="sm" placeholder="username"
                 value={newDriver.username}
                 onChange={(e) => setNewDriver({ ...newDriver, username: e.target.value })} />
+            </Col>
+            <Col md={6}>
+              <Form.Label style={{ fontSize: 12 }}>Password <span className="text-danger">*</span></Form.Label>
+              <Form.Control size="sm" type="password" placeholder="••••••••"
+                value={newDriver.password}
+                onChange={(e) => setNewDriver({ ...newDriver, password: e.target.value })} />
             </Col>
             <Col md={6}>
               <Form.Label style={{ fontSize: 12 }}>First Name *</Form.Label>

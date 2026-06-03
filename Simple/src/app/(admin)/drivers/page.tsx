@@ -44,8 +44,8 @@ export default function DriversPage() {
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null)
   const [driverForm, setDriverForm] = useState({
     empNo: '', firstName: '', lastName: '',
-    plantId: 'P001', username: '', licenseNumber: '',
-    licenseExpiryDate: '', isActive: true,
+    plantId: 'P001', username: '', password: '',
+    licenseNumber: '', licenseExpiryDate: '', isActive: true,
   })
 
   const [showVehicleModal, setShowVehicleModal] = useState(false)
@@ -87,14 +87,15 @@ export default function DriversPage() {
   const resetDriverForm = () => {
     setDriverForm({
       empNo: '', firstName: '', lastName: '',
-      plantId: 'P001', username: '', licenseNumber: '',
-      licenseExpiryDate: '', isActive: true,
+      plantId: 'P001', username: '', password: '',
+      licenseNumber: '', licenseExpiryDate: '', isActive: true,
     })
     setEditingDriver(null)
   }
 
   const handleSaveDriver = async () => {
-    if (!driverForm.empNo.trim() || !driverForm.firstName.trim() || !driverForm.lastName.trim()) return
+    if (!driverForm.empNo.trim() || !driverForm.firstName.trim() || !driverForm.lastName.trim() || !driverForm.username.trim()) return
+    if (!editingDriver && !driverForm.password.trim()) return
     setSaving(true)
     try {
       if (editingDriver) {
@@ -115,6 +116,7 @@ export default function DriversPage() {
           lastName: driverForm.lastName,
           plantId: driverForm.plantId,
           username: driverForm.username || null,
+          password: driverForm.password,
           licenseNumber: driverForm.licenseNumber || null,
           licenseExpiryDate: driverForm.licenseExpiryDate || null,
           isActive: driverForm.isActive,
@@ -525,11 +527,19 @@ export default function DriversPage() {
                 onChange={e => setDriverForm({ ...driverForm, empNo: e.target.value })} />
             </Col>
             <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Username</Form.Label>
+              <Form.Label style={{ fontSize: 12 }}>Username <span className="text-danger">*</span></Form.Label>
               <Form.Control size="sm" placeholder="jsmith"
                 value={driverForm.username}
                 onChange={e => setDriverForm({ ...driverForm, username: e.target.value })} />
             </Col>
+            {!editingDriver && (
+              <Col md={6}>
+                <Form.Label style={{ fontSize: 12 }}>Password <span className="text-danger">*</span></Form.Label>
+                <Form.Control size="sm" type="password" placeholder="••••••••"
+                  value={driverForm.password}
+                  onChange={e => setDriverForm({ ...driverForm, password: e.target.value })} />
+              </Col>
+            )}
             <Col md={6}>
               <Form.Label style={{ fontSize: 12 }}>First Name <span className="text-danger">*</span></Form.Label>
               <Form.Control size="sm" placeholder="John"
