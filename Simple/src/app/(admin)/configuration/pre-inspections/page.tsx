@@ -109,7 +109,7 @@ const Page = () => {
       const companyId = getCompanyId()
       const token = getToken()
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/companies/${companyId}/pre-inspections`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/companies/${companyId}/pre-inspections`,
         {
           headers: {
             // Authorization: `Bearer ${token}`,
@@ -185,7 +185,7 @@ const Page = () => {
     try {
       const companyId = getCompanyId()
       const token = getToken()
-      const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/companies/${companyId}/pre-inspections`
+      const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/companies/${companyId}/pre-inspections`
       const isEdit = !!selectedItem
       const url = isEdit ? `${baseUrl}/${selectedItem!.id}` : baseUrl
       const res = await fetch(url, {
@@ -221,7 +221,7 @@ const Page = () => {
       const companyId = getCompanyId()
       const token = getToken()
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/companies/${companyId}/pre-inspections/${selectedItem.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/companies/${companyId}/pre-inspections/${selectedItem.id}`,
         {
           method: 'DELETE',
           headers: {
@@ -344,9 +344,11 @@ const Page = () => {
               <Form.Select size="sm" value={inspectionType}
                 onChange={e => setInspectionType(e.target.value)}>
                 <option value="">All Inspection Types</option>
-                <option value="PRE">Pre Trip</option>
-                <option value="POST">Post Trip</option>
-                <option value="INTERIM">Interim</option>
+                <option value="PRE_TRIP">Pre Trip</option>
+                <option value="POST_TRIP">Post Trip</option>
+                <option value="ROADSIDE">Roadside</option>
+                <option value="ANNUAL">Annual</option>
+                <option value="INCIDENT">Incident</option>
               </Form.Select>
             </Col>
             <Col xs={12} md={3} className="d-flex gap-2">
@@ -459,9 +461,11 @@ const Page = () => {
             <Form.Select size="sm" value={form.inspectionType}
               onChange={e => setForm({ ...form, inspectionType: e.target.value })}>
               <option value="">Select type...</option>
-              <option value="PRE">Pre Trip</option>
-              <option value="POST">Post Trip</option>
-              <option value="INTERIM">Interim</option>
+              <option value="PRE_TRIP">Pre Trip</option>
+              <option value="POST_TRIP">Post Trip</option>
+              <option value="ROADSIDE">Roadside</option>
+              <option value="ANNUAL">Annual</option>
+              <option value="INCIDENT">Incident</option>
             </Form.Select>
           </FormGroup>
           <FormGroup className="mb-3">
