@@ -80,18 +80,18 @@ export const menuItems: MenuItemType[] = [
     key: 'reports',
     label: 'Reports',
     icon: LuChartColumnBig,
-    children: [
-      {
-        key: 'reports-shipment',
-        label: 'Shipments',
-        url: '/reports/shipment'
-      }
-    ]
+    url: '/reports'
+  },
+  {
+    key: 'shipments',
+    label: 'Shipments',
+    icon: LuTruck,
+    url: '/reports/shipment'
   },
 
   // ── People & Assets ───────────────────────────────────────
   {
-    key: 'customers-suppliers',
+    key: 'customers',
     label: 'Customers',
     icon: LuBuilding2,
     url: '/customers'
@@ -107,7 +107,7 @@ export const menuItems: MenuItemType[] = [
     label: 'Users',
     icon: LuUsers,
     url: '/users',
-    badge: { text: 'new', variant: 'success' }
+    // badge: { text: 'new', variant: 'success' }
   },
   {
     key: 'vehicles',
