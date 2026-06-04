@@ -112,7 +112,7 @@ const Page = () => {
         `${process.env.NEXT_PUBLIC_API_URL}/companies/${companyId}/pre-inspections`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            // Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
@@ -191,7 +191,7 @@ const Page = () => {
       const res = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          // Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -225,7 +225,7 @@ const Page = () => {
         {
           method: 'DELETE',
           headers: {
-            Authorization: `Bearer ${token}`,
+            // Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
