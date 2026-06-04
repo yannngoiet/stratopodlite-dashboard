@@ -83,7 +83,7 @@ export const menuItems: MenuItemType[] = [
     children: [
       {
         key: 'reports-shipment',
-        label: 'Shipment',
+        label: 'Shipments',
         url: '/reports/shipment'
       }
     ]
@@ -94,7 +94,7 @@ export const menuItems: MenuItemType[] = [
     key: 'customers-suppliers',
     label: 'Customers',
     icon: LuBuilding2,
-    url: '/customers-suppliers'
+    url: '/customers'
   },
   {
     key: 'drivers',
