@@ -9,7 +9,6 @@ import {
   LuUsers,
   LuCar,
   LuBuilding2,
-  LuFuel,
   LuSettings,
   LuCarFront,
 } from 'react-icons/lu';
@@ -81,13 +80,19 @@ export const menuItems: MenuItemType[] = [
     key: 'reports',
     label: 'Reports',
     icon: LuChartColumnBig,
-    url: '/reports'
+    children: [
+      {
+        key: 'reports-shipment',
+        label: 'Shipment',
+        url: '/reports/shipment'
+      }
+    ]
   },
 
   // ── People & Assets ───────────────────────────────────────
   {
     key: 'customers-suppliers',
-    label: 'Customers and Suppliers',
+    label: 'Customers',
     icon: LuBuilding2,
     url: '/customers-suppliers'
   },
@@ -96,12 +101,6 @@ export const menuItems: MenuItemType[] = [
     label: 'Drivers',
     icon: LuCar,
     url: '/drivers'
-  },
-  {
-    key: 'fuel-management',
-    label: 'Fuel Management',
-    icon: LuFuel,
-    url: '/fuel-management'
   },
   {
     key: 'users',
