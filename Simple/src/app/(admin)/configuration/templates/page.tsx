@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Form, Button, Table, Badge, Spinner } from 'react-bootstrap';
-import { LuUpload, LuFileText, LuStar } from 'react-icons/lu';
+import { Container, Form, Button, Table, Badge, Spinner, Modal } from 'react-bootstrap';
+import { LuUpload, LuFileText, LuStar, LuTrash2 } from 'react-icons/lu';
 import { getCompanyId } from '@/helpers/config';
 
 const API_BASE = process.env.NEXT_PUBLIC_PDF_API_URL;
@@ -37,6 +37,9 @@ const Page = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading]     = useState(false);
   const [actionId, setActionId]   = useState<number | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingTemplate, setDeletingTemplate] = useState<Template | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // ── Load templates on mount ────────────────────────────────────────────────
   useEffect(() => {
@@ -136,6 +139,23 @@ const Page = () => {
       await fetchTemplates();
     } finally {
       setActionId(null);
+    }
+  };
+
+  // ── Delete template ────────────────────────────────────────────────────────
+  const handleDelete = async () => {
+    if (!deletingTemplate) return;
+    setDeleting(true);
+    try {
+      await fetch(
+        `${API_BASE}/api/companies/${companyId}/templates/${deletingTemplate.id}`,
+        { method: 'DELETE' }
+      );
+      setShowDeleteModal(false);
+      setDeletingTemplate(null);
+      await fetchTemplates();
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -337,6 +357,13 @@ const Page = () => {
                                 : <LuStar size={14} />}
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="outline-danger"
+                            title="Delete Template"
+                            onClick={() => { setDeletingTemplate(t); setShowDeleteModal(true); }}>
+                            <LuTrash2 size={14} />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -347,6 +374,25 @@ const Page = () => {
           )}
         </div>
       </div>
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
+        <Modal.Header closeButton style={{ background: '#dc3545', color: '#fff' }}>
+          <Modal.Title style={{ fontSize: 15 }}>Delete Template</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-1">Are you sure you want to delete:</p>
+          <strong>{deletingTemplate?.name}</strong>
+          <p className="text-muted small mt-2 mb-0">This action cannot be undone.</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button size="sm" variant="outline-secondary"
+            onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+          <Button size="sm" variant="danger" disabled={deleting} onClick={handleDelete}>
+            {deleting ? 'Deleting...' : 'Yes, Delete'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
     </Container>
   );
 };
