@@ -307,6 +307,7 @@ export default function DriversPage() {
                 lastName: row.original.lastName,
                 plantId: row.original.plantId || 'P001',
                 username: row.original.username || '',
+                password: '',
                 licenseNumber: row.original.licenseNumber || '',
                 licenseExpiryDate: row.original.licenseExpiryDate || '',
                 isActive: row.original.isActive,
