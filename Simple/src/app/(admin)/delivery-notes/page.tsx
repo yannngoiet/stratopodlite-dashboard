@@ -136,6 +136,9 @@ const Page = () => {
       cell: ({ row }) => {
         const dn = row.original.deliveryNo
         const isDownloading = downloadingId === dn
+
+        if (row.original.status !== 'Completed') return null
+
         return (
           <div className="d-flex gap-1">
             <Button
