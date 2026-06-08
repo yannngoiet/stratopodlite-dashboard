@@ -4,20 +4,7 @@ import { useState, useEffect } from 'react';
 import { Container, Form, Button, Table, Badge, Spinner, Modal } from 'react-bootstrap';
 import { LuUpload, LuFileText, LuStar, LuTrash2 } from 'react-icons/lu';
 import { getCompanyId } from '@/helpers/config';
-
-const API_BASE = process.env.NEXT_PUBLIC_PDF_API_URL;
-
-interface Template {
-  id: number;
-  name: string;
-  description: string;
-  fileName: string;
-  category: string;
-  isDefault: boolean;
-  isActive: boolean;
-  createdAt: string;
-  companyId: number;
-}
+import templateService, { type Template } from '@/services/templateService';
 
 const CATEGORIES = ['DELIVERY', 'INVOICE'];
 
@@ -49,13 +36,11 @@ const Page = () => {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `${API_BASE}/api/companies/${companyId}/templates?includeInactive=true`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setTemplates(data);
-      }
+      const data = await templateService.getAll(companyId);
+      setTemplates(data);
+    } catch (err) {
+      console.error('Failed to load templates — PDF service may not be running:', err);
+      setTemplates([]);
     } finally {
       setLoading(false);
     }
@@ -96,24 +81,13 @@ const Page = () => {
 
     setUploading(true);
     try {
-      const form = new FormData();
-      form.append('templateFile', selectedFile!);
-      form.append('name', templateName.trim());
-      form.append('description', description.trim());
-      form.append('category', category);
+      await templateService.upload(companyId, {
+        templateFile: selectedFile!,
+        name: templateName.trim(),
+        description: description.trim(),
+        category,
+      });
 
-      const res = await fetch(
-        `${API_BASE}/api/companies/${companyId}/templates`,
-        { method: 'POST', body: form }
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-        setUploadError(err?.error ?? 'Upload failed. Please try again.');
-        return;
-      }
-
-      // ── Reset form ─────────────────────────────────────────────────────
       setSelectedFile(null);
       setTemplateName('');
       setDescription('');
@@ -123,6 +97,8 @@ const Page = () => {
       if (input) input.value = '';
 
       await fetchTemplates();
+    } catch (err: any) {
+      setUploadError(err?.response?.data?.error ?? 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -132,11 +108,10 @@ const Page = () => {
   const handleSetDefault = async (id: number) => {
     setActionId(id);
     try {
-      await fetch(
-        `${API_BASE}/api/companies/${companyId}/templates/${id}/set-default`,
-        { method: 'POST' }
-      );
+      await templateService.setDefault(companyId, id);
       await fetchTemplates();
+    } catch (err) {
+      console.error('Failed to set default template:', err);
     } finally {
       setActionId(null);
     }
@@ -147,10 +122,7 @@ const Page = () => {
     if (!deletingTemplate) return;
     setDeleting(true);
     try {
-      await fetch(
-        `${API_BASE}/api/companies/${companyId}/templates/${deletingTemplate.id}`,
-        { method: 'DELETE' }
-      );
+      await templateService.delete(companyId, deletingTemplate.id);
       setShowDeleteModal(false);
       setDeletingTemplate(null);
       await fetchTemplates();

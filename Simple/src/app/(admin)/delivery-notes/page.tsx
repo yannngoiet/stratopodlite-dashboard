@@ -10,9 +10,7 @@ import {
 import { Container, Form, Button, Row, Col, Badge, Spinner } from 'react-bootstrap';
 import { LuSearch, LuRefreshCw, LuDownload, LuEye } from 'react-icons/lu';
 import deliveryNoteService, { type DeliveryNoteListItem } from '@/services/deliveryNoteService';
-import { getCompanyId } from '@/helpers/config';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 const getStatusVariant = (status: string | null) => {
   switch (status) {
@@ -39,7 +37,6 @@ const formatDate = (date: string | null) => {
 }
 
 const Page = () => {
-  const companyId = getCompanyId();
 
   const [data, setData]             = useState<DeliveryNoteListItem[]>([])
   const [loading, setLoading]       = useState(false)
@@ -58,17 +55,7 @@ const Page = () => {
   const handleDownloadPdf = async (dn: string) => {
     setDownloadingId(dn)
     try {
-      const res = await fetch(
-        `${API_BASE}/api/companies/${companyId}/deliveries/${dn}/download-pdf`
-      )
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        alert(err?.message ?? `Failed to generate PDF for ${dn}`)
-        return
-      }
-
-      const blob = await res.blob()
+      const blob = await deliveryNoteService.downloadPdf(dn)
       const url  = URL.createObjectURL(blob)
       const a    = document.createElement('a')
       a.href     = url

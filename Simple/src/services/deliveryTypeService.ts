@@ -17,21 +17,21 @@ export interface UpdateDeliveryTypeRequest {
 const deliveryTypeService = {
   getAll: async (companyId: number): Promise<DeliveryType[]> => {
     const res = await httpClient.get<DeliveryType[]>(
-      `/companies/${companyId}/delivery-types`
+      `/api/companies/${companyId}/delivery-types`
     )
     return res.data
   },
 
   getById: async (companyId: number, id: number): Promise<DeliveryType> => {
     const res = await httpClient.get<DeliveryType>(
-      `/companies/${companyId}/delivery-types/${id}`
+      `/api/companies/${companyId}/delivery-types/${id}`
     )
     return res.data
   },
 
   create: async (companyId: number, data: CreateDeliveryTypeRequest): Promise<DeliveryType> => {
     const res = await httpClient.post<DeliveryType>(
-      `/companies/${companyId}/delivery-types`,
+      `/api/companies/${companyId}/delivery-types`,
       data
     )
     return res.data
@@ -39,14 +39,14 @@ const deliveryTypeService = {
 
   update: async (companyId: number, id: number, data: UpdateDeliveryTypeRequest): Promise<void> => {
     await httpClient.put(
-      `/companies/${companyId}/delivery-types/${id}`,
+      `/api/companies/${companyId}/delivery-types/${id}`,
       data
     )
   },
 
   delete: async (companyId: number, id: number): Promise<void> => {
     await httpClient.delete(
-      `/companies/${companyId}/delivery-types/${id}`
+      `/api/companies/${companyId}/delivery-types/${id}`
     )
   }
 }

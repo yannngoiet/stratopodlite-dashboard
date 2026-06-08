@@ -4,11 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table';
 import { Container, Form, Button, Row, Col, Modal, FormGroup, FormLabel, FormControl } from 'react-bootstrap';
 import { LuSearch, LuRefreshCw, LuPlus, LuPencil, LuTrash2, LuTag } from 'react-icons/lu';
-
-interface StatusCode {
-  id: number
-  description: string
-}
+import statusCodeService, { type StatusCode } from '@/services/statusCodeService';
+import { getCompanyId } from '@/helpers/config';
 
 interface StatusCodeForm {
   id: number
@@ -17,24 +14,13 @@ interface StatusCodeForm {
 
 const defaultForm: StatusCodeForm = { id: 0, description: '' }
 
-const getToken = (): string => {
-  if (typeof window === 'undefined') return ''
-  return localStorage.getItem('accessToken') ?? ''
-}
-
-const getCompanyId = (): number => {
-  if (typeof window === 'undefined') return 0
-  const user = localStorage.getItem('user')
-  return user ? JSON.parse(user).companyId ?? 0 : 0
-}
-
 const Page = () => {
   const [data, setData] = useState<StatusCode[]>([])
   const [allData, setAllData] = useState<StatusCode[]>([])
   const [loading, setLoading] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
-  const pageSize = 10
+  const pageSize = 15
   const [totalPages, setTotalPages] = useState(0)
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -57,22 +43,10 @@ const Page = () => {
   }
 
   const fetchData = useCallback(async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    if (!apiUrl) { console.error('NEXT_PUBLIC_API_URL is not set'); return }
     const companyId = getCompanyId()
     setLoading(true)
     try {
-      const res = await fetch(
-        `${apiUrl}/companies/${companyId}/status-codes`,
-        {
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`)
-      const result: StatusCode[] = await res.json()
+      const result = await statusCodeService.getAll(companyId)
       setAllData(result)
       applyFiltersAndPaginate(result, '', 1)
     } catch (err) {
@@ -115,25 +89,12 @@ const Page = () => {
     setSaving(true)
     setError(null)
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
       const companyId = getCompanyId()
-      const isEdit = !!selectedItem
-      const url = isEdit
-        ? `${apiUrl}/companies/${companyId}/status-codes/${selectedItem!.id}`
-        : `${apiUrl}/companies/${companyId}/status-codes`
-      const res = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(
-          isEdit
-            ? { description: form.description }
-            : { id: form.id, description: form.description }
-        )
-      })
-      if (!res.ok) throw new Error(await res.text() || 'Failed to save')
+      if (selectedItem) {
+        await statusCodeService.update(companyId, selectedItem.id, { description: form.description })
+      } else {
+        await statusCodeService.create(companyId, { id: form.id, description: form.description })
+      }
       setShowModal(false)
       await fetchData()
     } catch (err: any) {
@@ -147,19 +108,8 @@ const Page = () => {
     if (!selectedItem) return
     setSaving(true)
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
       const companyId = getCompanyId()
-      const res = await fetch(
-        `${apiUrl}/companies/${companyId}/status-codes/${selectedItem.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-      if (!res.ok) throw new Error('Failed to delete')
+      await statusCodeService.delete(companyId, selectedItem.id)
       setShowDeleteModal(false)
       await fetchData()
     } catch (err) {
@@ -235,7 +185,7 @@ const Page = () => {
                 {table.getHeaderGroups().map(hg => (
                   <tr key={hg.id}>
                     {hg.headers.map(h => (
-                      <th key={h.id} className="py-2 px-3 text-uppercase">
+                      <th key={h.id} className="py-2 px-3 text-uppercase" style={{ color: '#fff', backgroundColor: '#2c3e50' }}>
                         {flexRender(h.column.columnDef.header, h.getContext())}
                       </th>
                     ))}
