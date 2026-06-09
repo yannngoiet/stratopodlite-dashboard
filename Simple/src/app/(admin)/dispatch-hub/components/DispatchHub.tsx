@@ -5,7 +5,7 @@ import { Badge, Button, Col, Collapse, Form, InputGroup, Modal, Row } from 'reac
 import { LuChevronDown, LuChevronRight, LuFilter, LuPrinter, LuRefreshCw, LuSearch, LuSettings, LuTrash2, LuUsers } from 'react-icons/lu'
 import { TbPackage, TbTruck } from 'react-icons/tb'
 import { AssignedDelivery, Driver, LocationGroup, Shipment, UnassignedDelivery } from '@/types/dispatch'
-import { assignDelivery, bulkAssignDeliveries, fetchDriversWithAssignments, fetchUnassignedDeliveries, groupDeliveriesByFactory, submitDispatch, unassignDelivery, type SubmitDispatchItem } from '@/services/dispatchService'
+import dispatchService, { type SubmitDispatchItem } from '@/services/dispatchService'
 import vehicleService, { type Vehicle } from '@/services/vehicleService'
 import { getCompanyId } from '@/helpers/config'
 
@@ -121,8 +121,8 @@ const DispatchHub = () => {
     setDeliveriesLoading(true)
     setDeliveriesError(null)
     try {
-      const data = await fetchUnassignedDeliveries({ search: deliverySearch })
-      setDeliveryGroups(groupDeliveriesByFactory(data.items))
+      const data = await dispatchService.fetchUnassignedDeliveries({ search: deliverySearch })
+      setDeliveryGroups(dispatchService.groupDeliveriesByFactory(data.items))
     } catch (err: any) {
       setDeliveriesError(err.message)
     } finally {
@@ -134,7 +134,7 @@ const DispatchHub = () => {
     setDriversLoading(true)
     setDriversError(null)
     try {
-      const data = await fetchDriversWithAssignments()
+      const data = await dispatchService.fetchDriversWithAssignments()
       setDrivers(data)
     } catch (err: any) {
       setDriversError(err.message)
@@ -303,7 +303,7 @@ const DispatchHub = () => {
 
     setSubmitting(true)
     try {
-      const result = await submitDispatch(items)
+      const result = await dispatchService.submitDispatch(items)
       showToast(`${result.shipmentsDispatched} shipments dispatched with ${result.deliveriesDispatched} deliveries`)
       refreshAll()
     } catch (err: any) {
@@ -367,9 +367,9 @@ const DispatchHub = () => {
     setDraggedDelivery(null); setDragSource(null)
     try {
       if (deliveryNos.length === 1) {
-        await assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId: vehicleId ?? null })
+        await dispatchService.assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId: vehicleId ?? null })
       } else {
-        await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId: vehicleId ?? null })
+        await dispatchService.bulkAssignDeliveries({ deliveryNos, driverId, vehicleId: vehicleId ?? null })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0]?.deliveryNo || 'delivery'
       showToast(`${label} added to shipment ${shipmentNo}`)
@@ -405,9 +405,9 @@ const DispatchHub = () => {
     try {
       let result: any
       if (deliveryNos.length === 1) {
-        result = await assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId })
+        result = await dispatchService.assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId })
       } else {
-        result = await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId })
+        result = await dispatchService.bulkAssignDeliveries({ deliveryNos, driverId, vehicleId })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0]?.deliveryNo || 'delivery'
       showToast(`Shipment ${result.shipmentNo} created — ${label}`)
@@ -471,9 +471,9 @@ const DispatchHub = () => {
     try {
       let result: any
       if (deliveryNos.length === 1) {
-        result = await assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId })
+        result = await dispatchService.assignDelivery({ deliveryNo: deliveryNos[0], driverId, vehicleId })
       } else {
-        result = await bulkAssignDeliveries({ deliveryNos, driverId, vehicleId })
+        result = await dispatchService.bulkAssignDeliveries({ deliveryNos, driverId, vehicleId })
       }
       const label = incoming.length > 1 ? `${incoming.length} deliveries` : incoming[0]?.deliveryNo || 'delivery'
       showToast(`Shipment ${result.shipmentNo} created — ${label}`)
@@ -493,7 +493,7 @@ const DispatchHub = () => {
     setSelectedDeliveries(new Set()); setSelectedAssigned(new Set())
     setDraggedDelivery(null); setDragSource(null)
     try {
-      await Promise.all(deliveryNos.map((no) => unassignDelivery(no)))
+      await Promise.all(deliveryNos.map((no) => dispatchService.unassignDelivery(no)))
       const label = deliveryNos.length > 1 ? `${deliveryNos.length} deliveries` : `Delivery ${deliveryNos[0]}`
       showToast(`${label} returned to unassigned`, 'warning')
       refreshAll()

@@ -53,6 +53,15 @@ const deliveryNoteService = {
       `/api/companies/${companyId}/deliveries/${deliveryNo}`
     )
     return res.data
+  },
+
+  downloadPdf: async (deliveryNo: string): Promise<Blob> => {
+    const companyId = getCompanyId()
+    const res = await httpClient.get(
+      `/api/companies/${companyId}/deliveries/${deliveryNo}/download-pdf`,
+      { responseType: 'blob' }
+    )
+    return res.data
   }
 }
 

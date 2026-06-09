@@ -12,19 +12,8 @@ import {
   Modal, FormGroup, FormLabel, FormControl, FormCheck
 } from 'react-bootstrap';
 import { LuSearch, LuRefreshCw, LuPlus, LuPencil, LuTrash2, LuShieldCheck } from 'react-icons/lu';
-
-interface PreInspection {
-  id: number
-  description: string
-  category: string | null
-  inspectionType: string
-  isMandatory: boolean
-  isSupervisor: boolean
-  sortOrder: number
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
+import preInspectionService, { type PreInspection } from '@/services/preInspectionService';
+import { getCompanyId } from '@/helpers/config';
 
 interface PreInspectionForm {
   description: string
@@ -44,17 +33,6 @@ const defaultForm: PreInspectionForm = {
   isSupervisor: false,
   sortOrder: 0,
   isActive: true
-}
-
-const getCompanyId = (): number => {
-  if (typeof window === 'undefined') return 0
-  const user = localStorage.getItem('user')
-  return user ? JSON.parse(user).companyId ?? 0 : 0
-}
-
-const getToken = (): string => {
-  if (typeof window === 'undefined') return ''
-  return localStorage.getItem('accessToken') ?? ''
 }
 
 const formatDate = (date: string) =>
@@ -107,18 +85,7 @@ const Page = () => {
     setLoading(true)
     try {
       const companyId = getCompanyId()
-      const token = getToken()
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/companies/${companyId}/pre-inspections`,
-        {
-          headers: {
-            // Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-      if (!res.ok) throw new Error('Failed to fetch')
-      const result: PreInspection[] = await res.json()
+      const result = await preInspectionService.getAll(companyId)
       setAllData(result)
       applyFiltersAndPaginate(result, '', '', '', 1)
     } catch (err) {
@@ -184,27 +151,20 @@ const Page = () => {
     setError(null)
     try {
       const companyId = getCompanyId()
-      const token = getToken()
-      const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/companies/${companyId}/pre-inspections`
-      const isEdit = !!selectedItem
-      const url = isEdit ? `${baseUrl}/${selectedItem!.id}` : baseUrl
-      const res = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: {
-          // Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          description: form.description,
-          category: form.category || null,
-          inspectionType: form.inspectionType,
-          isMandatory: form.isMandatory,
-          isSupervisor: form.isSupervisor,
-          sortOrder: form.sortOrder,
-          isActive: form.isActive
-        })
-      })
-      if (!res.ok) throw new Error(await res.text() || 'Failed to save')
+      const payload = {
+        description: form.description,
+        category: form.category || null,
+        inspectionType: form.inspectionType,
+        isMandatory: form.isMandatory,
+        isSupervisor: form.isSupervisor,
+        sortOrder: form.sortOrder,
+        isActive: form.isActive
+      }
+      if (selectedItem) {
+        await preInspectionService.update(companyId, selectedItem.id, payload)
+      } else {
+        await preInspectionService.create(companyId, payload)
+      }
       setShowModal(false)
       await fetchData()
     } catch (err: any) {
@@ -219,18 +179,7 @@ const Page = () => {
     setSaving(true)
     try {
       const companyId = getCompanyId()
-      const token = getToken()
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/companies/${companyId}/pre-inspections/${selectedItem.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            // Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-      if (!res.ok) throw new Error('Failed to delete')
+      await preInspectionService.delete(companyId, selectedItem.id)
       setShowDeleteModal(false)
       await fetchData()
     } catch (err) {
@@ -368,7 +317,7 @@ const Page = () => {
                 {table.getHeaderGroups().map(hg => (
                   <tr key={hg.id}>
                     {hg.headers.map(h => (
-                      <th key={h.id} className="py-2 px-3 text-uppercase">
+                      <th key={h.id} className="py-2 px-3 text-uppercase" style={{ color: '#fff', backgroundColor: '#2c3e50' }}>
                         {flexRender(h.column.columnDef.header, h.getContext())}
                       </th>
                     ))}

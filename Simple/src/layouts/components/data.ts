@@ -144,7 +144,7 @@ export const menuItems: MenuItemType[] = [
       },
       {
         key: 'config-plants',
-        label: 'Plants / Quarries',
+        label: 'Plants',
         url: '/configuration/plants'
       },
       {
