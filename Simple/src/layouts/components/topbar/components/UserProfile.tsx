@@ -1,80 +1,109 @@
 'use client';
 
-import { userDropdownItems } from '@/layouts/components/data';
+import { useLayoutContext } from '@/context/useLayoutContext';
+import UserProfile from '@/layouts/components/topbar/components/UserProfile';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Fragment, useEffect, useState } from 'react';
-import { Dropdown, DropdownDivider, DropdownItem, DropdownMenu, DropdownToggle } from 'react-bootstrap';
+import { Menu, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import xeroService from '@/services/xeroService';
 
-const getInitials = (fullName: string) =>
-  fullName.trim().split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-
-const UserProfile = () => {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-    router.push('/auth/sign-in');
-  };
+const Topbar = () => {
+  const { changeSideNavSize, showBackdrop } = useLayoutContext();
+  const [connecting,    setConnecting]    = useState(false);
+  const [isSuperAdmin,  setIsSuperAdmin]  = useState(false);
+  const [companyId,     setCompanyId]     = useState<number | null>(null);
+  const [xeroConnected, setXeroConnected] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem('user')
-    if (user) {
-      const parsed = JSON.parse(user)
-      setEmail(parsed.email)
-      setName(`${parsed.firstName} ${parsed.lastName}`)
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      const user = JSON.parse(stored);
+      setIsSuperAdmin(user.role === 'SUPER_ADMIN');
+      setCompanyId(user.companyId);
+      if (user.companyId) {
+        xeroService.getStatus(user.companyId)
+          .then(connected => setXeroConnected(connected))
+          .catch(() => setXeroConnected(false));
+      }
     }
-  }, [])
+  }, []);
+
+  const toggleSideNav = () => {
+    const html = document.documentElement;
+    const currentSize = html.getAttribute('data-sidenav-size');
+    if (currentSize === 'offcanvas') {
+      html.classList.toggle('sidebar-enable');
+      showBackdrop();
+    } else {
+      changeSideNavSize(currentSize === 'collapse' ? 'default' : 'collapse');
+    }
+  };
+
+  const handleConnect = async () => {
+    if (!companyId) return;
+    setConnecting(true);
+    try {
+      const url = await xeroService.getAuthorizeUrl(companyId);
+      window.location.href = url;
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   return (
-    <div className="topbar-item nav-user">
-      <Dropdown align="end">
-        <DropdownToggle as="a" className="topbar-link dropdown-toggle drop-arrow-none px-2 d-flex align-items-center gap-2" style={{ cursor: 'pointer', textDecoration: 'none' }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #2d5a27, #192319)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontWeight: 700, fontSize: '0.72rem', flexShrink: 0
-          }}>
-            {name ? getInitials(name) : '?'}
-          </div>
-          <span style={{ color: '#333', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>{name || email}</span>
-        </DropdownToggle>
-        <DropdownMenu>
-          {name && (
-            <div className="dropdown-header noti-title">
-              <h6 className="text-overflow m-0">{name}</h6>
-            </div>
+    <header className="app-topbar" style={{ background: '#1a2340' }}>
+      <div className="flex items-center justify-between w-full h-full px-5">
+
+        {/* Left — brand + collapse toggle */}
+        <div className="flex items-center gap-3">
+
+          {/* Brand */}
+          <Link href="/" className="flex items-center">
+            <span className="font-bold text-lg tracking-widest text-white">STRATO</span>
+            <span className="font-bold text-lg tracking-widest" style={{ color: '#00d4e8' }}>POD</span>
+          </Link>
+
+          {/* Collapse toggle */}
+          <button
+            onClick={toggleSideNav}
+            className="button-collapse-toggle"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#fff',
+              padding: '0.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: 0.85,
+            }}
+          >
+            <Menu size={20} />
+          </button>
+        </div>
+
+        {/* Right — Connect Xero + User */}
+        <div className="flex items-center gap-3">
+          {isSuperAdmin && (
+            <button
+              onClick={handleConnect}
+              disabled={connecting}
+              className="flex items-center gap-2 text-white font-semibold text-sm px-4 py-2 transition-opacity hover:opacity-85 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ background: '#3b6fd4', border: 'none', borderRadius: 0 }}
+            >
+              {connecting
+                ? <><Loader2 size={14} className="animate-spin" /> Connecting...</>
+                : <><LinkIcon size={14} /> Connect Xero</>
+              }
+            </button>
           )}
-          {userDropdownItems.map((item, idx) => (
-            <Fragment key={idx}>
-              {item.isHeader ? (
-                <div className="dropdown-header noti-title">
-                  <h6 className="text-overflow m-0">{item.label}</h6>
-                </div>
-              ) : item.isDivider ? (
-                <DropdownDivider />
-              ) : item.isLogout ? (
-                <DropdownItem as="button" className={item.class} onClick={handleLogout}>
-                  {item.icon && <item.icon className="me-2 fs-17 align-middle" />}
-                  <span className="align-middle">{item.label}</span>
-                </DropdownItem>
-              ) : (
-                <DropdownItem as={Link} href={item.url ?? '#'} className={item.class}>
-                  {item.icon && <item.icon className="me-2 fs-17 align-middle" />}
-                  <span className="align-middle">{item.label}</span>
-                </DropdownItem>
-              )}
-            </Fragment>
-          ))}
-        </DropdownMenu>
-      </Dropdown>
-    </div>
+          <UserProfile />
+        </div>
+
+      </div>
+    </header>
   );
 };
 
-export default UserProfile;
+export default Topbar;

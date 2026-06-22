@@ -3,9 +3,7 @@
 import { useLayoutContext } from '@/context/useLayoutContext';
 import UserProfile from '@/layouts/components/topbar/components/UserProfile';
 import Link from 'next/link';
-import { Container, Spinner } from 'react-bootstrap';
-import { LuMenu, LuLink } from 'react-icons/lu';
-import { appName } from '@/helpers';
+import { Menu, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import xeroService from '@/services/xeroService';
 
@@ -22,8 +20,6 @@ const Topbar = () => {
       const user = JSON.parse(stored);
       setIsSuperAdmin(user.role === 'SUPER_ADMIN');
       setCompanyId(user.companyId);
-
-      // ── Check if Xero is already connected ───────────────────
       if (user.companyId) {
         xeroService.getStatus(user.companyId)
           .then(connected => setXeroConnected(connected))
@@ -43,61 +39,69 @@ const Topbar = () => {
     }
   };
 
-  // ── Connect Xero ───────────────────────────────────────────────
   const handleConnect = async () => {
     if (!companyId) return;
     setConnecting(true);
     try {
       const url = await xeroService.getAuthorizeUrl(companyId);
-      window.location.href = url;  // ← redirect same tab
+      window.location.href = url;
     } finally {
       setConnecting(false);
     }
-  }; 
+  };
 
   return (
-    <header className="app-topbar">
-      <Container fluid className="topbar-menu">
-        <div className="d-flex align-items-center gap-2">
-          <div className="logo-topbar">
-            <Link href="/" className="logo-dark">
-              <span className="logo-text text-white fw-bold fs-xl">{appName}</span>
-            </Link>
-            <Link href="/" className="logo-light">
-              <span className="logo-text text-white fw-bold fs-xl">{appName}</span>
-            </Link>
-          </div>
-          <button onClick={toggleSideNav} className="button-collapse-toggle">
-            <LuMenu className="fs-22 align-middle" />
+    <header className="app-topbar" style={{ background: '#1a2340' }}>
+      <div className="flex items-center justify-between w-full h-full px-5">
+
+        {/* Left — brand + collapse toggle */}
+        <div className="flex items-center gap-3">
+
+          {/* Brand */}
+          <Link href="/" className="flex items-center">
+            <span className="font-bold text-lg tracking-widest text-white">STRATO</span>
+            <span className="font-bold text-lg tracking-widest" style={{ color: '#29b6c5' }}>POD</span>
+          </Link>
+
+          {/* Collapse toggle */}
+          <button
+            onClick={toggleSideNav}
+            className="button-collapse-toggle"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#fff',
+              padding: '0.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: 0.85,
+            }}
+          >
+            <Menu size={20} />
           </button>
         </div>
 
-        <div className="d-flex align-items-center gap-2">
+        {/* Right — Connect Xero + User */}
+        <div className="flex items-center gap-3">
           {isSuperAdmin && (
             <button
               onClick={handleConnect}
               disabled={connecting}
-              style={{
-                background: '#13B5EA',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.45rem 1.1rem',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                color: '#fff',
-                cursor: connecting ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-              }}
+              className="flex items-center gap-2 text-white font-semibold text-sm px-4 py-2 transition-opacity hover:opacity-85 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ background: '#3b6fd4', border: 'none', borderRadius: 0 }}
             >
-              {connecting ? <Spinner size="sm" /> : <LuLink size={15} />}
-              {connecting ? 'Connecting...' : 'Connect Xero'}
+              {connecting
+                ? <><Loader2 size={14} className="animate-spin" /> Connecting...</>
+                : <><LinkIcon size={14} /> Connect Xero</>
+              }
             </button>
           )}
           <UserProfile />
         </div>
-      </Container>
+
+      </div>
     </header>
   );
 };

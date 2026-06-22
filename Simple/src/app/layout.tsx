@@ -1,6 +1,6 @@
 import AppWrapper from '@/components/AppWrapper';
 import { appDescription, appTitle } from '@/helpers';
-import { dmSans, ibmPlexSans, inter, jost, lato, montserrat, nunito, poppins, roboto, robotoSlab, rubik, ubuntu } from '@/helpers/fonts';
+import { ibmPlexSans, inter, jost, lato, montserrat, nunito, poppins, roboto, robotoSlab, rubik, ubuntu } from '@/helpers/fonts';
 import 'leaflet/dist/leaflet.css';
 import 'jsvectormap/dist/css/jsvectormap.min.css';
 import 'datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css';
@@ -12,21 +12,49 @@ import 'react-quill-new/dist/quill.bubble.css';
 import 'flatpickr/dist/flatpickr.min.css';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import '@/assets/scss/app.scss';
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+import { Toaster } from '@/components/ui/sonner';
+import './globals.css';
+
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata = {
   title: {
     default: appTitle,
-    template: '%s | ' + appTitle
+    template: '%s | ' + appTitle,
   },
   description: appDescription,
-  icons: ['/favicon.ico']
+  icons: ['/favicon.ico'],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${rubik.variable} ${inter.variable} ${nunito.variable} ${ubuntu.variable} ${jost.variable} ${roboto.variable} ${montserrat.variable} ${ibmPlexSans.variable} ${poppins.variable} ${lato.variable} ${dmSans.variable} ${robotoSlab.variable}`}>
-        <AppWrapper>{children}</AppWrapper>
+    <html lang="en" className={cn("font-sans", geist.variable)}>
+      <body
+        className={`
+          ${rubik.variable}
+          ${inter.variable}
+          ${nunito.variable}
+          ${ubuntu.variable}
+          ${jost.variable}
+          ${roboto.variable}
+          ${montserrat.variable}
+          ${ibmPlexSans.variable}
+          ${poppins.variable}
+          ${lato.variable}
+          ${robotoSlab.variable}
+        `}
+      >
+        <AppWrapper>
+          {children}
+        </AppWrapper>
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          duration={5000}
+        />
       </body>
     </html>
   );

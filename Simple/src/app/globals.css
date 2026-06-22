@@ -1,0 +1,269 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #1a2340;
+    --card: #ffffff;
+    --card-foreground: #1a2340;
+    --popover: #ffffff;
+    --popover-foreground: #1a2340;
+    --primary: #3b6fd4;
+    --primary-foreground: #ffffff;
+    --secondary: #f0f2f5;
+    --secondary-foreground: #1a2340;
+    --muted: #f0f2f5;
+    --muted-foreground: #6b7a99;
+    --accent: #f0f2f5;
+    --accent-foreground: #1a2340;
+    --destructive: #e03a3a;
+    --border: #dde3f0;
+    --input: #dde3f0;
+    --ring: #3b6fd4;
+    --radius: 0.625rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    color-scheme: light only;
+  }
+
+  html {
+    @apply font-sans;
+    color-scheme: light only;
+  }
+}
+
+/* ═══════════════════════════════════
+   LAYOUT — content-page wrapper
+═══════════════════════════════════ */
+.content-page {
+  background-color: #f0f2f5 !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+/* ═══════════════════════════════════
+   DASHBOARD ROOT RESETS
+═══════════════════════════════════ */
+#dashboard-root .card {
+  box-shadow: none !important;
+  margin-bottom: 0 !important;
+  border-radius: 0 !important;
+  background-color: #ffffff !important;
+  color: #1a2340 !important;
+  overflow: hidden !important;
+}
+
+#dashboard-root .card-body {
+  padding: 0 !important;
+}
+
+#dashboard-root .card-header {
+  padding: 0 !important;
+  border-bottom: none !important;
+  background: transparent !important;
+}
+
+#dashboard-root h1,
+#dashboard-root h2,
+#dashboard-root h3,
+#dashboard-root h4,
+#dashboard-root h5,
+#dashboard-root h6 {
+  margin: 0 !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  color: inherit !important;
+  line-height: inherit !important;
+}
+
+#dashboard-root p {
+  margin: 0 !important;
+}
+
+#dashboard-root table {
+  margin-bottom: 0 !important;
+  color: inherit !important;
+}
+
+/* Reset border-color but NOT on elements with inline border-top (stat cards) */
+#dashboard-root [class*="border"]:not([style*="border"]) {
+  border-color: #dde3f0 !important;
+}
+
+/* Preserve inline border-top accent colors on stat cards */
+#dashboard-root [style*="borderTop"],
+#dashboard-root [style*="border-top"] {
+  border-top-color: unset !important;
+}
+
+#dashboard-root .text-white {
+  color: #ffffff !important;
+}
+
+/* ═══════════════════════════════════
+   TABLE HEADER SORT BUTTONS
+═══════════════════════════════════ */
+#dashboard-root th button,
+#dashboard-root thead button {
+  background: transparent !important;
+  color: #6b7a99 !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 0.625rem !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+}
+
+#dashboard-root th button:hover,
+#dashboard-root thead button:hover {
+  color: #1a2340 !important;
+  opacity: 1 !important;
+}
+
+/* ═══════════════════════════════════
+   TOPBAR BUTTON OVERRIDES
+═══════════════════════════════════ */
+.button-collapse-toggle {
+  background: transparent !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 0.25rem !important;
+}
+
+.button-collapse-toggle:hover {
+  opacity: 0.8 !important;
+}
+
+/* ═══════════════════════════════════
+   GLOBAL BUTTON STYLES
+   Scoped to exclude shadcn buttons
+═══════════════════════════════════ */
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]) {
+  background: #3b6fd4;
+  color: #fff;
+  border: none;
+  border-radius: 0 !important;
+  padding: 0.55rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):focus {
+  outline: 2px solid #3b6fd4 !important;
+  outline-offset: 2px !important;
+  border-radius: 0 !important;
+}
+
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════
+   BUTTON VARIANTS
+═══════════════════════════════════ */
+button.btn-outline {
+  background: transparent !important;
+  color: #1a2340 !important;
+  border: 1.5px solid #dde3f0 !important;
+}
+
+button.btn-teal {
+  background: #29b6c5 !important;
+}
+
+button.btn-ghost {
+  background: transparent !important;
+  color: inherit !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* ═══════════════════════════════════
+   GLOBAL INPUT WRAPPER STYLES
+═══════════════════════════════════ */
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid #dde3f0;
+  border-radius: 0 !important;
+  background: #f8f9fc;
+  overflow: hidden;
+  padding-left: 0.75rem;
+  transition: border-color 0.15s;
+}
+
+.input-wrapper:focus-within {
+  border: 2px solid #3b6fd4 !important;
+}
+
+.input-wrapper.has-error {
+  border-color: #e03a3a !important;
+}
+
+/* ═══════════════════════════════════
+   GLOBAL RAW INPUT STYLES
+═══════════════════════════════════ */
+.raw-input {
+  flex: 1;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0.65rem 0.75rem 0.65rem 0;
+  font-size: 0.875rem;
+  color: #1a2340;
+  background: transparent;
+  border-radius: 0 !important;
+}
+
+.raw-input::placeholder {
+  color: #6b7a99;
+}
+
+.raw-input.no-icon {
+  padding-left: 0;
+}
+
+/* ═══════════════════════════════════
+   GLOBAL FIELD LABEL
+═══════════════════════════════════ */
+.field-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1a2340;
+  margin-bottom: 6px;
+}
+
+/* ═══════════════════════════════════
+   GLOBAL ERROR MESSAGE
+═══════════════════════════════════ */
+.field-error {
+  color: #e03a3a;
+  font-size: 0.73rem;
+  margin: 4px 0 0;
+}

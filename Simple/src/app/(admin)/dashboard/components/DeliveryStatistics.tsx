@@ -1,11 +1,11 @@
 'use client';
 
-import { Card, CardBody, CardFooter, Col, Row } from 'react-bootstrap';
-import { LuTruck, LuCalendar, LuClock, LuUsers } from 'react-icons/lu';
+import { Truck, Users, Calendar, Clock } from 'lucide-react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import CountUpClient from '@/components/client-wrapper/CountUpClient';
 import ChartJSClient from '@/components/client-wrapper/ChartJSClient';
 import { Filler, LineController, LineElement, PointElement } from 'chart.js';
-import { getColor } from '@/helpers/chart';
 
 const deliveryTrendChart = () => ({
   data: {
@@ -15,64 +15,91 @@ const deliveryTrendChart = () => ({
         label: 'Today',
         data: [2, 4, 3, 6, 5, 7, 6, 8],
         fill: true,
-        borderColor: getColor('chart-primary'),
-        backgroundColor: getColor('chart-primary-rgb', 0.2),
+        borderColor: '#3b6fd4',
+        backgroundColor: 'rgba(59,111,212,0.15)',
         tension: 0.4,
         pointRadius: 0,
-        borderWidth: 1,
+        borderWidth: 2,
+        borderDash: [],
       },
       {
         label: 'Yesterday',
         data: [3, 5, 4, 7, 6, 8, 7, 9],
         fill: true,
-        borderColor: getColor('chart-gray'),
-        backgroundColor: getColor('chart-gray-rgb', 0.2),
+        borderColor: '#29b6c5',
+        backgroundColor: 'rgba(41,182,197,0.08)',
         tension: 0.4,
         pointRadius: 0,
-        borderWidth: 1,
+        borderWidth: 2,
+        borderDash: [5, 3],
       },
     ],
   },
 });
 
 const DeliveryStatistics = ({ total, totalCustomers }: { total: number; totalCustomers: number }) => (
-  <Card style={{ overflow: 'hidden' }}>
-    <CardBody style={{ paddingBottom: '0.75rem' }}>
-      <Row className="align-items-center" style={{ minHeight: 0 }}>
-        <Col xl={3} md={6}>
-          <div className="text-center">
-            <p className="mb-4"><LuTruck /> Delivery Notes</p>
-            <h2 className="fw-bold mb-0">
-              <CountUpClient end={total} duration={2} enableScrollSpy scrollSpyOnce />
-            </h2>
-            <p className="text-muted">Total delivery notes in system</p>
-            <p className="mb-0 mt-4"><LuCalendar /> Updated today</p>
-          </div>
-        </Col>
-        <Col xl={3} md={6} className="order-xl-last">
-          <div className="text-center">
-            <p className="mb-4"><LuUsers /> Customers</p>
-            <h2 className="fw-bold mb-0">
-              <CountUpClient end={totalCustomers} duration={2} enableScrollSpy scrollSpyOnce />
-            </h2>
-            <p className="text-muted">Active customers</p>
-            <p className="mb-0 mt-4"><LuClock /> Last synced: today</p>
-          </div>
-        </Col>
-        <Col xl={6}>
-          <div className="w-100" style={{ height: '200px', maxHeight: '200px', overflow: 'hidden', position: 'relative' }}>
-            <ChartJSClient type="line" getOptions={deliveryTrendChart} plugins={[LineController, LineElement, PointElement, Filler]} />
-          </div>
-        </Col>
-      </Row>
-    </CardBody>
-    <CardFooter>
-      <div className="d-flex align-items-center text-muted justify-content-between">
-        <div>STRATOPOD Delivery Management System</div>
-        <div>{total} delivery notes loaded</div>
+  <div>
+    <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-0">
+
+      {/* Left — Delivery Notes stat */}
+      <div className="flex flex-col items-center justify-center text-center px-6 py-4 border-r border-[#dde3f0]">
+        <div className="flex items-center gap-2 text-xs text-[#6b7a99] mb-4">
+          <Truck size={13} /> Delivery Notes
+        </div>
+        <div className="text-3xl font-extrabold text-[#3b6fd4] leading-none mb-1">
+          <CountUpClient end={total} duration={2} enableScrollSpy scrollSpyOnce />
+        </div>
+        <p className="text-xs text-[#6b7a99] mb-4">Total delivery notes in system</p>
+        <div className="flex items-center gap-1 text-xs text-[#6b7a99]">
+          <Calendar size={12} /> Updated today
+        </div>
       </div>
-    </CardFooter>
-  </Card>
+
+      {/* Center — Chart */}
+      <div className="relative px-4 py-4">
+        <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-1.5 text-xs text-[#6b7a99]">
+            <span className="inline-block w-3 h-[2px] bg-[#3b6fd4]" />
+            Today
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-[#6b7a99]">
+            <span className="inline-block w-3 h-[2px] bg-[#29b6c5] border-dashed" style={{ borderTop: '2px dashed #29b6c5', background: 'none' }} />
+            Yesterday
+          </div>
+        </div>
+        <div className="w-full relative" style={{ height: '160px' }}>
+          <ChartJSClient
+            type="line"
+            getOptions={deliveryTrendChart}
+            plugins={[LineController, LineElement, PointElement, Filler]}
+          />
+        </div>
+      </div>
+
+      {/* Right — Customers stat */}
+      <div className="flex flex-col items-center justify-center text-center px-6 py-4 border-l border-[#dde3f0]">
+        <div className="flex items-center gap-2 text-xs text-[#6b7a99] mb-4">
+          <Users size={13} /> Customers
+        </div>
+        <div className="text-3xl font-extrabold text-[#29b6c5] leading-none mb-1">
+          <CountUpClient end={totalCustomers} duration={2} enableScrollSpy scrollSpyOnce />
+        </div>
+        <p className="text-xs text-[#6b7a99] mb-4">Active customers</p>
+        <div className="flex items-center gap-1 text-xs text-[#6b7a99]">
+          <Clock size={12} /> Last synced: today
+        </div>
+      </div>
+
+    </div>
+
+    <Separator className="bg-[#dde3f0]" />
+
+    {/* Footer */}
+    <div className="flex items-center justify-between px-5 py-3">
+      <span className="text-xs text-[#6b7a99]">STRATOPOD Delivery Management System</span>
+      <span className="text-xs text-[#6b7a99]">{total} delivery notes loaded</span>
+    </div>
+  </div>
 );
 
 export default DeliveryStatistics;
