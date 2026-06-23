@@ -1,10 +1,12 @@
 'use client';
 
-import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocalStorage } from 'usehooks-ts';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { debounce } from '@/helpers/debounce';
 import { toggleAttribute } from '@/helpers/layout';
 import useViewPort from '@/hooks/useViewPort';
+
+const STORAGE_KEY = '__SIMPLE_NEXT_CONFIG__';
+
 const INIT_STATE = {
   skin: 'shadcn',
   monochrome: false,
@@ -20,7 +22,18 @@ const INIT_STATE = {
   },
   position: 'fixed'
 };
-const LayoutContext = createContext(undefined);
+
+function readFromStorage() {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    return raw ? { ...INIT_STATE, ...JSON.parse(raw) } : INIT_STATE;
+  } catch {
+    return INIT_STATE;
+  }
+}
+
+const LayoutContext = createContext<any>(undefined);
+
 const useLayoutContext = () => {
   const context = useContext(LayoutContext);
   if (!context) {
@@ -28,161 +41,155 @@ const useLayoutContext = () => {
   }
   return context;
 };
-const LayoutProvider = ({
-  children
-}) => {
-  const [settings, setSettings] = useLocalStorage('__SIMPLE_NEXT_CONFIG__', INIT_STATE);
-  const [offcanvasStates, setOffcanvasStates] = useState({
-    showCustomizer: false
-  });
 
-  // update settings
-  const updateSettings = useCallback(_newSettings => {
-    setSettings(prevSettings => ({
-      ...prevSettings,
-      ..._newSettings,
-      sidenav: {
-        ...prevSettings.sidenav,
-        ...(_newSettings.sidenav || {})
-      },
-      topBar: {
-        ...prevSettings.topBar,
-        ...(_newSettings.topBar || {})
-      }
-    }));
-  }, [setSettings]);
-  const changeSkin = useCallback((nSkin, persist = true) => {
+const LayoutProvider = ({ children }: { children: React.ReactNode }) => {
+  const [settings, setSettingsState] = useState(INIT_STATE);
+  const [offcanvasStates, setOffcanvasStates] = useState({ showCustomizer: false });
+
+  // Always-current ref — callbacks read from this so they never need settings in deps
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
+  // Hydrate from localStorage once on mount (avoids SSR mismatch)
+  useEffect(() => {
+    setSettingsState(readFromStorage());
+  }, []);
+
+  // updateSettings is stable: deps = [] effectively (setSettingsState is stable)
+  const updateSettings = useCallback((patch: Partial<typeof INIT_STATE>) => {
+    setSettingsState(prev => {
+      const next = {
+        ...prev,
+        ...patch,
+        sidenav: { ...prev.sidenav, ...((patch as any).sidenav || {}) },
+        topBar:  { ...prev.topBar,  ...((patch as any).topBar  || {}) },
+      };
+      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+
+  // All callbacks are stable — they read settingsRef.current instead of closing over settings
+  const changeSkin = useCallback((nSkin: string, persist = true) => {
     toggleAttribute('data-skin', nSkin);
-    if (persist) updateSettings({
-      skin: nSkin
-    });
+    if (persist) updateSettings({ skin: nSkin } as any);
   }, [updateSettings]);
-  const toggleMonochromeMode = (persist = true) => {
-    toggleAttribute('class', !settings.monochrome ? 'monochrome' : '');
-    if (persist) updateSettings({
-      monochrome: !settings.monochrome
-    });
-  };
-  const changeTheme = useCallback((nTheme, persist = true) => {
+
+  const toggleMonochromeMode = useCallback((persist = true) => {
+    const next = !settingsRef.current.monochrome;
+    toggleAttribute('class', next ? 'monochrome' : '');
+    if (persist) updateSettings({ monochrome: next } as any);
+  }, [updateSettings]);
+
+  const changeTheme = useCallback((nTheme: string, persist = true) => {
     toggleAttribute('data-bs-theme', nTheme);
-    if (persist) updateSettings({
-      theme: nTheme
-    });
+    if (persist) updateSettings({ theme: nTheme } as any);
   }, [updateSettings]);
-  const changeTopBarColor = useCallback((nColor, persist = true) => {
+
+  const changeTopBarColor = useCallback((nColor: string, persist = true) => {
     toggleAttribute('data-topbar-color', nColor);
-    if (persist) updateSettings({
-      topBar: {
-        color: nColor
-      }
-    });
+    if (persist) updateSettings({ topBar: { color: nColor } } as any);
   }, [updateSettings]);
-  const changeSideNavSize = useCallback((nSize, persist = true) => {
+
+  const changeSideNavSize = useCallback((nSize: string, persist = true) => {
     toggleAttribute('data-sidenav-size', nSize);
-    if (persist) updateSettings({
-      sidenav: {
-        ...settings.sidenav,
-        size: nSize
-      }
-    });
-  }, [settings.sidenav, updateSettings]);
-  const changeSideNavColor = useCallback((nColor, persist = true) => {
-    toggleAttribute('data-menu-color', nColor);
-    if (persist) updateSettings({
-      sidenav: {
-        ...settings.sidenav,
-        color: nColor
-      }
-    });
-  }, [settings.sidenav, updateSettings]);
-  const toggleSideNavUser = () => {
-    toggleAttribute('data-sidenav-user', (!settings.sidenav.user).toString());
-    updateSettings({
-      sidenav: {
-        ...settings.sidenav,
-        user: !settings.sidenav.user
-      }
-    });
-  };
-  const toggleMobileMenu = () => {
-    updateSettings({
-      sidenav: {
-        ...settings.sidenav,
-        isMobileMenuOpen: !settings.sidenav.isMobileMenuOpen
-      }
-    });
-  };
-  const changePosition = useCallback((nPosition, persist = true) => {
-    toggleAttribute('data-layout-position', nPosition);
-    if (persist) updateSettings({
-      position: nPosition
-    });
+    if (persist) updateSettings({ sidenav: { ...settingsRef.current.sidenav, size: nSize } } as any);
   }, [updateSettings]);
-  const toggleCustomizer = () => {
-    setOffcanvasStates({
-      ...offcanvasStates,
-      showCustomizer: !offcanvasStates.showCustomizer
-    });
-  };
-  const customizer = {
+
+  const changeSideNavColor = useCallback((nColor: string, persist = true) => {
+    toggleAttribute('data-menu-color', nColor);
+    if (persist) updateSettings({ sidenav: { ...settingsRef.current.sidenav, color: nColor } } as any);
+  }, [updateSettings]);
+
+  const toggleSideNavUser = useCallback(() => {
+    const cur = settingsRef.current.sidenav;
+    toggleAttribute('data-sidenav-user', (!cur.user).toString());
+    updateSettings({ sidenav: { ...cur, user: !cur.user } } as any);
+  }, [updateSettings]);
+
+  const toggleMobileMenu = useCallback(() => {
+    const cur = settingsRef.current.sidenav;
+    updateSettings({ sidenav: { ...cur, isMobileMenuOpen: !cur.isMobileMenuOpen } } as any);
+  }, [updateSettings]);
+
+  const changePosition = useCallback((nPosition: string, persist = true) => {
+    toggleAttribute('data-layout-position', nPosition);
+    if (persist) updateSettings({ position: nPosition } as any);
+  }, [updateSettings]);
+
+  const toggleCustomizer = useCallback(() => {
+    setOffcanvasStates(prev => ({ ...prev, showCustomizer: !prev.showCustomizer }));
+  }, []);
+
+  const customizer = useMemo(() => ({
     isOpen: offcanvasStates.showCustomizer,
     toggle: toggleCustomizer
-  };
+  }), [offcanvasStates.showCustomizer, toggleCustomizer]);
+
   const reset = useCallback(() => {
-    setSettings(INIT_STATE);
-  }, [setSettings]);
-  const showBackdrop = () => {
-    const backdrop = document.createElement('div');
-    backdrop.id = 'custom-backdrop';
-    backdrop.className = 'offcanvas-backdrop fade show';
-    document.body.appendChild(backdrop);
-    document.body.style.overflow = 'hidden';
-    if (window.innerWidth > 767) {
-      document.body.style.paddingRight = '15px';
-    }
-    backdrop.addEventListener('click', () => {
-      const html = document.documentElement;
-      html.classList.remove('sidebar-enable');
-      hideBackdrop();
-    });
-  };
-  const hideBackdrop = () => {
-    const backdrop = document.getElementById('custom-backdrop');
-    if (backdrop) {
-      document.body.removeChild(backdrop);
+    setSettingsState(INIT_STATE);
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(INIT_STATE)); } catch {}
+  }, []);
+
+  const hideBackdrop = useCallback(() => {
+    const el = document.getElementById('custom-backdrop');
+    if (el) {
+      document.body.removeChild(el);
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     }
-  };
-  useEffect(() => {
-    toggleAttribute('data-skin', settings.skin);
-    toggleAttribute('data-bs-theme', settings.theme);
-    toggleAttribute('data-topbar-color', settings.topBar.color);
-    toggleAttribute('data-sidenav-color', settings.sidenav.color);
-    toggleAttribute('data-sidenav-size', settings.sidenav.size);
-    toggleAttribute('data-sidenav-user', settings.sidenav.user.toString());
-    toggleAttribute('data-layout-position', settings.position);
-    toggleAttribute('class', settings.monochrome ? 'monochrome' : '');
-  }, [settings]);
-  const {
-    width
-  } = useViewPort();
-  useEffect(() => {
-    const handleResize = () => {
-      if (width <= 1199) {
-        changeSideNavSize('offcanvas');
-      } else {
-        changeSideNavSize('default');
+  }, []);
+
+  const showBackdrop = useCallback(() => {
+    const el = document.createElement('div');
+    el.id = 'custom-backdrop';
+    el.className = 'offcanvas-backdrop fade show';
+    document.body.appendChild(el);
+    document.body.style.overflow = 'hidden';
+    if (window.innerWidth > 767) document.body.style.paddingRight = '15px';
+    el.addEventListener('click', () => {
+      document.documentElement.classList.remove('sidebar-enable');
+      const existing = document.getElementById('custom-backdrop');
+      if (existing) {
+        document.body.removeChild(existing);
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
       }
-    };
-    handleResize();
-    const debouncedResize = debounce(handleResize, 200);
+    });
+  }, []);
+
+  // Apply settings to DOM attributes whenever settings changes
+  useEffect(() => {
+    const s = settingsRef.current;
+    toggleAttribute('data-skin',            s.skin);
+    toggleAttribute('data-bs-theme',        s.theme);
+    toggleAttribute('data-topbar-color',    s.topBar.color);
+    toggleAttribute('data-sidenav-color',   s.sidenav.color);
+    toggleAttribute('data-sidenav-size',    s.sidenav.size);
+    toggleAttribute('data-sidenav-user',    s.sidenav.user.toString());
+    toggleAttribute('data-layout-position', s.position);
+    toggleAttribute('class',                s.monochrome ? 'monochrome' : '');
+  }, [settings]);
+
+  const { width } = useViewPort();
+
+  // Sync sidenav size to viewport — skip when width=0 (SSR placeholder)
+  useEffect(() => {
+    if (width === 0) return;
+    const targetSize  = width <= 1199 ? 'offcanvas' : 'default';
+    const currentSize = document.documentElement.getAttribute('data-sidenav-size');
+    if (currentSize !== targetSize) changeSideNavSize(targetSize);
+
+    const debouncedResize = debounce(() => {
+      const t = window.innerWidth <= 1199 ? 'offcanvas' : 'default';
+      const c = document.documentElement.getAttribute('data-sidenav-size');
+      if (c !== t) changeSideNavSize(t);
+    }, 200);
     window.addEventListener('resize', debouncedResize);
-    return () => {
-      window.removeEventListener('resize', debouncedResize);
-    };
-  }, [width]);
-  return <LayoutContext.Provider value={useMemo(() => ({
+    return () => window.removeEventListener('resize', debouncedResize);
+  }, [width, changeSideNavSize]);
+
+  const contextValue = useMemo(() => ({
     ...settings,
     changeSkin,
     toggleMonochromeMode,
@@ -196,9 +203,29 @@ const LayoutProvider = ({
     customizer,
     reset,
     showBackdrop,
-    hideBackdrop
-  }), [settings, changeSkin, toggleMonochromeMode, changeTheme, changeTopBarColor, changeSideNavSize, changeSideNavColor, toggleSideNavUser, toggleMobileMenu, changePosition, customizer, reset])}>
+    hideBackdrop,
+  }), [
+    settings,
+    changeSkin,
+    toggleMonochromeMode,
+    changeTheme,
+    changeTopBarColor,
+    changeSideNavSize,
+    changeSideNavColor,
+    toggleSideNavUser,
+    toggleMobileMenu,
+    changePosition,
+    customizer,
+    reset,
+    showBackdrop,
+    hideBackdrop,
+  ]);
+
+  return (
+    <LayoutContext.Provider value={contextValue}>
       {children}
-    </LayoutContext.Provider>;
+    </LayoutContext.Provider>
+  );
 };
+
 export { LayoutProvider, useLayoutContext };

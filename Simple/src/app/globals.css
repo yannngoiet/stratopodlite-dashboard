@@ -148,7 +148,7 @@
    GLOBAL BUTTON STYLES
    Scoped to exclude shadcn buttons
 ═══════════════════════════════════ */
-button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]) {
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.side-nav-link) {
   background: #3b6fd4;
   color: #fff;
   border: none;
@@ -267,3 +267,93 @@ button.btn-ghost {
   font-size: 0.73rem;
   margin: 4px 0 0;
 }
+
+/* ═══════════════════════════════════
+   DASHBOARD DESIGN TOKENS
+═══════════════════════════════════ */
+
+/* Color utilities */
+.dash-text-muted   { color: #6b7a99; }
+.dash-text-navy    { color: #1a2340; }
+.dash-text-blue    { color: #3b6fd4; }
+.dash-text-teal    { color: #29b6c5; }
+.dash-text-amber   { color: #EF9F27; }
+
+/* Card container — standalone panels (e.g. Recent Delivery Notes) */
+.dash-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+/* Card wrapper — used inside Bootstrap grid columns to fill height */
+.dash-card-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Card / section header label (uppercase small caps style) */
+.dash-card-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7a99;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Section title (e.g. "Recent Delivery Notes") */
+.dash-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7a99;
+}
+
+/* Icon circles */
+.dash-icon-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-icon-circle-blue { background: rgba(59,111,212,0.12); }
+.dash-icon-circle-teal { background: rgba(41,182,197,0.15); }
+
+/* Status pill badge */
+.dash-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+/* Table header row */
+.dash-table-header {
+  background: #f8f9fc;
+  border-bottom: 1px solid #dde3f0;
+}
+
+.dash-table-header th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7a99;
+  white-space: nowrap;
+}
+
+/* Table row */
+.dash-table-row {
+  border-bottom: 1px solid #f0f2f5;
+  transition: background-color 0.15s;
+}
+.dash-table-row:hover { background: #f8f9fc; }
+.dash-table-row td { padding: 0.875rem 1rem; white-space: nowrap; }

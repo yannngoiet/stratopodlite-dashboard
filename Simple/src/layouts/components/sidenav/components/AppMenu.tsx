@@ -6,7 +6,6 @@ import { menuItems, MenuItemType } from '@/layouts/components/data';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Collapse } from 'react-bootstrap';
 import { TbChevronDown } from 'react-icons/tb';
 
 interface MenuItemWithChildrenProps {
@@ -66,17 +65,15 @@ const MenuItemWithChildren = ({
         {item.badge && <span className={`badge bg-${item.badge.variant}`}>{item.badge.text}</span>}
         <span className="menu-arrow"><TbChevronDown /></span>
       </button>
-      <Collapse in={isOpen}>
-        <div>
-          <ul className="sub-menu">
-            {(item.children || []).map(child =>
-              child.children
-                ? <MenuItemWithChildren key={child.key} item={child} openMenuKey={openMenuKey} setOpenMenuKey={setOpenMenuKey} level={level + 1} />
-                : <MenuItem key={child.key} item={child} />
-            )}
-          </ul>
-        </div>
-      </Collapse>
+      <div style={{ display: isOpen ? 'block' : 'none' }}>
+        <ul className="sub-menu">
+          {(item.children || []).map(child =>
+            child.children
+              ? <MenuItemWithChildren key={child.key} item={child} openMenuKey={openMenuKey} setOpenMenuKey={setOpenMenuKey} level={level + 1} />
+              : <MenuItem key={child.key} item={child} />
+          )}
+        </ul>
+      </div>
     </li>;
 };
 

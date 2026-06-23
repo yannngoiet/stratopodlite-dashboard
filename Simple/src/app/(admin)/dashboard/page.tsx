@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Package, Users, Truck, Car, Activity, TriangleAlert, Check, X } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TriangleAlert, Check, X, FileText } from 'lucide-react';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import dashboardStatsService, { type DashboardStats } from '@/services/dashboardStatsService';
 import DeliveryStatistics from './components/DeliveryStatistics';
 import StatusBreakdownCard from './components/StatusBreakdownCard';
 import RecentDeliveryNotes from './components/RecentDeliveryNotes';
+import DeliveryNotesCard from './components/DeliveryNotesCard';
+import CustomersCard from './components/CustomersCard';
+import VehiclesCard from './components/VehiclesCard';
 
 const empty: DashboardStats = {
   totalDeliveryNotes:  0,
@@ -19,13 +22,6 @@ const empty: DashboardStats = {
   deliveriesByStatus:  [],
   recentDeliveryNotes: [],
 };
-
-const STAT_CARDS = (stats: DashboardStats) => [
-  { label: 'Delivery Notes', value: stats.totalDeliveryNotes, sub: 'total in system',    icon: Package, accent: '#3b6fd4', softBg: '#f0f5ff' },
-  { label: 'Customers',      value: stats.totalCustomers,     sub: 'active customers',   icon: Users,   accent: '#29b6c5', softBg: '#f0fbfc' },
-  { label: 'Drivers',        value: stats.totalDrivers,       sub: 'registered drivers', icon: Truck,   accent: '#3b6fd4', softBg: '#f0f5ff' },
-  { label: 'Vehicles',       value: stats.totalVehicles,      sub: 'fleet size',         icon: Car,     accent: '#29b6c5', softBg: '#f0fbfc' },
-];
 
 export default function DashboardPage() {
   const [stats, setStats]                               = useState<DashboardStats>(empty);
@@ -84,11 +80,11 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div id="dashboard-root" style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+    <div className="container-fluid" style={{ padding: '1.5rem' }}>
 
       {/* ── Banners ── */}
       {xeroSuccess && (
-        <Alert className="border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center justify-between rounded-none">
+        <Alert className="border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center justify-between rounded-none mb-3">
           <div className="flex items-center gap-2">
             <Check size={15} />
             <AlertDescription className="font-semibold">Xero connected successfully!</AlertDescription>
@@ -100,7 +96,7 @@ export default function DashboardPage() {
       )}
 
       {xeroAlreadyConnected && (
-        <Alert className="border-blue-200 bg-blue-50 text-blue-800 flex items-center justify-between rounded-none">
+        <Alert className="border-blue-200 bg-blue-50 text-blue-800 flex items-center justify-between rounded-none mb-3">
           <div className="flex items-center gap-2">
             <Check size={15} />
             <AlertDescription className="font-semibold">This Xero organisation is already connected.</AlertDescription>
@@ -112,102 +108,84 @@ export default function DashboardPage() {
       )}
 
       {error && (
-        <Alert className="border-amber-200 bg-amber-50 text-amber-800 rounded-none flex items-center gap-2">
+        <Alert className="border-amber-200 bg-amber-50 text-amber-800 rounded-none flex items-center gap-2 mb-3">
           <TriangleAlert size={15} />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {/* ── Page header ── */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-          <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#1a2340' }}>{companyName}</h1>
-          {companyType && (
-            <Badge variant="outline" className="text-[#6b7a99] border-[#dde3f0] text-xs font-normal rounded-sm">
-              {companyType}
-            </Badge>
-          )}
-        </div>
-        <p style={{ margin: 0, fontSize: '0.82rem', color: '#6b7a99' }}>
-          Delivery dashboard — monitor your deliveries, customers, drivers and status
+      <div className="mb-3 text-center" style={{ padding: '0.5rem 0 1rem' }}>
+        {companyType && (
+          <Badge variant="outline" className="text-[#6b7a99] border-[#dde3f0] text-xs font-normal rounded-sm mb-2">
+            {companyType}
+          </Badge>
+        )}
+        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#1a2340' }}>
+          {companyName} — Delivery Dashboard
+        </h1>
+        <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: '#6b7a99' }}>
+          Monitor your deliveries, customers, drivers and status.
         </p>
-        <div style={{ height: 3, width: 56, background: '#3b6fd4', marginTop: '0.5rem' }} />
       </div>
 
       {/* ── Row 1: 4 stat cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: '1rem' }}>
-        {STAT_CARDS(stats).map(({ label, value, sub, icon: Icon, accent, softBg }) => (
-          <Card
-            key={label}
-            className="rounded-none shadow-none"
-            style={{ border: '1px solid #dde3f0', borderTop: `3px solid ${accent}` }}
-          >
-            <CardContent className="pt-4 pb-4 px-5">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#6b7a99', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {label}
-                </span>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: softBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon size={15} style={{ color: accent }} />
-                </div>
-              </div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1a2340', lineHeight: 1 }}>
-                {value.toLocaleString()}
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#6b7a99', marginTop: 4 }}>{sub}</div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="row g-3 mb-3">
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dash-card-wrapper">
+            <DeliveryNotesCard total={stats.totalDeliveryNotes} />
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dash-card-wrapper">
+            <CustomersCard total={stats.totalCustomers} totalDrivers={stats.totalDrivers} />
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dash-card-wrapper">
+            <StatusBreakdownCard statuses={stats.deliveriesByStatus} />
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="dash-card-wrapper">
+            <VehiclesCard total={stats.totalVehicles} />
+          </div>
+        </div>
       </div>
 
-      {/* ── Row 2: Delivery statistics ── */}
-      <Card className="rounded-none shadow-none" style={{ border: '1px solid #dde3f0' }}>
-        <CardHeader className="pb-3 pt-4 px-5">
-          <CardTitle style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', fontWeight: 600, color: '#1a2340' }}>
-            <Activity size={15} style={{ color: '#3b6fd4' }} />
-            Delivery statistics
-          </CardTitle>
-        </CardHeader>
-        <Separator style={{ background: '#dde3f0' }} />
-        <CardContent className="pt-4 px-5 pb-5">
-          <DeliveryStatistics
-            total={stats.totalDeliveryNotes}
-            totalCustomers={stats.totalCustomers}
-          />
-        </CardContent>
-      </Card>
-
-      {/* ── Row 3: Status breakdown ── */}
-      <Card className="rounded-none shadow-none" style={{ border: '1px solid #dde3f0' }}>
-        <CardHeader className="pb-3 pt-4 px-5">
-          <CardTitle style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1a2340' }}>
-            Delivery status breakdown
-          </CardTitle>
-        </CardHeader>
-        <Separator style={{ background: '#dde3f0' }} />
-        <CardContent className="pt-4 px-5 pb-5">
-          <StatusBreakdownCard statuses={stats.deliveriesByStatus} />
-        </CardContent>
-      </Card>
-
-      {/* ── Row 4: Recent delivery notes ── */}
-      <Card className="rounded-none shadow-none" style={{ border: '1px solid #dde3f0' }}>
-        <CardHeader className="pb-3 pt-4 px-5">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <CardTitle style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1a2340' }}>
-              Recent delivery notes
-            </CardTitle>
-            <span style={{ fontSize: '0.72rem', color: '#6b7a99' }}>{stats.totalDeliveryNotes} total</span>
+      {/* ── Row 2: Delivery statistics chart ── */}
+      <div className="row g-3 mb-3">
+        <div className="col-12">
+          <div className="dash-card-wrapper">
+            <DeliveryStatistics
+              total={stats.totalDeliveryNotes}
+              totalDrivers={stats.totalDrivers}
+              notes={stats.recentDeliveryNotes}
+            />
           </div>
-        </CardHeader>
-        <Separator style={{ background: '#dde3f0' }} />
-        <CardContent style={{ padding: 0 }}>
-          <RecentDeliveryNotes
-            notes={stats.recentDeliveryNotes}
-            total={stats.totalDeliveryNotes}
-          />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* ── Row 3: Recent delivery notes table ── */}
+      <div className="row g-3">
+        <div className="col-12">
+          <div className="dash-card">
+            <div className="flex items-center justify-between px-4 py-3">
+              <h2 className="dash-section-title">Recent Delivery Notes</h2>
+              <Link href="/delivery-notes">
+                <Button size="sm" className="h-8 text-xs rounded-md gap-1.5 !bg-[#3b6fd4] !text-white border-none">
+                  <FileText size={13} /> View All
+                </Button>
+              </Link>
+            </div>
+            <div style={{ height: 1, background: '#dde3f0' }} />
+            <RecentDeliveryNotes
+              notes={stats.recentDeliveryNotes}
+              total={stats.totalDeliveryNotes}
+            />
+          </div>
+        </div>
+      </div>
 
     </div>
   );

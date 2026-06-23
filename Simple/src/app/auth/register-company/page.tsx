@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   LuTruck, LuBuilding2, LuUser, LuMail,
   LuPhone, LuLock, LuCheck, LuArrowRight, LuArrowLeft,
+  LuMinus, LuPlus,
 } from 'react-icons/lu';
 import authService from '@/services/authService';
 import { notify } from '@/lib/toast';
@@ -104,6 +105,7 @@ export default function RegisterPage() {
     try {
       await authService.registerCompany({
         companyName:          form.companyName,
+        companyType:          'ORGANISATION',
         adminPhoneNumber:     form.companyPhone || undefined,
         adminFirstName:       form.firstName,
         adminLastName:        form.lastName,
@@ -350,19 +352,21 @@ export default function RegisterPage() {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: '0.82rem', color: C.text, fontWeight: 600 }}>How many drivers?</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', border: `1.5px solid ${C.primary}` }}>
                     <button
                       onClick={() => setDriverCount(d => Math.max(1, d - 1))}
-                      style={{ width: 28, height: 28, padding: 0 }}
+                      style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                     >
-                      −
+                      <LuMinus size={14} />
                     </button>
-                    <span style={{ fontSize: '1.1rem', fontWeight: 700, minWidth: 28, textAlign: 'center', color: C.primary }}>{driverCount}</span>
+                    <span style={{ width: 40, textAlign: 'center', fontSize: '1rem', fontWeight: 700, color: C.primary, borderLeft: `1px solid ${C.border}`, borderRight: `1px solid ${C.border}`, lineHeight: '32px' }}>
+                      {driverCount}
+                    </span>
                     <button
                       onClick={() => setDriverCount(d => Math.min(plan.maxDrivers ?? 999, d + 1))}
-                      style={{ width: 28, height: 28, padding: 0 }}
+                      style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                     >
-                      +
+                      <LuPlus size={14} />
                     </button>
                   </div>
                   <span style={{ fontSize: '0.73rem', color: C.muted }}>max {plan.maxDrivers} on this plan</span>

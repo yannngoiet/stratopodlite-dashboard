@@ -3,7 +3,7 @@
 import { useLayoutContext } from '@/context/useLayoutContext';
 import UserProfile from '@/layouts/components/topbar/components/UserProfile';
 import Link from 'next/link';
-import { Menu, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { Menu, Link as LinkIcon, Loader2, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import xeroService from '@/services/xeroService';
 
@@ -60,7 +60,7 @@ const Topbar = () => {
           {/* Brand */}
           <Link href="/" className="flex items-center">
             <span className="font-bold text-lg tracking-widest text-white">STRATO</span>
-            <span className="font-bold text-lg tracking-widest" style={{ color: '#29b6c5' }}>POD</span>
+            <span className="font-bold text-lg tracking-widests" style={{ color: '#00d4e8' }}>POD</span>
           </Link>
 
           {/* Collapse toggle */}
@@ -86,17 +86,26 @@ const Topbar = () => {
         {/* Right — Connect Xero + User */}
         <div className="flex items-center gap-3">
           {isSuperAdmin && (
-            <button
-              onClick={handleConnect}
-              disabled={connecting}
-              className="flex items-center gap-2 text-white font-semibold text-sm px-4 py-2 transition-opacity hover:opacity-85 disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ background: '#3b6fd4', border: 'none', borderRadius: 0 }}
-            >
-              {connecting
-                ? <><Loader2 size={14} className="animate-spin" /> Connecting...</>
-                : <><LinkIcon size={14} /> Connect Xero</>
-              }
-            </button>
+            xeroConnected ? (
+              <div
+                className="flex items-center gap-2 text-sm font-semibold px-3 py-1.5"
+                style={{ background: 'rgba(0,212,232,0.15)', color: '#00d4e8', borderRadius: 0, border: '1px solid rgba(0,212,232,0.35)' }}
+              >
+                <CheckCircle2 size={14} /> Xero Connected
+              </div>
+            ) : (
+              <button
+                onClick={handleConnect}
+                disabled={connecting}
+                className="flex items-center gap-2 text-white font-semibold text-sm px-4 py-2 transition-opacity hover:opacity-85 disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ background: '#3b6fd4', border: 'none', borderRadius: 0 }}
+              >
+                {connecting
+                  ? <><Loader2 size={14} className="animate-spin" /> Connecting...</>
+                  : <><LinkIcon size={14} /> Connect Xero</>
+                }
+              </button>
+            )
           )}
           <UserProfile />
         </div>

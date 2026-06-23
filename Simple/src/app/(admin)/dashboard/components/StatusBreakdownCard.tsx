@@ -43,42 +43,44 @@ const StatusBreakdownCard = ({ statuses }: { statuses: DeliveryStatusStat[] }) =
 
   return (
     <Card className="rounded-none border-[#dde3f0] shadow-none h-full" style={{ borderTop: '3px solid #3b6fd4' }}>
-      <CardContent className="pt-4 px-5 pb-4">
+      <CardContent className="pt-3 px-5 pb-3">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-[10px] font-semibold text-[#6b7a99] uppercase tracking-wider">
-            Delivery Status
-          </span>
-          <Activity size={15} className="text-[#6b7a99]" />
+        <div className="flex items-center justify-between mb-3">
+          <span className="dash-card-label">Delivery Status</span>
+          <Activity size={22} className="text-[#6b7a99]" />
         </div>
 
         {statuses.length === 0 ? (
           <p className="text-xs text-[#6b7a99] text-center py-6">No data yet</p>
         ) : (
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col items-center">
 
-            {/* Doughnut with total in center */}
-            <div className="relative flex-shrink-0" style={{ width: 100, height: 100 }}>
+            {/* Doughnut — larger, centered */}
+            <div className="relative" style={{ width: 140, height: 140 }}>
               <Doughnut data={data} options={options as any} />
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-lg font-extrabold text-[#1a2340] leading-none">{total}</span>
+                <span className="text-2xl font-extrabold text-[#1a2340] leading-none">{total}</span>
                 <span className="text-[10px] text-[#6b7a99] mt-0.5">Total</span>
               </div>
             </div>
 
-            {/* Legend list */}
-            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+            {/* Status details below */}
+            <div className="w-full mt-4 flex flex-col gap-2.5">
               {statuses.map((s, i) => (
-                <div key={s.status} className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 min-w-0">
+                <div key={s.status} className="flex items-center gap-2">
+                  <div
+                    className="flex-shrink-0 rounded-sm"
+                    style={{ width: 8, height: 8, backgroundColor: COLORS[i % COLORS.length] }}
+                  />
+                  <span className="text-xs text-[#6b7a99] flex-1">{s.status}</span>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ width: 56, background: '#f0f2f5' }}>
                     <div
-                      className="flex-shrink-0"
-                      style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: COLORS[i % COLORS.length] }}
+                      className="h-full rounded-full"
+                      style={{ width: `${Math.round((s.count / total) * 100)}%`, background: COLORS[i % COLORS.length] }}
                     />
-                    <span className="text-[11px] text-[#6b7a99] truncate">{s.status}</span>
                   </div>
-                  <span className="text-[11px] font-bold text-[#1a2340] flex-shrink-0">{s.count}</span>
+                  <span className="text-xs font-bold text-[#1a2340] w-5 text-right">{s.count}</span>
                 </div>
               ))}
             </div>
