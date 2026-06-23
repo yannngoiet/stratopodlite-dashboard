@@ -6,29 +6,23 @@ import CountUpClient from '@/components/client-wrapper/CountUpClient';
 
 const DeliveryNotesCard = ({ total }: { total: number }) => (
   <Card className="rounded-none border-[#dde3f0] shadow-none h-full" style={{ borderTop: '3px solid #3b6fd4' }}>
-    <CardContent className="pt-4 px-5 pb-4 flex flex-col h-full">
+    <CardContent className="pt-3 px-5 pb-3 flex flex-col h-full">
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-[10px] font-semibold text-[#6b7a99] uppercase tracking-wider">
-          Delivery Notes
-        </span>
-        <Truck size={16} className="text-[#6b7a99]" />
+      <div className="flex items-center justify-between mb-3">
+        <span className="dash-card-label">Delivery Notes</span>
+        <Truck size={22} className="text-[#6b7a99]" />
       </div>
 
-      {/* Center content */}
-      <div className="flex flex-col items-center justify-center flex-1 py-2">
-        <div
-          className="w-14 h-14 rounded-full flex items-center justify-center mb-3"
-          style={{ background: total > 0 ? 'rgba(59,111,212,0.1)' : 'rgba(107,122,153,0.1)' }}
-        >
+      <div className="flex flex-col items-center justify-center flex-1 py-1">
+        <div className={`dash-icon-circle w-16 h-16 mb-2 ${total > 0 ? 'dash-icon-circle-blue' : ''}`}
+          style={total === 0 ? { background: 'rgba(107,122,153,0.12)' } : {}}>
           {total > 0
-            ? <FileText size={26} style={{ color: '#3b6fd4' }} />
-            : <FileX size={26} style={{ color: '#6b7a99' }} />}
+            ? <FileText size={30} className="dash-text-blue" />
+            : <FileX size={30} className="dash-text-muted" />}
         </div>
 
         <div
-          className="text-4xl font-extrabold leading-none"
+          className="text-5xl font-extrabold leading-none"
           style={{ color: total > 0 ? '#3b6fd4' : '#6b7a99' }}
         >
           {total > 0
@@ -40,17 +34,16 @@ const DeliveryNotesCard = ({ total }: { total: number }) => (
         </div>
       </div>
 
-      {/* Footer stats */}
       <div
-        className="flex justify-between pt-3 mt-2"
+        className="flex justify-between pt-2 mt-1"
         style={{ borderTop: '1px solid #f0f2f5' }}
       >
         <div>
-          <div className="text-[10px] text-[#6b7a99]">Total</div>
+          <div className="text-xs text-[#6b7a99]">Total</div>
           <div className="text-sm font-semibold text-[#1a2340]">{total}</div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] text-[#6b7a99]">In System</div>
+          <div className="text-xs text-[#6b7a99]">In System</div>
           <div className="text-sm font-semibold" style={{ color: '#3b6fd4' }}>{total}</div>
         </div>
       </div>
