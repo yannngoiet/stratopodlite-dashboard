@@ -246,10 +246,10 @@ export default function RegisterPage() {
               </div>
             </div>
             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
-              <button onClick={() => setStep(0)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', borderRadius: '2rem', fontWeight: 500, border: '1px solid var(--border)', background: '#fff', color: 'var(--color-navy)', cursor: 'pointer' }}>
+              <button onClick={() => setStep(0)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', borderRadius: '2rem', fontWeight: 500, border: '1px solid var(--border)', background: '#fff', color: 'var(--color-navy)', cursor: 'pointer', outline: 'none' }}>
                 <LuArrowLeft size={14} /> Back
               </button>
-              <button onClick={next} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+              <button onClick={next} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer', outline: 'none' }}>
                 Next <LuArrowRight size={14} />
               </button>
             </div>
@@ -372,13 +372,13 @@ export default function RegisterPage() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button onClick={() => setStep(1)} disabled={submitting}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', borderRadius: '2rem', fontWeight: 500, border: '1px solid var(--border)', background: '#fff', color: 'var(--color-navy)', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', borderRadius: '2rem', fontWeight: 500, border: '1px solid var(--border)', background: '#fff', color: 'var(--color-navy)', cursor: 'pointer', opacity: submitting ? 0.6 : 1, outline: 'none' }}>
                 <LuArrowLeft size={14} /> Back
               </button>
               {plan && plan.monthlyPrice > 0 ? (
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={() => handleSubmit('trial')} disabled={submitting}
-                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--primary)', color: '#fff', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, boxShadow: '0 2px 8px rgba(59,111,212,0.35)' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--primary)', color: '#fff', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, boxShadow: '0 2px 8px rgba(59,111,212,0.35)', outline: 'none' }}>
                     {submitting ? 'Creating...' : 'Start free trial'}
                   </button>
                   <button
@@ -392,13 +392,13 @@ export default function RegisterPage() {
                       router.push('/auth/payment')
                     }}
                     disabled={submitting}
-                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--color-green)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(34,197,94,0.35)' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--color-green)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(34,197,94,0.35)', outline: 'none' }}>
                     Buy Now
                   </button>
                 </div>
               ) : (
                 <button onClick={() => handleSubmit('demo')} disabled={submitting}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.75rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--color-teal)', color: '#fff', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.75rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--color-teal)', color: '#fff', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, outline: 'none' }}>
                   {submitting ? 'Sending request...' : 'Request a demo'} <LuArrowRight size={14} />
                 </button>
               )}
