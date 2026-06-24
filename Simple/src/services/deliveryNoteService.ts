@@ -22,7 +22,10 @@ export interface DeliveryNoteListResult {
 
 export interface DeliveryNoteFilters {
   deliveryNo?: string
+  shipmentNo?: string
   customerName?: string
+  invoiceNo?: string
+  status?: string
   dateFrom?: string
   dateTo?: string
   page?: number
@@ -35,10 +38,13 @@ const deliveryNoteService = {
     const params = new URLSearchParams({
       page: String(filters.page ?? 1),
       pageSize: String(filters.pageSize ?? 10),
-      ...(filters.deliveryNo && { deliveryNo: filters.deliveryNo }),
+      ...(filters.deliveryNo   && { deliveryNo:   filters.deliveryNo }),
+      ...(filters.shipmentNo   && { shipmentNo:   filters.shipmentNo }),
       ...(filters.customerName && { customerName: filters.customerName }),
-      ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
-      ...(filters.dateTo && { dateTo: filters.dateTo })
+      ...(filters.invoiceNo    && { invoiceNo:    filters.invoiceNo }),
+      ...(filters.status       && { status:       filters.status }),
+      ...(filters.dateFrom     && { dateFrom:     filters.dateFrom }),
+      ...(filters.dateTo       && { dateTo:       filters.dateTo }),
     })
 
     const res = await httpClient.get<DeliveryNoteListResult>(

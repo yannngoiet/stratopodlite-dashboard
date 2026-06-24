@@ -4,11 +4,16 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type SortingState,
 } from '@tanstack/react-table';
-import { Container, Form, Button, Row, Col, Badge, Spinner } from 'react-bootstrap';
-import { LuSearch, LuRefreshCw, LuDownload, LuEye } from 'react-icons/lu';
+import { Container, Badge, Spinner } from 'react-bootstrap';
+import { LuDownload, LuEye } from 'react-icons/lu';
+import { ArrowUp, ArrowDown, ArrowUpDown, Search, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import * as XLSX from 'xlsx';
 import deliveryNoteService, { type DeliveryNoteListItem } from '@/services/deliveryNoteService';
 
 
@@ -45,11 +50,14 @@ const Page = () => {
   const [pageSize]                  = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [sorting, setSorting]           = useState<SortingState>([])
 
-  const [deliveryNo, setDeliveryNo]     = useState('')
+  const [deliveryNo,   setDeliveryNo]   = useState('')
+  const [shipmentNo,   setShipmentNo]   = useState('')
   const [customerName, setCustomerName] = useState('')
-  const [dateFrom, setDateFrom]         = useState('')
-  const [dateTo, setDateTo]             = useState('')
+  const [invoiceNo,    setInvoiceNo]    = useState('')
+  const [status,       setStatus]       = useState('')
+  const [dateLoaded,   setDateLoaded]   = useState('')
 
   // ── Download PDF ───────────────────────────────────────────────────────────
   const handleDownloadPdf = async (dn: string) => {
@@ -71,26 +79,41 @@ const Page = () => {
   }
 
   // ── Columns ────────────────────────────────────────────────────────────────
+  const SortHeader = ({ column, label }: { column: any; label: string }) => (
+    <button
+      className="dash-sort-btn-dark"
+      onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+    >
+      {label}
+      {column.getIsSorted() === 'asc'  ? <ArrowUp size={12} /> :
+       column.getIsSorted() === 'desc' ? <ArrowDown size={12} /> :
+       <ArrowUpDown size={12} className="dash-sort-icon-neutral" />}
+    </button>
+  )
+
   const columns: ColumnDef<DeliveryNoteListItem>[] = [
     {
       header: '#',
       cell: ({ row }) => row.index + 1,
       size: 50
     },
-    { accessorKey: 'deliveryNo',      header: 'Delivery Nr' },
+    {
+      accessorKey: 'deliveryNo',
+      header: ({ column }) => <SortHeader column={column} label="Delivery Nr" />,
+    },
     {
       accessorKey: 'shipmentNo',
-      header: 'Shipment Nr',
+      header: ({ column }) => <SortHeader column={column} label="Shipment Nr" />,
       cell: ({ row }) => row.original.shipmentNo ?? '-'
     },
     {
       accessorKey: 'customerName',
-      header: 'Customer Name',
+      header: ({ column }) => <SortHeader column={column} label="Customer Name" />,
       cell: ({ row }) => row.original.customerName ?? '-'
     },
     {
       accessorKey: 'invoiceNo',
-      header: 'Invoice Nr',
+      header: ({ column }) => <SortHeader column={column} label="Invoice Nr" />,
       cell: ({ row }) => row.original.invoiceNo ?? '-'
     },
     {
@@ -100,7 +123,7 @@ const Page = () => {
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: ({ column }) => <SortHeader column={column} label="Status" />,
       cell: ({ row }) => (
         <Badge bg={getStatusVariant(row.original.status)}>
           {row.original.status ?? '-'}
@@ -109,12 +132,12 @@ const Page = () => {
     },
     {
       accessorKey: 'createdAt',
-      header: 'Date Loaded',
+      header: ({ column }) => <SortHeader column={column} label="Date Loaded" />,
       cell: ({ row }) => formatDate(row.original.createdAt)
     },
     {
       accessorKey: 'updatedAt',
-      header: 'Last Updated',
+      header: ({ column }) => <SortHeader column={column} label="Last Updated" />,
       cell: ({ row }) => formatDate(row.original.updatedAt)
     },
     {
@@ -127,23 +150,12 @@ const Page = () => {
         if (row.original.status !== 'Completed') return null
 
         return (
-          <div className="d-flex gap-1">
-            <Button
-              size="sm"
-              variant="outline-primary"
-              title="View Details"
-              onClick={() => alert(`Preview: ${dn}`)}>
+          <div className="flex gap-1">
+            <Button size="sm" variant="outline" title="View Details" onClick={() => alert(`Preview: ${dn}`)} className="rounded-md px-2">
               <LuEye size={14} />
             </Button>
-            <Button
-              size="sm"
-              variant="outline-success"
-              title="Download PDF"
-              disabled={isDownloading}
-              onClick={() => handleDownloadPdf(dn)}>
-              {isDownloading
-                ? <Spinner size="sm" />
-                : <LuDownload size={14} />}
+            <Button size="sm" variant="outline" title="Download PDF" disabled={isDownloading} onClick={() => handleDownloadPdf(dn)} className="rounded-md px-2 !border-green-500 !text-green-600 hover:!bg-green-50">
+              {isDownloading ? <Spinner size="sm" /> : <LuDownload size={14} />}
             </Button>
           </div>
         )
@@ -155,19 +167,24 @@ const Page = () => {
   const fetchData = useCallback(async (
     currentPage       = 1,
     currentDeliveryNo = '',
+    currentShipmentNo = '',
     currentCustomer   = '',
-    currentDateFrom   = '',
-    currentDateTo     = ''
+    currentInvoiceNo  = '',
+    currentStatus     = '',
+    currentDateLoaded = ''
   ) => {
     setLoading(true)
     try {
       const result = await deliveryNoteService.getAll({
         page:         currentPage,
         pageSize,
-        deliveryNo:   currentDeliveryNo || undefined,
-        customerName: currentCustomer   || undefined,
-        dateFrom:     currentDateFrom   || undefined,
-        dateTo:       currentDateTo     || undefined,
+        deliveryNo:   currentDeliveryNo  || undefined,
+        shipmentNo:   currentShipmentNo  || undefined,
+        customerName: currentCustomer    || undefined,
+        invoiceNo:    currentInvoiceNo   || undefined,
+        status:       currentStatus      || undefined,
+        dateFrom:     currentDateLoaded  || undefined,
+        dateTo:       currentDateLoaded  || undefined,
       })
       setData(result.items)
       setTotalCount(result.totalCount)
@@ -183,29 +200,47 @@ const Page = () => {
 
   const handleSearch = () => {
     setPage(1)
-    fetchData(1, deliveryNo, customerName, dateFrom, dateTo)
+    fetchData(1, deliveryNo, shipmentNo, customerName, invoiceNo, status, dateLoaded)
   }
 
   const handleReset = () => {
-    setDeliveryNo('')
-    setCustomerName('')
-    setDateFrom('')
-    setDateTo('')
+    setDeliveryNo(''); setShipmentNo(''); setCustomerName(''); setInvoiceNo(''); setStatus(''); setDateLoaded('')
     setPage(1)
-    fetchData(1, '', '', '', '')
+    fetchData(1, '', '', '', '', '', '')
   }
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
-    fetchData(newPage, deliveryNo, customerName, dateFrom, dateTo)
+    fetchData(newPage, deliveryNo, shipmentNo, customerName, invoiceNo, status, dateLoaded)
+  }
+
+  const handleExportExcel = () => {
+    const rows = data.map((item, i) => ({
+      '#':             i + 1,
+      'Delivery No':   item.deliveryNo,
+      'Shipment No':   item.shipmentNo    ?? '-',
+      'Customer Name': item.customerName  ?? '-',
+      'Invoice No':    item.invoiceNo     ?? '-',
+      'Order No':      item.purchaseOrderNo ?? '-',
+      'Status':        item.status        ?? '-',
+      'Date Loaded':   formatDate(item.createdAt),
+      'Last Updated':  formatDate(item.updatedAt),
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Delivery Notes')
+    XLSX.writeFile(wb, `DeliveryNotes_${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
   const table = useReactTable({
     data: data ?? [],
     columns,
-    getCoreRowModel: getCoreRowModel(),
+    state:            { sorting },
+    onSortingChange:  setSorting,
+    getCoreRowModel:  getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     manualPagination: true,
-    pageCount: totalPages
+    pageCount:        totalPages,
   })
 
   const start = totalCount === 0 ? 0 : (page - 1) * pageSize + 1
@@ -222,46 +257,35 @@ const Page = () => {
 
         <div className="card-body p-3">
           {/* Filters */}
-          <Row className="g-2 mb-3 align-items-center">
-            <Col xs={12} md={3}>
-              <Form.Control size="sm" type="text" placeholder="Delivery Nr"
-                value={deliveryNo}
-                onChange={e => setDeliveryNo(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSearch()} />
-            </Col>
-            <Col xs={12} md={3}>
-              <Form.Control size="sm" type="text" placeholder="Customer Name"
-                value={customerName}
-                onChange={e => setCustomerName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSearch()} />
-            </Col>
-            <Col xs={6} md={2}>
-              <Form.Control size="sm" type="date" value={dateFrom}
-                onChange={e => setDateFrom(e.target.value)} />
-            </Col>
-            <Col xs={6} md={2}>
-              <Form.Control size="sm" type="date" value={dateTo}
-                onChange={e => setDateTo(e.target.value)} />
-            </Col>
-            <Col xs={12} md={2} className="d-flex gap-2">
-              <Button size="sm" variant="primary" onClick={handleSearch} disabled={loading}>
-                <LuSearch className="me-1" />Search
-              </Button>
-              <Button size="sm" variant="secondary" onClick={handleReset} disabled={loading}>
-                <LuRefreshCw className="me-1" />Reset
-              </Button>
-            </Col>
-          </Row>
+          <div className="dash-filter-bar mb-3">
+            <input value={deliveryNo}   onChange={e => setDeliveryNo(e.target.value)}   onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Delivery No"   className="dash-filter-input" />
+            <input value={shipmentNo}   onChange={e => setShipmentNo(e.target.value)}   onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Shipment No"   className="dash-filter-input" />
+            <input value={customerName} onChange={e => setCustomerName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Customer Name" className="dash-filter-input" />
+            <input value={invoiceNo}    onChange={e => setInvoiceNo(e.target.value)}    onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Invoice No"    className="dash-filter-input" />
+            <select value={status} onChange={e => setStatus(e.target.value)} className="dash-filter-input">
+              <option value="">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="InProgress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+            <input type="date" value={dateLoaded} onChange={e => setDateLoaded(e.target.value)} className="dash-filter-input" style={{ flex: '0 0 auto', width: 160 }} title="Date Loaded" />
+            <Button size="sm" onClick={handleSearch} disabled={loading} className="flex items-center gap-1.5 whitespace-nowrap btn-blue rounded-md">
+              <Search size={13} /> Search
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleReset} disabled={loading} className="flex items-center gap-1.5 whitespace-nowrap rounded-md">
+              <RotateCcw size={13} /> Reset
+            </Button>
+          </div>
 
           {/* Table */}
           <div className="table-responsive">
-            <table className="table table-bordered table-striped table-hover table-sm align-middle mb-0">
-              <thead style={{ backgroundColor: '#2c3e50' }}>
+            <table className="table table-hover table-sm align-middle mb-0">
+              <thead className="dash-thead-dark">
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map(header => (
-                      <th key={header.id} className="py-2 px-3 text-uppercase"
-                        style={{ color: '#fff', fontWeight: 600, fontSize: '0.75rem', backgroundColor: '#2c3e50' }}>
+                      <th key={header.id} className="py-2 px-3 text-uppercase">
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </th>
                     ))}
@@ -305,40 +329,33 @@ const Page = () => {
                 ? `Showing ${start} to ${end} of ${totalCount} entries`
                 : 'No entries found'}
             </small>
-            <div className="d-flex gap-1">
-              <Button variant="outline-secondary" size="sm"
-                disabled={page === 1 || loading}
-                onClick={() => handlePageChange(1)}>«</Button>
-              <Button variant="outline-secondary" size="sm"
-                disabled={page === 1 || loading}
-                onClick={() => handlePageChange(page - 1)}>‹</Button>
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" disabled={page === 1 || loading} onClick={() => handlePageChange(1)} className="rounded-md px-2">«</Button>
+              <Button variant="outline" size="sm" disabled={page === 1 || loading} onClick={() => handlePageChange(page - 1)} className="rounded-md px-2">‹</Button>
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const pageNum = Math.max(1, page - 2) + i
                 if (pageNum > totalPages) return null
                 return (
                   <Button key={pageNum} size="sm"
-                    variant={pageNum === page ? 'primary' : 'outline-secondary'}
+                    className={`rounded-md px-2 ${pageNum === page ? 'btn-navy' : ''}`}
+                    variant={pageNum === page ? 'default' : 'outline'}
                     onClick={() => handlePageChange(pageNum)}>
                     {pageNum}
                   </Button>
                 )
               })}
-              <Button variant="outline-secondary" size="sm"
-                disabled={page >= totalPages || loading}
-                onClick={() => handlePageChange(page + 1)}>›</Button>
-              <Button variant="outline-secondary" size="sm"
-                disabled={page >= totalPages || loading}
-                onClick={() => handlePageChange(totalPages)}>»</Button>
+              <Button variant="outline" size="sm" disabled={page >= totalPages || loading} onClick={() => handlePageChange(page + 1)} className="rounded-md px-2">›</Button>
+              <Button variant="outline" size="sm" disabled={page >= totalPages || loading} onClick={() => handlePageChange(totalPages)} className="rounded-md px-2">»</Button>
             </div>
           </div>
 
           {/* Export */}
-          <div className="d-flex justify-content-center mt-3 gap-2">
-            <Button variant="info" size="sm" className="text-white">
-              <LuDownload className="me-1" />Download Report
+          <div className="flex justify-center mt-3 gap-2">
+            <Button size="sm" className="flex items-center gap-1.5 btn-sky rounded-md">
+              <LuDownload size={13} /> Download Report
             </Button>
-            <Button variant="success" size="sm">
-              <LuDownload className="me-1" />Export to Excel
+            <Button size="sm" onClick={handleExportExcel} disabled={data.length === 0} className="flex items-center gap-1.5 btn-green rounded-md">
+              <LuDownload size={13} /> Export to Excel
             </Button>
           </div>
         </div>

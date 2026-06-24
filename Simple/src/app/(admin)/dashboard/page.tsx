@@ -173,7 +173,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between px-4 py-3">
               <h2 className="dash-section-title">Recent Delivery Notes</h2>
               <Link href="/delivery-notes">
-                <Button size="sm" className="h-8 text-xs rounded-md gap-1.5 !bg-[#3b6fd4] !text-white border-none">
+                <Button size="sm" className="h-8 text-xs rounded-md gap-1.5 btn-blue">
                   <FileText size={13} /> View All
                 </Button>
               </Link>

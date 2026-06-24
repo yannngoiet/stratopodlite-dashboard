@@ -16,6 +16,12 @@ export interface RegisterCompanyRequest {
   planId:               string
   estimatedDriverCount: number
   requestDemo:          boolean
+
+  // Payment (direct purchase flow)
+  cardHolderName?:      string
+  cardNumber?:          string
+  cardExpiry?:          string
+  cardCvv?:             string
 }
 
 export interface RegisterCompanyResponse {

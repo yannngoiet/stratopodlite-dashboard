@@ -1,340 +1,226 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Container, Form, Button, Table, Badge, Spinner, Modal } from 'react-bootstrap';
-import { LuUpload, LuFileText, LuStar, LuTrash2 } from 'react-icons/lu';
-import { getCompanyId } from '@/helpers/config';
-import templateService, { type Template } from '@/services/templateService';
+import { useState, useEffect } from 'react'
+import { Container, Badge, Modal } from 'react-bootstrap'
+import { LuUpload, LuFileText, LuStar, LuTrash2, LuLayoutTemplate } from 'react-icons/lu'
+import { RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { getCompanyId } from '@/helpers/config'
+import templateService, { type Template } from '@/services/templateService'
 
-const CATEGORIES = ['DELIVERY', 'INVOICE'];
+const CATEGORIES = ['DELIVERY', 'INVOICE']
 
 const Page = () => {
-  const companyId = getCompanyId();
+  const companyId = getCompanyId()
 
-  // ── Upload form state ──────────────────────────────────────────────────────
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [templateName, setTemplateName] = useState('');
-  const [description, setDescription]   = useState('');
-  const [category, setCategory]         = useState('DELIVERY');
-  const [uploading, setUploading]       = useState(false);
-  const [uploadError, setUploadError]   = useState('');
-  const [fieldErrors, setFieldErrors]   = useState<Record<string, string>>({});
+  const [selectedFile, setSelectedFile]   = useState<File | null>(null)
+  const [templateName, setTemplateName]   = useState('')
+  const [description, setDescription]     = useState('')
+  const [category, setCategory]           = useState('DELIVERY')
+  const [uploading, setUploading]         = useState(false)
+  const [uploadError, setUploadError]     = useState('')
+  const [fieldErrors, setFieldErrors]     = useState<Record<string, string>>({})
 
-  // ── Table state ────────────────────────────────────────────────────────────
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [loading, setLoading]     = useState(false);
-  const [actionId, setActionId]   = useState<number | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletingTemplate, setDeletingTemplate] = useState<Template | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [templates, setTemplates]         = useState<Template[]>([])
+  const [loading, setLoading]             = useState(false)
+  const [actionId, setActionId]           = useState<number | null>(null)
+  const [showDeleteModal, setShowDeleteModal]     = useState(false)
+  const [deletingTemplate, setDeletingTemplate]   = useState<Template | null>(null)
+  const [deleting, setDeleting]           = useState(false)
 
-  // ── Load templates on mount ────────────────────────────────────────────────
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
+  useEffect(() => { fetchTemplates() }, [])
 
   const fetchTemplates = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const data = await templateService.getAll(companyId);
-      setTemplates(data);
+      const data = await templateService.getAll(companyId)
+      setTemplates(data)
     } catch (err) {
-      console.error('Failed to load templates — PDF service may not be running:', err);
-      setTemplates([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      console.error(err); setTemplates([])
+    } finally { setLoading(false) }
+  }
 
-  // ── Validate ───────────────────────────────────────────────────────────────
   const validate = (): boolean => {
-    const errors: Record<string, string> = {};
+    const errors: Record<string, string> = {}
+    if (!templateName.trim()) errors.templateName = 'Template name is required.'
+    if (!description.trim())  errors.description  = 'Description is required.'
+    if (!selectedFile)        errors.file         = 'Please select a .docx file.'
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
-    if (!templateName.trim())
-      errors.templateName = 'Template name is required.';
-
-    if (!description.trim())
-      errors.description = 'Description is required.';
-
-    if (!selectedFile)
-      errors.file = 'Please select a .docx file.';
-
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // ── Upload ─────────────────────────────────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setSelectedFile(file);
-    if (file && !templateName) {
-      setTemplateName(file.name.replace(/\.[^/.]+$/, ''));
-    }
-    if (fieldErrors.file) {
-      setFieldErrors(prev => ({ ...prev, file: '' }));
-    }
-  };
+    const file = e.target.files?.[0] ?? null
+    setSelectedFile(file)
+    if (file && !templateName) setTemplateName(file.name.replace(/\.[^/.]+$/, ''))
+    if (fieldErrors.file) setFieldErrors(prev => ({ ...prev, file: '' }))
+  }
 
   const handleUpload = async () => {
-    setUploadError('');
-    if (!validate()) return;
-
-    setUploading(true);
+    setUploadError('')
+    if (!validate()) return
+    setUploading(true)
     try {
       await templateService.upload(companyId, {
         templateFile: selectedFile!,
         name: templateName.trim(),
         description: description.trim(),
         category,
-      });
-
-      setSelectedFile(null);
-      setTemplateName('');
-      setDescription('');
-      setCategory('DELIVERY');
-      setFieldErrors({});
-      const input = document.getElementById('templateFile') as HTMLInputElement;
-      if (input) input.value = '';
-
-      await fetchTemplates();
+      })
+      setSelectedFile(null); setTemplateName(''); setDescription(''); setCategory('DELIVERY'); setFieldErrors({})
+      const input = document.getElementById('templateFile') as HTMLInputElement
+      if (input) input.value = ''
+      await fetchTemplates()
     } catch (err: any) {
-      setUploadError(err?.response?.data?.error ?? 'Upload failed. Please try again.');
-    } finally {
-      setUploading(false);
-    }
-  };
+      setUploadError(err?.response?.data?.error ?? 'Upload failed. Please try again.')
+    } finally { setUploading(false) }
+  }
 
-  // ── Set default ────────────────────────────────────────────────────────────
   const handleSetDefault = async (id: number) => {
-    setActionId(id);
-    try {
-      await templateService.setDefault(companyId, id);
-      await fetchTemplates();
-    } catch (err) {
-      console.error('Failed to set default template:', err);
-    } finally {
-      setActionId(null);
-    }
-  };
+    setActionId(id)
+    try { await templateService.setDefault(companyId, id); await fetchTemplates() }
+    catch (err) { console.error(err) }
+    finally { setActionId(null) }
+  }
 
-  // ── Delete template ────────────────────────────────────────────────────────
   const handleDelete = async () => {
-    if (!deletingTemplate) return;
-    setDeleting(true);
+    if (!deletingTemplate) return
+    setDeleting(true)
     try {
-      await templateService.delete(companyId, deletingTemplate.id);
-      setShowDeleteModal(false);
-      setDeletingTemplate(null);
-      await fetchTemplates();
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  // ── Category badge colour ──────────────────────────────────────────────────
-  const categoryVariant = (cat: string) =>
-    cat === 'DELIVERY' ? 'primary' : 'secondary';
+      await templateService.delete(companyId, deletingTemplate.id)
+      setShowDeleteModal(false); setDeletingTemplate(null); await fetchTemplates()
+    } finally { setDeleting(false) }
+  }
 
   return (
     <Container fluid className="py-3">
 
-      {/* ── Upload Card ───────────────────────────────────────────────────── */}
+      {/* Upload Card */}
       <div className="card shadow-sm mb-4">
-        <div className="card-header py-2 d-flex justify-content-between align-items-center">
-          <h6 className="mb-0 fw-semibold">Upload Template</h6>
-          <span className="badge bg-secondary">Company ID: {companyId}</span>
+        <div className="card-header d-flex justify-content-between align-items-center py-2">
+          <h6 className="mb-0 fw-semibold d-flex align-items-center gap-2">
+            <LuLayoutTemplate size={15} /> Upload Template
+          </h6>
+          <span className="badge badge-blue" style={{ fontSize: 11 }}>Company ID: {companyId}</span>
         </div>
         <div className="card-body p-3">
-          <div className="row g-3 align-items-start">
-
-            {/* Template Name */}
-            <div className="col-12 col-md-3">
-              <Form.Label className="small fw-semibold">
-                Template Name <span className="text-danger">*</span>
-              </Form.Label>
-              <Form.Control
-                size="sm"
-                type="text"
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="flex flex-col gap-1" style={{ flex: '2 1 180px' }}>
+              <label className="field-label">Template Name <span className="text-red-500">*</span></label>
+              <input className={`dash-filter-input ${fieldErrors.templateName ? 'border-red-400' : ''}`}
                 placeholder="e.g. Standard Delivery Note"
                 value={templateName}
-                isInvalid={!!fieldErrors.templateName}
-                onChange={e => {
-                  setTemplateName(e.target.value);
-                  if (fieldErrors.templateName)
-                    setFieldErrors(prev => ({ ...prev, templateName: '' }));
-                }}
-              />
-              <Form.Control.Feedback type="invalid">
-                {fieldErrors.templateName}
-              </Form.Control.Feedback>
+                onChange={e => { setTemplateName(e.target.value); if (fieldErrors.templateName) setFieldErrors(p => ({ ...p, templateName: '' })) }} />
+              {fieldErrors.templateName && <span style={{ fontSize: 11, color: '#ef4444' }}>{fieldErrors.templateName}</span>}
             </div>
-
-            {/* Category */}
-            <div className="col-12 col-md-2">
-              <Form.Label className="small fw-semibold">Category</Form.Label>
-              <Form.Select
-                size="sm"
-                value={category}
-                onChange={e => setCategory(e.target.value)}>
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </Form.Select>
+            <div className="flex flex-col gap-1" style={{ flex: '1 1 130px' }}>
+              <label className="field-label">Category</label>
+              <select className="dash-filter-input" value={category} onChange={e => setCategory(e.target.value)}>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
-
-            {/* Description */}
-            <div className="col-12 col-md-3">
-              <Form.Label className="small fw-semibold">
-                Description <span className="text-danger">*</span>
-              </Form.Label>
-              <Form.Control
-                size="sm"
-                type="text"
+            <div className="flex flex-col gap-1" style={{ flex: '2 1 180px' }}>
+              <label className="field-label">Description <span className="text-red-500">*</span></label>
+              <input className={`dash-filter-input ${fieldErrors.description ? 'border-red-400' : ''}`}
                 placeholder="e.g. Standard delivery note template"
                 value={description}
-                isInvalid={!!fieldErrors.description}
-                onChange={e => {
-                  setDescription(e.target.value);
-                  if (fieldErrors.description)
-                    setFieldErrors(prev => ({ ...prev, description: '' }));
-                }}
-              />
-              <Form.Control.Feedback type="invalid">
-                {fieldErrors.description}
-              </Form.Control.Feedback>
+                onChange={e => { setDescription(e.target.value); if (fieldErrors.description) setFieldErrors(p => ({ ...p, description: '' })) }} />
+              {fieldErrors.description && <span style={{ fontSize: 11, color: '#ef4444' }}>{fieldErrors.description}</span>}
             </div>
-
-            {/* File */}
-            <div className="col-12 col-md-2">
-              <Form.Label className="small fw-semibold">
-                File <span className="text-muted">(.docx)</span>{' '}
-                <span className="text-danger">*</span>
-              </Form.Label>
-              <Form.Control
-                id="templateFile"
-                size="sm"
-                type="file"
-                accept=".docx"
-                isInvalid={!!fieldErrors.file}
-                onChange={handleFileChange}
-              />
-              <Form.Control.Feedback type="invalid">
-                {fieldErrors.file}
-              </Form.Control.Feedback>
+            <div className="flex flex-col gap-1" style={{ flex: '2 1 180px' }}>
+              <label className="field-label">File (.docx) <span className="text-red-500">*</span></label>
+              <input id="templateFile" type="file" accept=".docx"
+                className={`dash-filter-input ${fieldErrors.file ? 'border-red-400' : ''}`}
+                style={{ padding: '3px 8px' }}
+                onChange={handleFileChange} />
+              {fieldErrors.file && <span style={{ fontSize: 11, color: '#ef4444' }}>{fieldErrors.file}</span>}
             </div>
-
-            {/* Upload Button */}
-            <div className="col-12 col-md-2 d-flex align-items-end">
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={handleUpload}
-                disabled={uploading}
-                className="w-100">
-                {uploading
-                  ? <><Spinner size="sm" className="me-1" />Uploading...</>
-                  : <><LuUpload className="me-1" />Upload</>}
+            <div className="flex flex-col gap-1">
+              <label className="field-label opacity-0 select-none">.</label>
+              <Button size="sm" disabled={uploading} onClick={handleUpload}
+                className="flex items-center gap-1.5 btn-blue rounded-md whitespace-nowrap px-4">
+                <LuUpload size={13} /> {uploading ? 'Uploading...' : 'Upload'}
               </Button>
             </div>
           </div>
 
-          {/* File preview */}
           {selectedFile && (
-            <div className="mt-2 d-flex align-items-center gap-2 text-muted small">
-              <LuFileText />
-              <span>{selectedFile.name}</span>
-              <Badge bg="secondary">{(selectedFile.size / 1024).toFixed(1)} KB</Badge>
+            <div className="flex items-center gap-1.5 mt-2 text-muted" style={{ fontSize: 13 }}>
+              <LuFileText size={14} /> {selectedFile.name}
+              <Badge bg="secondary" style={{ fontSize: 10 }}>{(selectedFile.size / 1024).toFixed(1)} KB</Badge>
             </div>
           )}
 
-          {/* API error */}
           {uploadError && (
-            <div className="mt-2 alert alert-danger py-2 small mb-0">
-              {uploadError}
-            </div>
+            <div className="mt-2 alert alert-danger py-2 mb-0" style={{ fontSize: 13 }}>{uploadError}</div>
           )}
         </div>
       </div>
 
-      {/* ── Templates Table ───────────────────────────────────────────────── */}
+      {/* Table Card */}
       <div className="card shadow-sm">
-        <div className="card-header py-2 d-flex justify-content-between align-items-center">
+        <div className="card-header d-flex justify-content-between align-items-center py-2">
           <h6 className="mb-0 fw-semibold">Uploaded Templates</h6>
-          <Button size="sm" variant="outline-secondary" onClick={fetchTemplates}>
-            Refresh
+          <Button size="sm" variant="outline" onClick={fetchTemplates} disabled={loading}
+            className="flex items-center gap-1.5 rounded-md">
+            <RotateCcw size={13} /> Refresh
           </Button>
         </div>
-        <div className="card-body p-0">
-          {loading ? (
-            <div className="text-center py-4">
-              <Spinner size="sm" className="me-2" />Loading templates...
-            </div>
-          ) : (
-            <Table bordered hover size="sm" className="mb-0" style={{ fontSize: '0.85rem' }}>
-              <thead>
+        <div className="card-body p-3">
+          <div className="table-responsive">
+            <table className="table table-hover table-sm align-middle mb-0">
+              <thead className="dash-thead-dark">
                 <tr>
                   {['#', 'Name', 'File', 'Category', 'Default', 'Active', 'Created', 'Actions'].map(h => (
-                    <th
-                      key={h}
-                      className="py-2 px-3 text-uppercase"
-                      style={{ backgroundColor: '#2c3e50', color: '#fff', fontWeight: 600, fontSize: '0.75rem' }}>
-                      {h}
-                    </th>
+                    <th key={h} className="py-2 px-3 text-uppercase">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {templates.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-4 text-muted">
-                      No templates uploaded yet
-                    </td>
-                  </tr>
+              <tbody style={{ fontSize: '0.85rem' }}>
+                {loading ? (
+                  <tr><td colSpan={8} className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
+                  </td></tr>
+                ) : templates.length === 0 ? (
+                  <tr><td colSpan={8} className="text-center py-4 text-muted">No templates uploaded yet</td></tr>
                 ) : (
                   templates.map((t, i) => (
                     <tr key={t.id}>
-                      <td className="py-2 px-3">{i + 1}</td>
+                      <td className="py-2 px-3"><span className="dash-cell-muted">{i + 1}</span></td>
                       <td className="py-2 px-3">{t.name}</td>
                       <td className="py-2 px-3">
-                        <LuFileText className="me-1 text-muted" />
-                        {t.fileName}
+                        <span className="flex items-center gap-1 dash-cell-muted">
+                          <LuFileText size={13} /> {t.fileName}
+                        </span>
                       </td>
                       <td className="py-2 px-3">
-                        <Badge bg={categoryVariant(t.category)}>{t.category}</Badge>
+                        <Badge bg={t.category === 'DELIVERY' ? 'primary' : 'secondary'}>{t.category}</Badge>
                       </td>
                       <td className="py-2 px-3 text-center">
-                        {t.isDefault
-                          ? <Badge bg="warning" text="dark">Default</Badge>
-                          : <span className="text-muted">—</span>}
+                        {t.isDefault ? <Badge bg="warning" text="dark">Default</Badge> : <span className="dash-cell-muted">—</span>}
                       </td>
                       <td className="py-2 px-3 text-center">
-                        <Badge bg={t.isActive ? 'success' : 'danger'}>
-                          {t.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
+                        <Badge bg={t.isActive ? 'success' : 'danger'}>{t.isActive ? 'Active' : 'Inactive'}</Badge>
                       </td>
                       <td className="py-2 px-3">
-                        {new Date(t.createdAt).toLocaleDateString('en-ZA')}
+                        <span className="dash-cell-muted">{new Date(t.createdAt).toLocaleDateString('en-ZA')}</span>
                       </td>
                       <td className="py-2 px-3">
-                        <div className="d-flex gap-1">
+                        <div className="flex gap-1">
                           {!t.isDefault && (
-                            <Button
-                              size="sm"
-                              variant="outline-warning"
-                              title="Set as Default"
+                            <Button size="sm" variant="outline" title="Set as Default"
                               disabled={actionId === t.id}
+                              className="rounded-md px-2 btn-outline-amber"
                               onClick={() => handleSetDefault(t.id)}>
                               {actionId === t.id
-                                ? <Spinner size="sm" />
-                                : <LuStar size={14} />}
+                                ? <span className="spinner-border spinner-border-sm" role="status" />
+                                : <LuStar size={11} />}
                             </Button>
                           )}
-                          <Button
-                            size="sm"
-                            variant="outline-danger"
-                            title="Delete Template"
-                            onClick={() => { setDeletingTemplate(t); setShowDeleteModal(true); }}>
-                            <LuTrash2 size={14} />
+                          <Button size="sm" variant="outline" title="Delete Template"
+                            className="rounded-md px-2 btn-outline-red"
+                            onClick={() => { setDeletingTemplate(t); setShowDeleteModal(true) }}>
+                            <LuTrash2 size={11} />
                           </Button>
                         </div>
                       </td>
@@ -342,31 +228,31 @@ const Page = () => {
                   ))
                 )}
               </tbody>
-            </Table>
-          )}
+            </table>
+          </div>
         </div>
       </div>
-      {/* Delete Confirmation Modal */}
+
+      {/* Delete Modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
-        <Modal.Header closeButton style={{ background: '#dc3545', color: '#fff' }}>
-          <Modal.Title style={{ fontSize: 15 }}>Delete Template</Modal.Title>
+        <Modal.Header closeButton className="modal-header-dark">
+          <Modal.Title style={{ fontSize: 15, fontWeight: 600 }}>Delete Template</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="p-4">
           <p className="mb-1">Are you sure you want to delete:</p>
           <strong>{deletingTemplate?.name}</strong>
-          <p className="text-muted small mt-2 mb-0">This action cannot be undone.</p>
+          <p className="text-muted mt-2 mb-0" style={{ fontSize: 12 }}>This action cannot be undone.</p>
         </Modal.Body>
-        <Modal.Footer>
-          <Button size="sm" variant="outline-secondary"
-            onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-          <Button size="sm" variant="danger" disabled={deleting} onClick={handleDelete}>
+        <Modal.Footer style={{ borderTop: '1px solid #dde3f0', padding: '0.75rem 1.25rem' }}>
+          <Button size="sm" variant="outline" className="rounded-md px-4" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+          <Button size="sm" disabled={deleting} className="rounded-md px-4 btn-outline-red" onClick={handleDelete}>
             {deleting ? 'Deleting...' : 'Yes, Delete'}
           </Button>
         </Modal.Footer>
       </Modal>
 
     </Container>
-  );
-};
+  )
+}
 
-export default Page;
+export default Page

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -12,11 +12,24 @@ import {
   type SortingState,
   type ColumnFiltersState,
 } from '@tanstack/react-table'
-import { Badge, Button, Col, Container, Form, Modal, Row } from 'react-bootstrap'
-import { LuPencil, LuTrash2, LuPlus, LuCar, LuCarFront, LuSave, LuDownload } from 'react-icons/lu'
+import { Badge, Button as RBButton, Container, Form, Modal } from 'react-bootstrap'
+import { LuPencil, LuTrash2, LuPlus, LuCarFront, LuSave, LuDownload } from 'react-icons/lu'
+import { ArrowUp, ArrowDown, ArrowUpDown, Search, RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import * as XLSX from 'xlsx'
 import driverService, { type Driver } from '@/services/driverService'
 import vehicleService, { type Vehicle } from '@/services/vehicleService'
 import { getCompanyId } from '@/helpers/config'
+
+const SortHeader = ({ column, label }: { column: any; label: string }) => (
+  <button className="dash-sort-btn-dark"
+    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+    {label}
+    {column.getIsSorted() === 'asc'  ? <ArrowUp size={12} /> :
+     column.getIsSorted() === 'desc' ? <ArrowDown size={12} /> :
+     <ArrowUpDown size={12} className="dash-sort-icon-neutral" />}
+  </button>
+)
 
 const PLANT_OPTIONS = [
   { id: 'P001', name: 'Acme Head Office - JHB' },
@@ -24,8 +37,6 @@ const PLANT_OPTIONS = [
   { id: 'P003', name: 'Acme Depot - DBN' },
   { id: 'PLANT001', name: 'Johannesburg Warehouse' },
 ]
-
-const NAVY = '#2c3e50'
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<Driver[]>([])
@@ -48,7 +59,6 @@ export default function DriversPage() {
     licenseNumber: '', licenseExpiryDate: '', isActive: true,
   })
 
-  const [showVehicleModal, setShowVehicleModal] = useState(false)
   const [vehicleReg, setVehicleReg] = useState('')
   const [vehicleType, setVehicleType] = useState('')
   const [savingVehicle, setSavingVehicle] = useState(false)
@@ -195,35 +205,31 @@ export default function DriversPage() {
       id: 'index',
       header: '#',
       size: 50,
-      cell: ({ row }) => (
-        <span style={{ color: '#888', fontSize: 12 }}>{row.index + 1}</span>
-      )
+      cell: ({ row }) => row.index + 1,
     },
     {
       accessorKey: 'empNo',
-      header: 'Emp No',
-      cell: ({ row }) => (
-        <span style={{ fontWeight: 600, color: NAVY }}>{row.original.empNo}</span>
-      )
+      header: ({ column }) => <SortHeader column={column} label="Emp No" />,
+      cell: ({ row }) => <span className="dash-text-navy">{row.original.empNo}</span>,
     },
     {
       id: 'fullName',
-      header: 'Full Name',
+      header: ({ column }) => <SortHeader column={column} label="Full Name" />,
       accessorFn: row => `${row.firstName} ${row.lastName}`,
-      cell: ({ row }) => `${row.original.firstName} ${row.original.lastName}`
+      cell: ({ row }) => `${row.original.firstName} ${row.original.lastName}`,
     },
     {
       accessorKey: 'plantId',
-      header: 'Plant',
+      header: ({ column }) => <SortHeader column={column} label="Plant" />,
       cell: ({ row }) => {
         const plant = PLANT_OPTIONS.find(p => p.id === row.original.plantId)
-        return <span style={{ fontSize: 12 }}>{plant ? plant.name : row.original.plantId || '—'}</span>
-      }
+        return <span className="dash-cell-muted">{plant ? plant.name : row.original.plantId || '—'}</span>
+      },
     },
     {
       accessorKey: 'licenseNumber',
-      header: 'License Nr',
-      cell: ({ row }) => row.original.licenseNumber || '—',
+      header: ({ column }) => <SortHeader column={column} label="License Nr" />,
+      cell: ({ row }) => <span className="dash-cell-muted">{row.original.licenseNumber || '—'}</span>,
     },
     {
       id: 'vehicle',
@@ -254,10 +260,9 @@ export default function DriversPage() {
                 </option>
               ))}
             </Form.Select>
-            <Button size="sm"
-              style={{ padding: '2px 6px', background: '#17a2b8', border: 'none' }}
-              disabled={savingAssign === driverId}
-              onClick={() => handleAssignVehicle(driverId)}>
+            <Button size="sm" disabled={savingAssign === driverId}
+              onClick={() => handleAssignVehicle(driverId)}
+              className="rounded-md px-2 btn-sky">
               {savingAssign === driverId
                 ? <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10 }} />
                 : <LuSave size={11} />}
@@ -268,37 +273,30 @@ export default function DriversPage() {
     },
     {
       accessorKey: 'isSignedIn',
-      header: 'Signed In',
+      header: ({ column }) => <SortHeader column={column} label="Signed In" />,
       cell: ({ row }) => (
-        <Badge bg={row.original.isSignedIn ? 'success' : 'secondary'} style={{ fontSize: 11 }}>
+        <Badge bg={row.original.isSignedIn ? 'success' : 'secondary'}>
           {row.original.isSignedIn ? 'Yes' : 'No'}
         </Badge>
-      )
+      ),
     },
     {
       accessorKey: 'isActive',
-      header: 'Status',
+      header: ({ column }) => <SortHeader column={column} label="Status" />,
       cell: ({ row }) => (
-        <Badge
-          style={{
-            fontSize: 11,
-            background: row.original.isActive ? '#fff3cd' : '#f8d7da',
-            color: row.original.isActive ? '#856404' : '#842029',
-            border: `1px solid ${row.original.isActive ? '#ffc107' : '#f5c2c7'}`,
-            borderRadius: 20,
-            padding: '3px 10px'
-          }}>
+        <Badge bg={row.original.isActive ? 'warning' : 'danger'}
+          style={{ color: row.original.isActive ? '#856404' : '#fff', borderRadius: 20, padding: '3px 10px' }}>
           {row.original.isActive ? 'Active' : 'Inactive'}
         </Badge>
-      )
+      ),
     },
     {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => (
-        <div className="d-flex gap-1">
-          <Button size="sm" variant="outline-secondary"
-            style={{ padding: '2px 6px', fontSize: 11 }}
+        <div className="flex gap-1">
+          <Button size="sm" variant="outline"
+            className="rounded-md px-2 !border-slate-300"
             onClick={() => {
               setEditingDriver(row.original)
               setDriverForm({
@@ -316,13 +314,13 @@ export default function DriversPage() {
             }}>
             <LuPencil size={11} />
           </Button>
-          <Button size="sm" variant="outline-danger"
-            style={{ padding: '2px 6px', fontSize: 11 }}
+          <Button size="sm" variant="outline"
+            className="rounded-md px-2 !border-red-400 !text-red-500 hover:!bg-red-50"
             onClick={() => { setDeletingDriver(row.original); setShowDeleteModal(true) }}>
             <LuTrash2 size={11} />
           </Button>
         </div>
-      )
+      ),
     }
   ], [vehicles, assigningVehicleId, savingAssign])
 
@@ -341,106 +339,112 @@ export default function DriversPage() {
   })
 
   const totalDrivers = drivers.length
-  const activeDrivers = drivers.filter(d => d.isActive).length
-  const signedInDrivers = drivers.filter(d => d.isSignedIn).length
   const start = totalDrivers === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1
   const end = Math.min((pagination.pageIndex + 1) * pagination.pageSize, table.getFilteredRowModel().rows.length)
 
-  return (
-    <Container fluid className="py-3" style={{ fontSize: 13 }}>
+  const handleExportExcel = () => {
+    const rows = table.getFilteredRowModel().rows.map((row, i) => {
+      const d = row.original
+      const plant = PLANT_OPTIONS.find(p => p.id === d.plantId)
+      const vehicle = getDriverVehicle(d.id)
+      return {
+        '#':            i + 1,
+        'Emp No':       d.empNo,
+        'Full Name':    `${d.firstName} ${d.lastName}`,
+        'Plant':        plant ? plant.name : d.plantId || '—',
+        'License Nr':   d.licenseNumber || '—',
+        'Vehicle':      vehicle ? vehicle.vehicleReg : '—',
+        'Signed In':    d.isSignedIn ? 'Yes' : 'No',
+        'Status':       d.isActive ? 'Active' : 'Inactive',
+      }
+    })
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Drivers')
+    XLSX.writeFile(wb, `Drivers_${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
 
-      {/* ── Main Card — matches delivery notes style ── */}
+  return (
+    <Container fluid className="py-3">
+
       <div className="card shadow-sm">
         <div className="card-header d-flex justify-content-between align-items-center py-2">
           <h6 className="mb-0 fw-semibold">
             Drivers ({table.getFilteredRowModel().rows.length} total)
           </h6>
           <div className="d-flex gap-2">
-            <Button size="sm"
-              style={{ background: '#17a2b8', border: 'none', fontSize: 12 }}
-              onClick={() => setShowVehicleList(true)}>
-              <LuCarFront size={13} className="me-1" />Manage Vehicles
+            <Button size="sm" onClick={() => setShowVehicleList(true)}
+              className="flex items-center gap-1.5 btn-sky rounded-md">
+              <LuCarFront size={13} /> Manage Vehicles
             </Button>
-            <Button size="sm"
-              style={{ background: NAVY, border: 'none', fontSize: 12 }}
-              onClick={() => { resetDriverForm(); setShowFormModal(true) }}>
-              <LuPlus size={13} className="me-1" />Add Driver
+            <Button size="sm" onClick={() => { resetDriverForm(); setShowFormModal(true) }}
+              className="flex items-center gap-1.5 btn-navy rounded-md">
+              <LuPlus size={13} /> Add Driver
             </Button>
           </div>
         </div>
 
         <div className="card-body p-3">
 
-          {/* ── Filters row — matches delivery notes ── */}
-          <Row className="g-2 mb-3">
-            <Col xs={12} md={4}>
-              <Form.Control size="sm" type="text"
-                placeholder="Search by name or emp no..."
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)} />
-            </Col>
-            <Col xs={6} md={3}>
-              <Form.Select size="sm"
-                onChange={(e) => {
-                  if (e.target.value === '') table.getColumn('isActive')?.setFilterValue(undefined)
-                  else table.getColumn('isActive')?.setFilterValue(e.target.value === 'true')
-                }}>
-                <option value="">All Status</option>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </Form.Select>
-            </Col>
-            <Col xs={6} md={3}>
-              <Form.Select size="sm"
-                onChange={(e) => {
-                  table.getColumn('plantId')?.setFilterValue(e.target.value || undefined)
-                }}>
-                <option value="">All Plants</option>
-                {PLANT_OPTIONS.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </Form.Select>
-            </Col>
-          </Row>
+          {/* Filters */}
+          <div className="dash-filter-bar mb-3">
+            <input placeholder="Emp No" className="dash-filter-input"
+              onChange={e => table.getColumn('empNo')?.setFilterValue(e.target.value || undefined)} />
+            <input placeholder="Full Name" className="dash-filter-input"
+              onChange={e => table.getColumn('fullName')?.setFilterValue(e.target.value || undefined)} />
+            <select className="dash-filter-input"
+              onChange={e => table.getColumn('plantId')?.setFilterValue(e.target.value || undefined)}>
+              <option value="">All Plants</option>
+              {PLANT_OPTIONS.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <select className="dash-filter-input"
+              onChange={e => {
+                if (e.target.value === '') table.getColumn('isActive')?.setFilterValue(undefined)
+                else table.getColumn('isActive')?.setFilterValue(e.target.value === 'true')
+              }}>
+              <option value="">All Status</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+            <Button size="sm" onClick={() => table.setPageIndex(0)}
+              className="flex items-center gap-1.5 whitespace-nowrap btn-blue rounded-md">
+              <Search size={13} /> Search
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => {
+              setGlobalFilter('')
+              table.getColumn('empNo')?.setFilterValue(undefined)
+              table.getColumn('fullName')?.setFilterValue(undefined)
+              table.getColumn('plantId')?.setFilterValue(undefined)
+              table.getColumn('isActive')?.setFilterValue(undefined)
+              table.setPageIndex(0)
+            }} className="flex items-center gap-1.5 whitespace-nowrap rounded-md">
+              <RotateCcw size={13} /> Reset
+            </Button>
+          </div>
 
-          {/* ── Table ── */}
+          {/* Table */}
           <div className="table-responsive">
-            <table className="table table-bordered table-hover table-sm align-middle mb-0"
-              style={{ fontSize: 13 }}>
-              <thead>
+            <table className="table table-hover table-sm align-middle mb-0">
+              <thead className="dash-thead-dark">
                 {table.getHeaderGroups().map(hg => (
                   <tr key={hg.id}>
                     {hg.headers.map(h => (
-                      <th key={h.id}
-                        className="py-2 px-3 text-uppercase"
-                        style={{
-                          background: NAVY,
-                          color: '#fff',
-                          fontSize: '0.72rem',
-                          fontWeight: 600,
-                          cursor: h.column.getCanSort() ? 'pointer' : 'default',
-                          whiteSpace: 'nowrap'
-                        }}
-                        onClick={h.column.getToggleSortingHandler()}>
-                        <div className="d-flex align-items-center gap-1">
-                          {flexRender(h.column.columnDef.header, h.getContext())}
-                          {h.column.getCanSort() && (
-                            <span style={{ opacity: 0.5, fontSize: 10 }}>
-                              {h.column.getIsSorted() === 'asc' ? '↑'
-                                : h.column.getIsSorted() === 'desc' ? '↓' : '↕'}
-                            </span>
-                          )}
-                        </div>
+                      <th key={h.id} className="py-2 px-3 text-uppercase">
+                        {flexRender(h.column.columnDef.header, h.getContext())}
                       </th>
                     ))}
                   </tr>
                 ))}
               </thead>
-              <tbody>
+              <tbody style={{ fontSize: '0.85rem' }}>
                 {loading ? (
                   <tr>
                     <td colSpan={columns.length} className="text-center py-5">
-                      <div className="spinner-border text-primary" role="status" />
+                      <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : table.getRowModel().rows.length === 0 ? (
@@ -464,45 +468,39 @@ export default function DriversPage() {
             </table>
           </div>
 
-          {/* ── Pagination — matches delivery notes ── */}
+          {/* Pagination */}
           <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
             <small className="text-muted">
               Showing {start} to {end} of {table.getFilteredRowModel().rows.length} entries
             </small>
-            <div className="d-flex gap-1">
-              <Button variant="outline-secondary" size="sm"
-                disabled={!table.getCanPreviousPage()}
-                onClick={() => table.setPageIndex(0)}>«</Button>
-              <Button variant="outline-secondary" size="sm"
-                disabled={!table.getCanPreviousPage()}
-                onClick={() => table.previousPage()}>‹</Button>
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" disabled={!table.getCanPreviousPage()} onClick={() => table.setPageIndex(0)} className="rounded-md px-2">«</Button>
+              <Button variant="outline" size="sm" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()} className="rounded-md px-2">‹</Button>
               {Array.from({ length: Math.min(5, table.getPageCount()) }, (_, i) => {
                 const pageNum = Math.max(0, pagination.pageIndex - 2) + i
                 if (pageNum >= table.getPageCount()) return null
                 return (
                   <Button key={pageNum} size="sm"
-                    variant={pageNum === pagination.pageIndex ? 'primary' : 'outline-secondary'}
+                    className={`rounded-md px-2 ${pageNum === pagination.pageIndex ? 'btn-navy' : ''}`}
+                    variant={pageNum === pagination.pageIndex ? 'default' : 'outline'}
                     onClick={() => table.setPageIndex(pageNum)}>
                     {pageNum + 1}
                   </Button>
                 )
               })}
-              <Button variant="outline-secondary" size="sm"
-                disabled={!table.getCanNextPage()}
-                onClick={() => table.nextPage()}>›</Button>
-              <Button variant="outline-secondary" size="sm"
-                disabled={!table.getCanNextPage()}
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}>»</Button>
+              <Button variant="outline" size="sm" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()} className="rounded-md px-2">›</Button>
+              <Button variant="outline" size="sm" disabled={!table.getCanNextPage()} onClick={() => table.setPageIndex(table.getPageCount() - 1)} className="rounded-md px-2">»</Button>
             </div>
           </div>
 
-          {/* ── Export buttons — matches delivery notes ── */}
-          <div className="d-flex justify-content-center mt-3 gap-2">
-            <Button style={{ background: '#17a2b8', border: 'none', fontSize: 12 }} size="sm">
-              <LuDownload size={13} className="me-1" />Download Report
+          {/* Export */}
+          <div className="flex justify-center mt-3 gap-2">
+            <Button size="sm" className="flex items-center gap-1.5 btn-sky rounded-md">
+              <LuDownload size={13} /> Download Report
             </Button>
-            <Button style={{ background: '#28a745', border: 'none', fontSize: 12 }} size="sm">
-              <LuDownload size={13} className="me-1" />Export to Excel
+            <Button size="sm" onClick={handleExportExcel} disabled={drivers.length === 0}
+              className="flex items-center gap-1.5 btn-green rounded-md">
+              <LuDownload size={13} /> Export to Excel
             </Button>
           </div>
 
@@ -513,83 +511,95 @@ export default function DriversPage() {
       <Modal show={showFormModal}
         onHide={() => { setShowFormModal(false); resetDriverForm() }}
         centered size="lg">
-        <Modal.Header closeButton
-          style={{ background: NAVY, color: '#fff' }}>
-          <Modal.Title style={{ fontSize: 15 }}>
+        <Modal.Header closeButton className="modal-header-dark">
+          <Modal.Title style={{ fontSize: 15, fontWeight: 600 }}>
             {editingDriver ? `Edit Driver — ${editingDriver.fullName}` : 'Add New Driver'}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Row className="g-3">
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Employee Number <span className="text-danger">*</span></Form.Label>
-              <Form.Control size="sm" placeholder="EMP001"
+        <Modal.Body className="p-4">
+          <div className="grid grid-cols-2 gap-4">
+
+            <div className="flex flex-col gap-1">
+              <label className="field-label">Employee Number <span className="text-red-500">*</span></label>
+              <input className="dash-filter-input" placeholder="EMP001"
                 value={driverForm.empNo}
                 onChange={e => setDriverForm({ ...driverForm, empNo: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Username <span className="text-danger">*</span></Form.Label>
-              <Form.Control size="sm" placeholder="jsmith"
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="field-label">Username <span className="text-red-500">*</span></label>
+              <input className="dash-filter-input" placeholder="jsmith"
                 value={driverForm.username}
                 onChange={e => setDriverForm({ ...driverForm, username: e.target.value })} />
-            </Col>
+            </div>
+
             {!editingDriver && (
-              <Col md={6}>
-                <Form.Label style={{ fontSize: 12 }}>Password <span className="text-danger">*</span></Form.Label>
-                <Form.Control size="sm" type="password" placeholder="••••••••"
+              <div className="flex flex-col gap-1">
+                <label className="field-label">Password <span className="text-red-500">*</span></label>
+                <input className="dash-filter-input" type="password" placeholder="••••••••"
                   value={driverForm.password}
                   onChange={e => setDriverForm({ ...driverForm, password: e.target.value })} />
-              </Col>
+              </div>
             )}
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>First Name <span className="text-danger">*</span></Form.Label>
-              <Form.Control size="sm" placeholder="John"
+
+            <div className="flex flex-col gap-1">
+              <label className="field-label">First Name <span className="text-red-500">*</span></label>
+              <input className="dash-filter-input" placeholder="John"
                 value={driverForm.firstName}
                 onChange={e => setDriverForm({ ...driverForm, firstName: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Last Name <span className="text-danger">*</span></Form.Label>
-              <Form.Control size="sm" placeholder="Smith"
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="field-label">Last Name <span className="text-red-500">*</span></label>
+              <input className="dash-filter-input" placeholder="Smith"
                 value={driverForm.lastName}
                 onChange={e => setDriverForm({ ...driverForm, lastName: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Plant</Form.Label>
-              <Form.Select size="sm" value={driverForm.plantId}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="field-label">Plant</label>
+              <select className="dash-filter-input" value={driverForm.plantId}
                 onChange={e => setDriverForm({ ...driverForm, plantId: e.target.value })}>
                 {PLANT_OPTIONS.map(p => (
                   <option key={p.id} value={p.id}>{p.id} - {p.name}</option>
                 ))}
-              </Form.Select>
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>License Nr</Form.Label>
-              <Form.Control size="sm" placeholder="LIC123456"
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="field-label">License Nr</label>
+              <input className="dash-filter-input" placeholder="LIC123456"
                 value={driverForm.licenseNumber}
                 onChange={e => setDriverForm({ ...driverForm, licenseNumber: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>License Expiry Date</Form.Label>
-              <Form.Control size="sm" type="date"
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="field-label">License Expiry Date</label>
+              <input className="dash-filter-input" type="date"
                 value={driverForm.licenseExpiryDate}
                 onChange={e => setDriverForm({ ...driverForm, licenseExpiryDate: e.target.value })} />
-            </Col>
-            <Col md={6} className="d-flex align-items-end pb-1">
-              <Form.Check type="switch" label="Active Driver"
+            </div>
+
+            <div className="flex items-center gap-2 pt-4">
+              <Form.Check type="switch" id="active-driver-switch"
                 checked={driverForm.isActive}
                 onChange={e => setDriverForm({ ...driverForm, isActive: e.target.checked })} />
-            </Col>
-          </Row>
+              <label htmlFor="active-driver-switch" className="field-label mb-0" style={{ cursor: 'pointer' }}>
+                Active Driver
+              </label>
+            </div>
+
+          </div>
         </Modal.Body>
-        <Modal.Footer>
-          <Button size="sm" variant="outline-secondary"
-            onClick={() => { setShowFormModal(false); resetDriverForm() }}>
+        <Modal.Footer style={{ borderTop: '1px solid #dde3f0', padding: '0.75rem 1.25rem' }}>
+          <Button size="sm" variant="outline"
+            onClick={() => { setShowFormModal(false); resetDriverForm() }}
+            className="rounded-md px-4">
             Cancel
           </Button>
-          <Button size="sm"
-            style={{ background: NAVY, border: 'none' }}
-            disabled={saving}
-            onClick={handleSaveDriver}>
+          <Button size="sm" disabled={saving}
+            onClick={handleSaveDriver}
+            className="rounded-md px-4 btn-navy">
             {saving ? 'Saving...' : editingDriver ? 'Update Driver' : 'Add Driver'}
           </Button>
         </Modal.Footer>
@@ -599,26 +609,26 @@ export default function DriversPage() {
       <Modal show={showVehicleList}
         onHide={() => setShowVehicleList(false)}
         centered size="lg">
-        <Modal.Header closeButton style={{ background: NAVY, color: '#fff' }}>
-          <Modal.Title style={{ fontSize: 15 }}>
+        <Modal.Header closeButton className="modal-header-dark">
+          <Modal.Title style={{ fontSize: 15, fontWeight: 600 }}>
             <LuCarFront size={16} className="me-2" />Vehicle Management
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="p-4">
+
           {/* Add Vehicle Form */}
-          <div className="p-3 mb-3 rounded"
-            style={{ background: '#f8f9fa', border: '1px solid #dee2e6' }}>
-            <h6 className="fw-semibold mb-2" style={{ fontSize: 13 }}>Add New Vehicle</h6>
-            <Row className="g-2 align-items-end">
-              <Col xs={5}>
-                <Form.Label style={{ fontSize: 12 }}>Vehicle Registration</Form.Label>
-                <Form.Control size="sm" placeholder="ABC 123 GP"
+          <div className="p-3 mb-4 rounded-lg" style={{ background: '#f8fafc', border: '1px solid #dde3f0' }}>
+            <p className="fw-semibold mb-3" style={{ fontSize: 13, color: '#1a2340' }}>Add New Vehicle</p>
+            <div className="flex gap-3 items-end">
+              <div className="flex flex-col gap-1 flex-1">
+                <label className="field-label">Vehicle Registration</label>
+                <input className="dash-filter-input" placeholder="ABC 123 GP"
                   value={vehicleReg}
                   onChange={e => setVehicleReg(e.target.value.toUpperCase())} />
-              </Col>
-              <Col xs={4}>
-                <Form.Label style={{ fontSize: 12 }}>Type</Form.Label>
-                <Form.Select size="sm" value={vehicleType}
+              </div>
+              <div className="flex flex-col gap-1 flex-1">
+                <label className="field-label">Type</label>
+                <select className="dash-filter-input" value={vehicleType}
                   onChange={e => setVehicleType(e.target.value)}>
                   <option value="">— Any —</option>
                   <option value="Truck">Truck</option>
@@ -626,33 +636,28 @@ export default function DriversPage() {
                   <option value="Flatbed">Flatbed</option>
                   <option value="Tanker">Tanker</option>
                   <option value="Van">Van</option>
-                </Form.Select>
-              </Col>
-              <Col xs={3}>
-                <Button size="sm" className="w-100"
-                  style={{ background: '#28a745', border: 'none' }}
-                  disabled={savingVehicle || !vehicleReg.trim()}
-                  onClick={handleAddVehicle}>
-                  <LuPlus size={13} className="me-1" />
-                  {savingVehicle ? 'Adding...' : 'Add'}
-                </Button>
-              </Col>
-            </Row>
+                </select>
+              </div>
+              <Button size="sm" disabled={savingVehicle || !vehicleReg.trim()}
+                onClick={handleAddVehicle}
+                className="flex items-center gap-1.5 btn-green rounded-md px-4">
+                <LuPlus size={13} />
+                {savingVehicle ? 'Adding...' : 'Add'}
+              </Button>
+            </div>
           </div>
 
-          {/* Vehicle List */}
-          <Form.Control size="sm" placeholder="Search vehicles..."
-            className="mb-2" value={vehicleSearch}
-            onChange={e => setVehicleSearch(e.target.value)} />
+          {/* Search */}
+          <input className="dash-filter-input mb-3 w-full" placeholder="Search vehicles..."
+            value={vehicleSearch} onChange={e => setVehicleSearch(e.target.value)} />
 
+          {/* Vehicle Table */}
           <div className="table-responsive">
-            <table className="table table-bordered table-hover table-sm align-middle mb-0"
-              style={{ fontSize: 13 }}>
-              <thead>
+            <table className="table table-hover table-sm align-middle mb-0" style={{ fontSize: 13 }}>
+              <thead className="dash-thead-dark">
                 <tr>
                   {['#', 'Vehicle Reg', 'Type', 'Assigned Driver', 'Actions'].map(h => (
-                    <th key={h} className="py-2 px-3 text-uppercase"
-                      style={{ background: NAVY, color: '#fff', fontSize: '0.72rem', fontWeight: 600 }}>
+                    <th key={h} className="py-2 px-3 text-uppercase">
                       {h}
                     </th>
                   ))}
@@ -661,30 +666,29 @@ export default function DriversPage() {
               <tbody>
                 {filteredVehicles.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center text-muted py-3">No vehicles</td>
+                    <td colSpan={5} className="text-center text-muted py-3">No vehicles found</td>
                   </tr>
                 ) : (
                   filteredVehicles.map((v, idx) => (
                     <tr key={v.id}>
                       <td className="px-3 text-muted">{idx + 1}</td>
-                      <td className="px-3 fw-semibold" style={{ color: NAVY }}>{v.vehicleReg}</td>
-                      <td className="px-3">{v.vehicleType || '—'}</td>
+                      <td className="px-3 fw-semibold dash-text-navy">{v.vehicleReg}</td>
+                      <td className="px-3 text-muted">{v.vehicleType || '—'}</td>
                       <td className="px-3">
                         {v.currentDriverName
-                          ? <span style={{ color: '#28a745', fontWeight: 600 }}>{v.currentDriverName}</span>
-                          : <span className="text-muted">—</span>
-                        }
+                          ? <span style={{ color: '#16a34a', fontWeight: 600 }}>{v.currentDriverName}</span>
+                          : <span className="text-muted">—</span>}
                       </td>
                       <td className="px-3">
-                        <div className="d-flex gap-1">
-                          <Button size="sm" variant="outline-danger"
-                            style={{ padding: '2px 6px' }}
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline"
+                            className="rounded-md px-2 !border-red-300 !text-red-500 hover:!bg-red-50"
                             onClick={() => handleDeleteVehicle(v.id)}>
-                            <LuTrash2 size={10} />
+                            <LuTrash2 size={11} />
                           </Button>
                           {v.currentDriverId && (
-                            <Button size="sm" variant="outline-warning"
-                              style={{ padding: '2px 6px', fontSize: 11 }}
+                            <Button size="sm" variant="outline"
+                              className="rounded-md px-2 !border-amber-300 !text-amber-600 hover:!bg-amber-50"
                               onClick={async () => {
                                 await vehicleService.assignDriver(companyId, v.id, null)
                                 await loadVehicles()
@@ -701,8 +705,9 @@ export default function DriversPage() {
             </table>
           </div>
         </Modal.Body>
-        <Modal.Footer>
-          <Button size="sm" variant="outline-secondary" onClick={() => setShowVehicleList(false)}>
+        <Modal.Footer style={{ borderTop: '1px solid #dde3f0', padding: '0.75rem 1.25rem' }}>
+          <Button size="sm" variant="outline" onClick={() => setShowVehicleList(false)}
+            className="rounded-md px-4">
             Close
           </Button>
         </Modal.Footer>
@@ -710,18 +715,18 @@ export default function DriversPage() {
 
       {/* ── Delete Driver Modal ── */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
-        <Modal.Header closeButton style={{ background: NAVY, color: '#fff' }}>
+        <Modal.Header closeButton className="modal-header-dark">
           <Modal.Title style={{ fontSize: 15 }}>Delete Driver</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           Are you sure you want to delete <strong>{deletingDriver?.fullName}</strong>?
         </Modal.Body>
         <Modal.Footer>
-          <Button size="sm" variant="outline-secondary"
-            onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-          <Button size="sm" variant="danger" disabled={saving} onClick={handleDeleteDriver}>
+          <RBButton size="sm" variant="outline-secondary"
+            onClick={() => setShowDeleteModal(false)}>Cancel</RBButton>
+          <RBButton size="sm" variant="danger" disabled={saving} onClick={handleDeleteDriver}>
             {saving ? 'Deleting...' : 'Delete'}
-          </Button>
+          </RBButton>
         </Modal.Footer>
       </Modal>
 

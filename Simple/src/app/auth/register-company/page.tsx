@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -9,50 +9,16 @@ import {
   LuMinus, LuPlus,
 } from 'react-icons/lu';
 import authService from '@/services/authService';
+import planService, { type PlanResponse } from '@/services/planService';
 import { notify } from '@/lib/toast';
 
-const C = {
-  primary:    '#3b6fd4',
-  teal:       '#29b6c5',
-  bg:         '#f0f2f5',
-  card:       '#ffffff',
-  text:       '#1a2340',
-  muted:      '#6b7a99',
-  border:     '#dde3f0',
-  blueSoft:   '#f0f5ff',
-  tealSoft:   '#f0fbfc',
-  tealBorder: '#b2e8ed',
-};
-
-const PLANS = [
-  {
-    id: 'starter', name: 'Starter', price: 350,
-    maxDrivers: 10, maxDispatchers: 2, popular: false, accent: C.primary,
-    features: ['Up to 10 drivers', '2 dashboard users', 'Proof of delivery', 'Digital signatures', 'Email support'],
-  },
-  {
-    id: 'business', name: 'Business', price: 330,
-    maxDrivers: 20, maxDispatchers: 5, popular: true, accent: C.primary,
-    features: ['Up to 20 drivers', '5 dashboard users', 'Proof of delivery', 'Digital signatures', 'Priority support', 'Basic reports'],
-  },
-  {
-    id: 'professional', name: 'Professional', price: 300,
-    maxDrivers: 50, maxDispatchers: 10, popular: false, accent: C.primary,
-    features: ['Up to 50 drivers', '10 dashboard users', 'Proof of delivery', 'Digital signatures', 'Dedicated support', 'Advanced reports', 'API access'],
-  },
-  {
-    id: 'premium', name: 'Premium', price: null,
-    maxDrivers: null, maxDispatchers: null, popular: false, accent: C.teal,
-    features: ['Unlimited drivers', 'Unlimited users', 'Proof of delivery', 'Digital signatures', 'SLA support', 'Custom reports', 'API access', 'Custom integrations'],
-  },
-];
-
+const POPULAR_PLAN_CODE = 'business';
 const STEPS = ['Company details', 'Admin account', 'Choose plan'];
 
 const cardHeading = (title: string, subtitle: string, center = false) => (
-  <div style={{ borderBottom: `3px solid ${C.primary}`, paddingBottom: '1rem', marginBottom: '1.5rem', textAlign: center ? 'center' : 'left' }}>
-    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: C.text }}>{title}</h2>
-    <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: C.muted }}>{subtitle}</p>
+  <div style={{ borderBottom: '3px solid var(--primary)', paddingBottom: '1rem', marginBottom: '1.5rem', textAlign: center ? 'center' : 'left' }}>
+    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-navy)' }}>{title}</h2>
+    <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--muted-foreground)' }}>{subtitle}</p>
   </div>
 );
 
@@ -67,6 +33,26 @@ export default function RegisterPage() {
     firstName: '', lastName: '', email: '', password: '', confirmPassword: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [plans, setPlans] = useState<PlanResponse[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+
+  useEffect(() => {
+    planService.getAll()
+      .then(setPlans)
+      .catch(() => notify.error('Failed to load plans', 'Please refresh the page.'))
+      .finally(() => setPlansLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem('purchase_data');
+    if (stored) {
+      const data = JSON.parse(stored);
+      setForm(data.form);
+      setSelectedPlan(data.selectedPlan);
+      setDriverCount(data.driverCount);
+      setStep(2);
+    }
+  }, []);
 
   const set = (key: string, val: string) => {
     setForm(f => ({ ...f, [key]: val }));
@@ -98,9 +84,9 @@ export default function RegisterPage() {
     setStep(s => s + 1);
   };
 
-  const plan = PLANS.find(p => p.id === selectedPlan)!;
+  const plan = plans.find(p => p.code === selectedPlan);
 
-  const handleSubmit = async (requestDemo = false) => {
+  const handleSubmit = async (mode: 'trial' | 'demo' | 'buy' = 'trial') => {
     setSubmitting(true);
     try {
       await authService.registerCompany({
@@ -114,11 +100,16 @@ export default function RegisterPage() {
         adminPassword:        form.password,
         planId:               selectedPlan,
         estimatedDriverCount: driverCount,
-        requestDemo,
+        requestDemo:          mode === 'demo',
       });
 
-      if (requestDemo) {
+      if (mode === 'demo') {
         notify.info('Demo request received', 'Our team will contact you within 1 business day.');
+        setTimeout(() => router.push('/auth/sign-in'), 2000);
+        return;
+      }
+      if (mode === 'buy') {
+        notify.success('Purchase request received!', 'Our team will contact you shortly to complete the payment.');
         setTimeout(() => router.push('/auth/sign-in'), 2000);
         return;
       }
@@ -126,12 +117,8 @@ export default function RegisterPage() {
       await authService.login(form.email, form.password);
       notify.success('Account created!', 'Your 14-day free trial has started. Welcome to StratoPOD.');
       setTimeout(() => router.push('/dashboard'), 1500);
-
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message ??
-        err?.message ??
-        'Registration failed. Please try again.';
+      const message = err?.response?.data?.message ?? err?.message ?? 'Registration failed. Please try again.';
       notify.error('Registration failed', message);
     } finally {
       setSubmitting(false);
@@ -139,19 +126,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '2rem 1rem' }}>
+    <div className="auth-page" style={{ justifyContent: 'flex-start' }}>
 
       {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
-        <div style={{ width: 72, height: 72, background: C.primary, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.6rem' }}>
+        <div className="auth-logo-circle" style={{ width: 72, height: 72 }}>
           <LuTruck size={34} color="#fff" />
         </div>
-        <p style={{ margin: 0, fontWeight: 800, fontSize: '1.3rem', letterSpacing: '1px', color: C.text }}>
-          STRATO<span style={{ color: C.teal }}>POD</span>
-        </p>
-        <p style={{ margin: '3px 0 0', fontSize: '0.7rem', fontWeight: 600, color: C.muted, letterSpacing: '2px', textTransform: 'uppercase' }}>
-          Electronic Proof of Delivery
-        </p>
+        <p className="auth-logo-text">STRATO<span className="auth-logo-accent">POD</span></p>
+        <p className="auth-logo-sub">Electronic Proof of Delivery</p>
       </div>
 
       {/* Steps */}
@@ -161,18 +144,18 @@ export default function RegisterPage() {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
               <div style={{
                 width: 32, height: 32, borderRadius: '50%',
-                background: i <= step ? C.primary : '#d5daea',
+                background: i <= step ? 'var(--primary)' : 'var(--color-step-inactive)',
                 color: '#fff', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', fontSize: '0.78rem', fontWeight: 700,
               }}>
                 {i < step ? <LuCheck size={14} /> : i + 1}
               </div>
-              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: i <= step ? C.primary : C.muted, whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: i <= step ? 'var(--primary)' : 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>
                 {label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div style={{ width: 56, height: 2, background: i < step ? C.primary : '#d5daea', margin: '0 8px', marginBottom: 18 }} />
+              <div style={{ width: 56, height: 2, background: i < step ? 'var(--primary)' : 'var(--color-step-inactive)', margin: '0 8px', marginBottom: 18 }} />
             )}
           </div>
         ))}
@@ -180,10 +163,10 @@ export default function RegisterPage() {
 
       {/* Card */}
       <div style={{
-        background: C.card, borderRadius: 12,
+        background: '#fff', borderRadius: 12,
         padding: step === 2 ? '1.75rem' : '2rem',
         width: '100%', maxWidth: step === 2 ? '920px' : '440px',
-        boxShadow: '0 4px 24px rgba(59,111,212,0.1)',
+        boxShadow: '0 4px 24px var(--color-shadow-blue)',
       }}>
 
         {/* STEP 0 — Company details */}
@@ -194,7 +177,7 @@ export default function RegisterPage() {
               <div>
                 <label className="field-label">Company name *</label>
                 <div className={`input-wrapper${errors.companyName ? ' has-error' : ''}`}>
-                  <LuBuilding2 size={15} color={C.muted} />
+                  <LuBuilding2 size={15} className="dash-text-muted" />
                   <input className="raw-input" placeholder="Acme Logistics" value={form.companyName} onChange={e => set('companyName', e.target.value)} />
                 </div>
                 {errors.companyName && <p className="field-error">{errors.companyName}</p>}
@@ -202,19 +185,15 @@ export default function RegisterPage() {
               <div>
                 <label className="field-label">Phone number *</label>
                 <div className={`input-wrapper${errors.companyPhone ? ' has-error' : ''}`}>
-                  <LuPhone size={15} color={C.muted} />
+                  <LuPhone size={15} className="dash-text-muted" />
                   <input className="raw-input" type="tel" placeholder="+27 11 000 0000" value={form.companyPhone} onChange={e => set('companyPhone', e.target.value)} />
                 </div>
                 {errors.companyPhone && <p className="field-error">{errors.companyPhone}</p>}
               </div>
             </div>
             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Link href="/auth/sign-in" style={{ fontSize: '0.8rem', color: C.primary, textDecoration: 'none', fontWeight: 500 }}>
-                Already have an account?
-              </Link>
-              <button onClick={next}>
-                Next <LuArrowRight size={14} />
-              </button>
+              <Link href="/auth/sign-in" className="auth-link">Already have an account?</Link>
+              <button onClick={next}>Next <LuArrowRight size={14} /></button>
             </div>
           </>
         )}
@@ -228,7 +207,7 @@ export default function RegisterPage() {
                 <div>
                   <label className="field-label">First name *</label>
                   <div className={`input-wrapper${errors.firstName ? ' has-error' : ''}`}>
-                    <LuUser size={15} color={C.muted} />
+                    <LuUser size={15} className="dash-text-muted" />
                     <input className="raw-input" placeholder="John" value={form.firstName} onChange={e => set('firstName', e.target.value)} />
                   </div>
                   {errors.firstName && <p className="field-error">{errors.firstName}</p>}
@@ -244,7 +223,7 @@ export default function RegisterPage() {
               <div>
                 <label className="field-label">Email address *</label>
                 <div className={`input-wrapper${errors.email ? ' has-error' : ''}`}>
-                  <LuMail size={15} color={C.muted} />
+                  <LuMail size={15} className="dash-text-muted" />
                   <input className="raw-input" type="email" placeholder="john@company.co.za" value={form.email} onChange={e => set('email', e.target.value)} />
                 </div>
                 {errors.email && <p className="field-error">{errors.email}</p>}
@@ -252,7 +231,7 @@ export default function RegisterPage() {
               <div>
                 <label className="field-label">Password *</label>
                 <div className={`input-wrapper${errors.password ? ' has-error' : ''}`}>
-                  <LuLock size={15} color={C.muted} />
+                  <LuLock size={15} className="dash-text-muted" />
                   <input className="raw-input" type="password" placeholder="Min. 8 characters" value={form.password} onChange={e => set('password', e.target.value)} />
                 </div>
                 {errors.password && <p className="field-error">{errors.password}</p>}
@@ -260,17 +239,17 @@ export default function RegisterPage() {
               <div>
                 <label className="field-label">Confirm password *</label>
                 <div className={`input-wrapper${errors.confirmPassword ? ' has-error' : ''}`}>
-                  <LuLock size={15} color={C.muted} />
+                  <LuLock size={15} className="dash-text-muted" />
                   <input className="raw-input" type="password" placeholder="Repeat password" value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)} />
                 </div>
                 {errors.confirmPassword && <p className="field-error">{errors.confirmPassword}</p>}
               </div>
             </div>
             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
-              <button onClick={() => setStep(0)} className="btn-outline">
+              <button onClick={() => setStep(0)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', borderRadius: '2rem', fontWeight: 500, border: '1px solid var(--border)', background: '#fff', color: 'var(--color-navy)', cursor: 'pointer' }}>
                 <LuArrowLeft size={14} /> Back
               </button>
-              <button onClick={next}>
+              <button onClick={next} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer' }}>
                 Next <LuArrowRight size={14} />
               </button>
             </div>
@@ -282,126 +261,144 @@ export default function RegisterPage() {
           <>
             {cardHeading('Choose your plan', 'Priced per driver per month. 14-day free trial — no card required.', true)}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              {PLANS.map(p => {
-                const sel = selectedPlan === p.id;
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => setSelectedPlan(p.id)}
-                    style={{
-                      border: sel ? `2px solid ${p.accent}` : `1.5px solid ${C.border}`,
-                      borderRadius: 0, padding: '1.25rem 1rem',
-                      cursor: 'pointer', position: 'relative',
-                      background: sel ? (p.accent === C.teal ? C.tealSoft : C.blueSoft) : C.card,
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {p.popular && (
-                      <div style={{
-                        position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)',
-                        background: C.primary, color: '#fff',
-                        fontSize: '0.6rem', fontWeight: 700,
-                        padding: '2px 10px', borderRadius: 0,
-                        whiteSpace: 'nowrap', letterSpacing: '0.5px',
-                      }}>
-                        MOST POPULAR
-                      </div>
-                    )}
-                    {sel && (
-                      <div style={{
-                        position: 'absolute', top: 10, right: 10,
-                        width: 20, height: 20, borderRadius: '50%',
-                        background: p.accent, display: 'flex',
-                        alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <LuCheck size={11} color="#fff" />
-                      </div>
-                    )}
-                    <p style={{ fontSize: '0.7rem', fontWeight: 700, color: p.accent, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 6px' }}>
-                      {p.name}
-                    </p>
-                    {p.price ? (
-                      <div style={{ marginBottom: '0.75rem' }}>
-                        <span style={{ fontSize: '1.55rem', fontWeight: 800, color: C.text }}>R{p.price}</span>
-                        <span style={{ fontSize: '0.7rem', color: C.muted }}>/driver/mo</span>
-                      </div>
-                    ) : (
-                      <div style={{ marginBottom: '0.75rem' }}>
-                        <span style={{ fontSize: '1rem', fontWeight: 700, color: C.teal }}>Contact us</span>
-                      </div>
-                    )}
-                    <div style={{ height: 1, background: C.border, marginBottom: '0.75rem' }} />
-                    {p.features.map((f, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 5 }}>
-                        <LuCheck size={12} color={sel ? p.accent : C.border} style={{ marginTop: 2, flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.73rem', color: C.muted, lineHeight: 1.4 }}>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-
-            {plan.price && (
-              <div style={{
-                background: C.blueSoft, border: `1.5px solid ${C.border}`,
-                borderRadius: 0, padding: '1rem 1.25rem', marginBottom: '1.25rem',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: '0.82rem', color: C.text, fontWeight: 600 }}>How many drivers?</span>
-                  <div style={{ display: 'flex', alignItems: 'center', border: `1.5px solid ${C.primary}` }}>
-                    <button
-                      onClick={() => setDriverCount(d => Math.max(1, d - 1))}
-                      style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+            {plansLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-foreground)', fontSize: '0.875rem' }}>Loading plans...</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                {plans.map(p => {
+                  const sel = selectedPlan === p.code;
+                  const isPremium = p.code === 'premium';
+                  const accent = isPremium ? 'var(--color-teal)' : 'var(--primary)';
+                  const popular = p.code === POPULAR_PLAN_CODE;
+                  return (
+                    <div
+                      key={p.code}
+                      onClick={() => setSelectedPlan(p.code)}
+                      style={{
+                        border: sel ? `2px solid ${accent}` : '1.5px solid var(--border)',
+                        borderRadius: 0, padding: '1.25rem 1rem',
+                        cursor: 'pointer', position: 'relative',
+                        background: sel ? (isPremium ? 'var(--color-teal-soft)' : 'var(--color-blue-soft)') : '#fff',
+                        transition: 'all 0.15s',
+                      }}
                     >
+                      {popular && (
+                        <div style={{
+                          position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)',
+                          background: 'var(--primary)', color: '#fff',
+                          fontSize: '0.6rem', fontWeight: 700,
+                          padding: '2px 10px', borderRadius: 0,
+                          whiteSpace: 'nowrap', letterSpacing: '0.5px',
+                        }}>
+                          MOST POPULAR
+                        </div>
+                      )}
+                      {sel && (
+                        <div style={{
+                          position: 'absolute', top: 10, right: 10,
+                          width: 20, height: 20, borderRadius: '50%',
+                          background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <LuCheck size={11} color="#fff" />
+                        </div>
+                      )}
+                      <p style={{ fontSize: '0.7rem', fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 6px' }}>
+                        {p.name}
+                      </p>
+                      {p.monthlyPrice > 0 ? (
+                        <div style={{ marginBottom: '0.75rem' }}>
+                          <span style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--color-navy)' }}>R{p.monthlyPrice}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>/driver/mo</span>
+                        </div>
+                      ) : (
+                        <div style={{ marginBottom: '0.75rem' }}>
+                          <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-teal)' }}>Contact us</span>
+                        </div>
+                      )}
+                      <div style={{ height: 1, background: 'var(--border)', marginBottom: '0.75rem' }} />
+                      {p.features.map((f: string, i: number) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 5 }}>
+                          <LuCheck size={12} color={sel ? accent : 'var(--border)'} style={{ marginTop: 2, flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.73rem', color: 'var(--muted-foreground)', lineHeight: 1.4 }}>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {plan && plan.monthlyPrice > 0 && (
+              <div style={{
+                background: 'var(--color-blue-soft)', border: '1.5px solid var(--border)',
+                borderRadius: 0, padding: '1rem 1.25rem', marginBottom: '1.25rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--color-navy)', fontWeight: 600 }}>How many drivers?</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <button className="btn-stepper"
+                      onClick={() => setDriverCount(d => Math.max(1, d - 1))}
+                      style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', flexShrink: 0 }}>
                       <LuMinus size={14} />
                     </button>
-                    <span style={{ width: 40, textAlign: 'center', fontSize: '1rem', fontWeight: 700, color: C.primary, borderLeft: `1px solid ${C.border}`, borderRight: `1px solid ${C.border}`, lineHeight: '32px' }}>
+                    <span style={{ minWidth: 48, textAlign: 'center', fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', background: '#fff', border: '1.5px solid var(--border)', borderRadius: '8px', padding: '4px 10px' }}>
                       {driverCount}
                     </span>
-                    <button
-                      onClick={() => setDriverCount(d => Math.min(plan.maxDrivers ?? 999, d + 1))}
-                      style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                    >
+                    <button className="btn-stepper"
+                      onClick={() => setDriverCount(d => Math.min(plan?.maxDrivers ?? 999, d + 1))}
+                      style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', flexShrink: 0 }}>
                       <LuPlus size={14} />
                     </button>
                   </div>
-                  <span style={{ fontSize: '0.73rem', color: C.muted }}>max {plan.maxDrivers} on this plan</span>
+                  <span style={{ fontSize: '0.73rem', color: 'var(--muted-foreground)' }}>max {plan?.maxDrivers} on this plan</span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '0.72rem', color: C.muted, margin: '0 0 2px' }}>Estimated monthly</p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 800, color: C.primary, margin: 0 }}>
-                    R{(plan.price * driverCount).toLocaleString('en-ZA')}
+                  <p style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', margin: '0 0 2px' }}>Estimated monthly</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', margin: 0 }}>
+                    R{((plan?.monthlyPrice ?? 0) * driverCount).toLocaleString('en-ZA')}
                   </p>
-                  <p style={{ fontSize: '0.7rem', color: C.muted, margin: 0 }}>{driverCount} drivers × R{plan.price}</p>
+                  <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', margin: 0 }}>{driverCount} drivers × R{plan?.monthlyPrice}</p>
                 </div>
               </div>
             )}
 
-            <div style={{
-              background: C.tealSoft, border: `1.5px solid ${C.tealBorder}`,
-              borderRadius: 0, padding: '0.75rem 1rem', marginBottom: '1.25rem',
-              display: 'flex', alignItems: 'flex-start', gap: 10,
-            }}>
-              <LuCheck size={15} color={C.teal} style={{ marginTop: 2, flexShrink: 0 }} />
-              <p style={{ fontSize: '0.78rem', color: '#1a6b75', margin: 0, lineHeight: 1.5 }}>
+            <div className="auth-teal-note">
+              <LuCheck size={15} color="var(--color-teal)" style={{ marginTop: 2, flexShrink: 0 }} />
+              <p className="auth-teal-note-text">
                 Your 14-day free trial starts today. No credit card required until your trial ends.
               </p>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button onClick={() => setStep(1)} className="btn-outline" disabled={submitting}>
+              <button onClick={() => setStep(1)} disabled={submitting}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', borderRadius: '2rem', fontWeight: 500, border: '1px solid var(--border)', background: '#fff', color: 'var(--color-navy)', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}>
                 <LuArrowLeft size={14} /> Back
               </button>
-              {plan.price ? (
-                <button onClick={() => handleSubmit(false)} disabled={submitting}>
-                  {submitting ? 'Creating account...' : 'Start free trial'} <LuArrowRight size={14} />
-                </button>
+              {plan && plan.monthlyPrice > 0 ? (
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => handleSubmit('trial')} disabled={submitting}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--primary)', color: '#fff', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, boxShadow: '0 2px 8px rgba(59,111,212,0.35)' }}>
+                    {submitting ? 'Creating...' : 'Start free trial'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      sessionStorage.setItem('purchase_data', JSON.stringify({
+                        form, selectedPlan, driverCount,
+                        planName: plan.name,
+                        planPrice: plan.monthlyPrice,
+                        totalMonthly: plan.monthlyPrice * driverCount,
+                      }))
+                      router.push('/auth/payment')
+                    }}
+                    disabled={submitting}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--color-green)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(34,197,94,0.35)' }}>
+                    Buy Now
+                  </button>
+                </div>
               ) : (
-                <button onClick={() => handleSubmit(true)} disabled={submitting} className="btn-teal">
+                <button onClick={() => handleSubmit('demo')} disabled={submitting}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.75rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--color-teal)', color: '#fff', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
                   {submitting ? 'Sending request...' : 'Request a demo'} <LuArrowRight size={14} />
                 </button>
               )}
@@ -410,7 +407,7 @@ export default function RegisterPage() {
         )}
       </div>
 
-      <p style={{ marginTop: '1.5rem', fontSize: '0.72rem', color: C.muted }}>
+      <p className="auth-footer">
         &copy; {new Date().getFullYear()} StratoPOD. All rights reserved.
       </p>
 
