@@ -58,9 +58,9 @@ const Topbar = () => {
         <div className="flex items-center gap-3">
 
           {/* Brand */}
-          <Link href="/" className="flex items-center">
-            <span className="font-bold text-lg tracking-widest text-white">STRATO</span>
-            <span className="font-bold text-lg tracking-widests" style={{ color: '#00d4e8' }}>POD</span>
+          <Link href="/dashboard" className="flex items-center">
+            <span className="font-bold text-xl tracking-widest text-white">STRATO</span>
+            <span className="font-bold text-xl tracking-widest" style={{ color: '#00d4e8' }}>POD</span>
           </Link>
 
           {/* Collapse toggle */}
@@ -87,18 +87,16 @@ const Topbar = () => {
         <div className="flex items-center gap-3">
           {isSuperAdmin && (
             xeroConnected ? (
-              <div
-                className="flex items-center gap-2 text-sm font-semibold px-3 py-1.5"
-                style={{ background: 'rgba(0,212,232,0.15)', color: '#00d4e8', borderRadius: 0, border: '1px solid rgba(0,212,232,0.35)' }}
-              >
+              <div className="flex items-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md"
+                style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.35)' }}>
                 <CheckCircle2 size={14} /> Xero Connected
               </div>
             ) : (
               <button
                 onClick={handleConnect}
                 disabled={connecting}
-                className="flex items-center gap-2 text-white font-semibold text-sm px-4 py-2 transition-opacity hover:opacity-85 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ background: '#3b6fd4', border: 'none', borderRadius: 0 }}
+                className="flex items-center gap-2 text-white font-semibold text-sm px-4 py-2 rounded-md transition-opacity hover:opacity-85 disabled:opacity-60 disabled:cursor-not-allowed btn-blue"
+                style={{ border: 'none' }}
               >
                 {connecting
                   ? <><Loader2 size={14} className="animate-spin" /> Connecting...</>

@@ -27,6 +27,7 @@ export interface ShipmentPagedResult {
 const shipmentService = {
   getAll: async (params: {
     shipmentNo?: string
+    plantId?: string
     statusId?: number
     page?: number
     pageSize?: number
@@ -34,7 +35,8 @@ const shipmentService = {
     const companyId = getCompanyId()
     const query = new URLSearchParams()
     if (params.shipmentNo) query.set('shipmentNo', params.shipmentNo)
-    if (params.statusId)   query.set('statusId', String(params.statusId))
+    if (params.plantId)    query.set('plantId',    params.plantId)
+    if (params.statusId)   query.set('statusId',   String(params.statusId))
     query.set('page',     String(params.page     ?? 1))
     query.set('pageSize', String(params.pageSize ?? 10))
 

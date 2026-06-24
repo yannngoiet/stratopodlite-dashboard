@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Truck, Users, Calendar, Clock } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import CountUpClient from '@/components/client-wrapper/CountUpClient';
@@ -37,18 +38,12 @@ const buildBarChart = (notes: RecentDeliveryNote[]) => {
       ],
     },
     options: {
-      plugins: {
-        legend: { display: false },
-      },
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
       scales: {
-        x: {
-          ticks: { maxRotation: 0, minRotation: 0 },
-          grid: { display: false },
-        },
-        y: {
-          ticks: { stepSize: 1, precision: 0 },
-          beginAtZero: true,
-        },
+        x: { ticks: { maxRotation: 0, minRotation: 0 }, grid: { display: false } },
+        y: { ticks: { stepSize: 1, precision: 0 }, beginAtZero: true },
       },
     },
   };
@@ -62,63 +57,74 @@ const DeliveryStatistics = ({
   total: number;
   totalDrivers: number;
   notes: RecentDeliveryNote[];
-}) => (
-  <div>
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-0">
+}) => {
+  const [chartReady, setChartReady] = useState(false);
 
-      {/* Left — Delivery Notes stat */}
-      <div className="flex flex-col items-center justify-center text-center px-6 py-4 border-r border-[#dde3f0]">
-        <div className="flex items-center gap-2 dash-card-label mb-4">
-          <Truck size={13} /> Delivery Notes
+  useEffect(() => {
+    const id = setTimeout(() => setChartReady(true), 80);
+    return () => clearTimeout(id);
+  }, []);
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-0">
+
+        {/* Left — Delivery Notes stat */}
+        <div className="flex flex-col items-center justify-center text-center px-6 py-4 border-r dash-border">
+          <div className="flex items-center gap-2 dash-card-label mb-4">
+            <Truck size={13} /> Delivery Notes
+          </div>
+          <div className="text-3xl font-extrabold dash-text-blue leading-none mb-1">
+            <CountUpClient end={total} duration={2} enableScrollSpy scrollSpyOnce />
+          </div>
+          <p className="text-xs dash-text-muted mb-4">Total delivery notes in system</p>
+          <div className="flex items-center gap-1 text-xs dash-text-muted">
+            <Calendar size={12} /> Updated today
+          </div>
         </div>
-        <div className="text-3xl font-extrabold text-[#3b6fd4] leading-none mb-1">
-          <CountUpClient end={total} duration={2} enableScrollSpy scrollSpyOnce />
+
+        {/* Center — Bar chart */}
+        <div className="relative px-4 py-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="dash-dot-blue" />
+            <span className="text-xs dash-text-muted">Deliveries per day</span>
+          </div>
+          <div className="w-full relative" style={{ height: '160px' }}>
+            {chartReady && (
+              <ChartJSClient
+                key={`bar-${notes.length}`}
+                type="bar"
+                getOptions={() => buildBarChart(notes)}
+                plugins={[BarController, BarElement]}
+              />
+            )}
+          </div>
         </div>
-        <p className="text-xs text-[#6b7a99] mb-4">Total delivery notes in system</p>
-        <div className="flex items-center gap-1 text-xs text-[#6b7a99]">
-          <Calendar size={12} /> Updated today
+
+        {/* Right — Drivers stat */}
+        <div className="flex flex-col items-center justify-center text-center px-6 py-4 border-l dash-border">
+          <div className="flex items-center gap-2 dash-card-label mb-4">
+            <Users size={13} /> Drivers
+          </div>
+          <div className="text-3xl font-extrabold dash-text-teal leading-none mb-1">
+            <CountUpClient end={totalDrivers} duration={2} enableScrollSpy scrollSpyOnce />
+          </div>
+          <p className="text-xs dash-text-muted mb-4">Active drivers</p>
+          <div className="flex items-center gap-1 text-xs dash-text-muted">
+            <Clock size={12} /> Last synced: today
+          </div>
         </div>
+
       </div>
 
-      {/* Center — Bar chart */}
-      <div className="relative px-4 py-4">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="inline-block w-3 h-3 rounded-sm" style={{ background: '#3b6fd4' }} />
-          <span className="text-xs text-[#6b7a99]">Deliveries per day</span>
-        </div>
-        <div className="w-full relative" style={{ height: '160px' }}>
-          <ChartJSClient
-            key={`bar-${notes.length}`}
-            type="bar"
-            getOptions={() => buildBarChart(notes)}
-            plugins={[BarController, BarElement]}
-          />
-        </div>
-      </div>
+      <Separator className="dash-bg-separator" />
 
-      {/* Right — Drivers stat */}
-      <div className="flex flex-col items-center justify-center text-center px-6 py-4 border-l border-[#dde3f0]">
-        <div className="flex items-center gap-2 dash-card-label mb-4">
-          <Users size={13} /> Drivers
-        </div>
-        <div className="text-3xl font-extrabold text-[#29b6c5] leading-none mb-1">
-          <CountUpClient end={totalDrivers} duration={2} enableScrollSpy scrollSpyOnce />
-        </div>
-        <p className="text-xs text-[#6b7a99] mb-4">Active drivers</p>
-        <div className="flex items-center gap-1 text-xs text-[#6b7a99]">
-          <Clock size={12} /> Last synced: today
-        </div>
+      <div className="flex items-center justify-between px-5 py-3">
+        <span className="text-xs dash-text-muted">STRATOPOD Delivery Management System</span>
+        <span className="text-xs dash-text-muted">{total} delivery notes loaded</span>
       </div>
-
     </div>
-
-    <Separator className="bg-[#dde3f0]" />
-
-    <div className="flex items-center justify-between px-5 py-3">
-      <span className="text-xs text-[#6b7a99]">STRATOPOD Delivery Management System</span>
-      <span className="text-xs text-[#6b7a99]">{total} delivery notes loaded</span>
-    </div>
-  </div>
-);
+  );
+};
 
 export default DeliveryStatistics;

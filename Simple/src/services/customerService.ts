@@ -32,7 +32,10 @@ const customerService = {
   getAll: async (params: {
     customerCode?: string
     customerName?: string
+    email?: string
+    telephone?: string
     isActive?: boolean
+    createdDate?: string
     page?: number
     pageSize?: number
   }): Promise<CustomerPagedResult> => {
@@ -40,7 +43,11 @@ const customerService = {
     const query = new URLSearchParams()
     if (params.customerCode) query.set('customerCode', params.customerCode)
     if (params.customerName) query.set('customerName', params.customerName)
+    if (params.email)        query.set('email',        params.email)
+    if (params.telephone)    query.set('telephone',    params.telephone)
     if (params.isActive !== undefined) query.set('isActive', String(params.isActive))
+    if (params.createdDate)  query.set('dateFrom',     params.createdDate)
+    if (params.createdDate)  query.set('dateTo',       params.createdDate)
     query.set('page',     String(params.page     ?? 1))
     query.set('pageSize', String(params.pageSize ?? 10))
 

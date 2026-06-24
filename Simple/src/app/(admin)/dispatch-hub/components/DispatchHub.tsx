@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Badge, Button, Col, Collapse, Form, InputGroup, Modal, Row } from 'react-bootstrap'
 import { LuChevronDown, LuChevronRight, LuFilter, LuPrinter, LuRefreshCw, LuSearch, LuSettings, LuTrash2, LuUsers } from 'react-icons/lu'
+import { Button as ShadButton } from '@/components/ui/button'
+import { RotateCcw } from 'lucide-react'
 import { TbPackage, TbTruck } from 'react-icons/tb'
 import { AssignedDelivery, Driver, LocationGroup, Shipment, UnassignedDelivery } from '@/types/dispatch'
 import dispatchService, { type SubmitDispatchItem } from '@/services/dispatchService'
@@ -586,13 +588,14 @@ const DispatchHub = () => {
             </Col>
           </Row>
         </Modal.Body>
-        <Modal.Footer>
-          <Button size="sm" variant="secondary" onClick={() => { setShowDriverModal(false); resetDriverForm() }}>Cancel</Button>
-          <Button size="sm" variant="primary"
+        <Modal.Footer style={{ borderTop: '1px solid #dde3f0', padding: '0.75rem 1.25rem' }}>
+          <ShadButton size="sm" variant="outline" className="rounded-md px-4"
+            onClick={() => { setShowDriverModal(false); resetDriverForm() }}>Cancel</ShadButton>
+          <ShadButton size="sm" className="rounded-md px-4 btn-navy"
             disabled={creatingDriver || !newDriver.empNo || !newDriver.firstName || !newDriver.lastName}
             onClick={handleCreateDriver}>
             {creatingDriver ? 'Creating...' : 'Add Driver'}
-          </Button>
+          </ShadButton>
         </Modal.Footer>
       </Modal>
 
@@ -622,17 +625,17 @@ const DispatchHub = () => {
             </Form.Select>
           </Form.Group>
         </Modal.Body>
-        <Modal.Footer>
-          <Button size="sm" variant="secondary" onClick={() => {
+        <Modal.Footer style={{ borderTop: '1px solid #dde3f0', padding: '0.75rem 1.25rem' }}>
+          <ShadButton size="sm" variant="outline" className="rounded-md px-4" onClick={() => {
             setShowVehicleModal(false)
             setPendingNewShipmentDriver(null)
             setSelectedVehicleIdForDriver(null)
-          }}>Cancel</Button>
-          <Button size="sm" variant="primary"
+          }}>Cancel</ShadButton>
+          <ShadButton size="sm" className="rounded-md px-4 btn-navy"
             disabled={!selectedVehicleIdForDriver}
             onClick={handleCreateShipment}>
             Create Shipment
-          </Button>
+          </ShadButton>
         </Modal.Footer>
       </Modal>
 
@@ -646,26 +649,24 @@ const DispatchHub = () => {
               <strong style={{ fontSize: 14 }}>Drivers</strong>
             </div>
             <div className="d-flex align-items-center gap-2">
-              <Button size="sm" variant="success"
-                onClick={() => setShowDriverModal(true)}
-                style={{ fontSize: 11 }}>
+              <ShadButton size="sm" onClick={() => setShowDriverModal(true)}
+                className="flex items-center gap-1 btn-green rounded-md" style={{ fontSize: 11 }}>
                 + Add Driver
-              </Button>
+              </ShadButton>
               <Form.Control type="date" size="sm" value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
                 style={{ fontSize: 12, width: 140 }} />
-              <Button size="sm" variant="outline-secondary" onClick={refreshAll}>
-                <LuRefreshCw size={13} />
-              </Button>
-              <Button size="sm" style={{ background: '#17a2b8', border: 'none', fontSize: 12 }}>
-                <LuPrinter size={13} className="me-1" />PRINT ALL
-              </Button>
-              <Button size="sm"
-                style={{ background: '#28a745', border: 'none', fontSize: 12 }}
-                disabled={submitting}
-                onClick={handleSubmitDispatch}>
+              <ShadButton size="sm" variant="outline" onClick={refreshAll}
+                className="rounded-md px-2">
+                <RotateCcw size={13} />
+              </ShadButton>
+              <ShadButton size="sm" className="flex items-center gap-1 btn-sky rounded-md" style={{ fontSize: 11 }}>
+                <LuPrinter size={13} /> PRINT ALL
+              </ShadButton>
+              <ShadButton size="sm" disabled={submitting} onClick={handleSubmitDispatch}
+                className="flex items-center gap-1 btn-green rounded-md" style={{ fontSize: 11 }}>
                 {submitting ? 'Submitting...' : 'SUBMIT DISPATCH'}
-              </Button>
+              </ShadButton>
             </div>
           </div>
 
@@ -727,15 +728,14 @@ const DispatchHub = () => {
             style={{ background: '#fff', border: '1px solid #d0dbe8' }}>
             <strong style={{ fontSize: 14 }}>📄 Delivery Notes</strong>
             <div className="d-flex align-items-center gap-2">
-              <Button size="sm" variant="outline-secondary" onClick={loadDeliveries} disabled={deliveriesLoading}>
-                <LuRefreshCw size={13} className={deliveriesLoading ? 'spin' : ''} />
-              </Button>
-              <Button size="sm"
-                style={{ background: '#28a745', border: 'none', fontSize: 12 }}
-                disabled={submitting}
-                onClick={handleSubmitDispatch}>
+              <ShadButton size="sm" variant="outline" onClick={loadDeliveries} disabled={deliveriesLoading}
+                className="rounded-md px-2">
+                <RotateCcw size={13} className={deliveriesLoading ? 'spin' : ''} />
+              </ShadButton>
+              <ShadButton size="sm" disabled={submitting} onClick={handleSubmitDispatch}
+                className="flex items-center gap-1 btn-green rounded-md" style={{ fontSize: 11 }}>
                 {submitting ? 'Submitting...' : 'SUBMIT DISPATCH'}
-              </Button>
+              </ShadButton>
               <Form.Control type="date" size="sm" value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
                 style={{ fontSize: 12, width: 140 }} />
@@ -1038,8 +1038,8 @@ function ShipmentBlock({
       onDragLeave={() => { if (dragOverTarget === targetKey) setDragOverTarget(null) }}
       onDrop={(e) => { e.preventDefault(); onDropOnShipment(driverId, shipment.shipmentNo, shipment.vehicleId ?? null) }}>
 
-      <div className="d-flex align-items-center justify-content-between px-2 py-1"
-        style={{ background: '#2c3e50', borderRadius: '4px 4px 0 0' }}>
+      <div className="d-flex align-items-center justify-content-between px-2 py-1 dispatch-shipment-bar"
+        style={{ borderRadius: '4px 4px 0 0' }}>
         <span style={{ fontSize: 11, color: '#fff' }}>
           Shipment: {shipment.shipmentNo ?? <em style={{ opacity: 0.6 }}>Assigning...</em>}
         </span>
