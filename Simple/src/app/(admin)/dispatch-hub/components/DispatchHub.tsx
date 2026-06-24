@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Badge, Button, Col, Collapse, Form, InputGroup, Modal, Row } from 'react-bootstrap'
-import { LuChevronDown, LuChevronRight, LuFilter, LuPrinter, LuRefreshCw, LuSearch, LuSettings, LuTrash2, LuUsers } from 'react-icons/lu'
+import { Badge, Button, Col, Form, InputGroup, Modal, Row } from 'react-bootstrap'
+import { LuChevronDown, LuChevronRight, LuFilter, LuPrinter, LuSearch, LuSettings, LuTrash2, LuUsers } from 'react-icons/lu'
 import { Button as ShadButton } from '@/components/ui/button'
 import { RotateCcw } from 'lucide-react'
 import { TbPackage, TbTruck } from 'react-icons/tb'
@@ -521,72 +521,91 @@ const DispatchHub = () => {
 
       {/* Add Driver Modal */}
       <Modal show={showDriverModal} onHide={() => { setShowDriverModal(false); resetDriverForm() }} size="lg" centered>
-        <Modal.Header closeButton>
-          <Modal.Title style={{ fontSize: 16 }}>Add New Driver</Modal.Title>
+        <Modal.Header closeButton className="modal-header-dark">
+          <Modal.Title style={{ fontSize: 15, fontWeight: 600 }}>Add New Driver</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Row className="g-2">
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Employee Number *</Form.Label>
-              <Form.Control size="sm" placeholder="EMP011"
-                value={newDriver.empNo}
-                onChange={(e) => setNewDriver({ ...newDriver, empNo: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Username <span className="text-danger">*</span></Form.Label>
-              <Form.Control size="sm" placeholder="username"
-                value={newDriver.username}
-                onChange={(e) => setNewDriver({ ...newDriver, username: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Password <span className="text-danger">*</span></Form.Label>
-              <Form.Control size="sm" type="password" placeholder="••••••••"
-                value={newDriver.password}
-                onChange={(e) => setNewDriver({ ...newDriver, password: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>First Name *</Form.Label>
-              <Form.Control size="sm" placeholder="Johannes"
-                value={newDriver.firstName}
-                onChange={(e) => setNewDriver({ ...newDriver, firstName: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Last Name *</Form.Label>
-              <Form.Control size="sm" placeholder="Burg"
-                value={newDriver.lastName}
-                onChange={(e) => setNewDriver({ ...newDriver, lastName: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Plant *</Form.Label>
-              <Form.Select size="sm" value={newDriver.plantId}
-                onChange={(e) => setNewDriver({ ...newDriver, plantId: e.target.value })}>
-                {PLANT_OPTIONS.map(p => (
-                  <option key={p.id} value={p.id}>{p.id} - {p.name}</option>
-                ))}
-              </Form.Select>
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>License Number</Form.Label>
-              <Form.Control size="sm" placeholder="LIC123456"
-                value={newDriver.licenseNumber}
-                onChange={(e) => setNewDriver({ ...newDriver, licenseNumber: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>License Expiry</Form.Label>
-              <Form.Control size="sm" type="date"
-                value={newDriver.licenseExpiryDate}
-                onChange={(e) => setNewDriver({ ...newDriver, licenseExpiryDate: e.target.value })} />
-            </Col>
-            <Col md={6}>
-              <Form.Label style={{ fontSize: 12 }}>Status</Form.Label>
-              <Form.Select size="sm"
-                value={newDriver.isActive ? 'active' : 'inactive'}
-                onChange={(e) => setNewDriver({ ...newDriver, isActive: e.target.value === 'active' })}>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </Form.Select>
-            </Col>
-          </Row>
+        <Modal.Body style={{ padding: '1.5rem' }}>
+          <div className="row g-3">
+            <div className="col-md-6">
+              <label className="field-label">Employee Number <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <div className="input-wrapper">
+                <input className="raw-input no-icon" placeholder="EMP011"
+                  value={newDriver.empNo}
+                  onChange={(e) => setNewDriver({ ...newDriver, empNo: e.target.value })} />
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label className="field-label">Username <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <div className="input-wrapper">
+                <input className="raw-input no-icon" placeholder="username"
+                  value={newDriver.username}
+                  onChange={(e) => setNewDriver({ ...newDriver, username: e.target.value })} />
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label className="field-label">Password <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <div className="input-wrapper">
+                <input className="raw-input no-icon" type="password" placeholder="••••••••"
+                  value={newDriver.password}
+                  onChange={(e) => setNewDriver({ ...newDriver, password: e.target.value })} />
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label className="field-label">First Name <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <div className="input-wrapper">
+                <input className="raw-input no-icon" placeholder="Johannes"
+                  value={newDriver.firstName}
+                  onChange={(e) => setNewDriver({ ...newDriver, firstName: e.target.value })} />
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label className="field-label">Last Name <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <div className="input-wrapper">
+                <input className="raw-input no-icon" placeholder="Burg"
+                  value={newDriver.lastName}
+                  onChange={(e) => setNewDriver({ ...newDriver, lastName: e.target.value })} />
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label className="field-label">Plant <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <div className="input-wrapper" style={{ padding: 0 }}>
+                <select className="raw-input no-icon" style={{ paddingLeft: '0.75rem', width: '100%' }}
+                  value={newDriver.plantId}
+                  onChange={(e) => setNewDriver({ ...newDriver, plantId: e.target.value })}>
+                  {PLANT_OPTIONS.map(p => (
+                    <option key={p.id} value={p.id}>{p.id} - {p.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label className="field-label">License Number</label>
+              <div className="input-wrapper">
+                <input className="raw-input no-icon" placeholder="LIC123456"
+                  value={newDriver.licenseNumber}
+                  onChange={(e) => setNewDriver({ ...newDriver, licenseNumber: e.target.value })} />
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label className="field-label">License Expiry</label>
+              <div className="input-wrapper">
+                <input className="raw-input no-icon" type="date"
+                  value={newDriver.licenseExpiryDate}
+                  onChange={(e) => setNewDriver({ ...newDriver, licenseExpiryDate: e.target.value })} />
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label className="field-label">Status</label>
+              <div className="input-wrapper" style={{ padding: 0 }}>
+                <select className="raw-input no-icon" style={{ paddingLeft: '0.75rem', width: '100%' }}
+                  value={newDriver.isActive ? 'active' : 'inactive'}
+                  onChange={(e) => setNewDriver({ ...newDriver, isActive: e.target.value === 'active' })}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </Modal.Body>
         <Modal.Footer style={{ borderTop: '1px solid #dde3f0', padding: '0.75rem 1.25rem' }}>
           <ShadButton size="sm" variant="outline" className="rounded-md px-4"
@@ -813,7 +832,7 @@ const DispatchHub = () => {
                       {group.factories.reduce((s, f) => s + f.deliveries.length, 0)}
                     </Badge>
                   </div>
-                  <Collapse in={!collapsedLocations[group.location]}>
+                  {!collapsedLocations[group.location] && (
                     <div>
                       {group.factories.map((factory) => {
                         const factKey = `${group.location}__${factory.factoryCode}`
@@ -830,7 +849,7 @@ const DispatchHub = () => {
                               </div>
                               <Badge bg="warning" text="dark" style={{ fontSize: 10 }}>{factory.deliveries.length}</Badge>
                             </div>
-                            <Collapse in={!collapsedFactories[factKey]}>
+                            {!collapsedFactories[factKey] && (
                               <div>
                                 {factory.deliveries.map((delivery) => (
                                   <DeliveryCard
@@ -848,12 +867,12 @@ const DispatchHub = () => {
                                   />
                                 ))}
                               </div>
-                            </Collapse>
+                            )}
                           </div>
                         )
                       })}
                     </div>
-                  </Collapse>
+                  )}
                 </div>
               ))
             )}
