@@ -181,7 +181,7 @@ a:focus:not(:focus-visible),
    GLOBAL BUTTON STYLES
    Scoped to exclude shadcn buttons
 ═══════════════════════════════════ */
-button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.side-nav-link):not(.dash-sort-btn):not(.dash-sort-btn-dark):not(.dash-nav-btn):not(.dash-page-btn):not(.btn-ghost):not(.btn-close):not(.btn-stepper) {
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.side-nav-link):not(.dash-sort-btn):not(.dash-sort-btn-dark):not(.dash-nav-btn):not(.dash-page-btn):not(.btn-ghost):not(.btn-close):not(.btn-stepper):not([data-close-button]):not([data-sonner-toast] *) {
   background: #3b6fd4;
   color: #fff;
   border: none;
@@ -196,23 +196,47 @@ button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not
   transition: opacity 0.15s, transform 0.1s;
 }
 
-button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.btn-stepper):hover:not(:disabled) {
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.btn-stepper):not([data-close-button]):hover:not(:disabled) {
   opacity: 0.88;
 }
 
-button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.btn-stepper):active:not(:disabled) {
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.btn-stepper):not([data-close-button]):active:not(:disabled) {
   transform: scale(0.98);
 }
 
-button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.btn-stepper):focus {
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.btn-stepper):not([data-close-button]):focus {
   outline: 2px solid #3b6fd4 !important;
   outline-offset: 2px !important;
   border-radius: 0 !important;
 }
 
-button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.btn-stepper):disabled {
+button:not([data-slot="button"]):not([role="option"]):not([role="combobox"]):not(.btn-stepper):not([data-close-button]):disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* Sonner toast close button */
+[data-close-button] {
+  all: unset;
+  position: absolute !important;
+  top: -6px !important;
+  left: -6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: #fff !important;
+  border: 1px solid #dde3f0 !important;
+  color: #6b7a99 !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+[data-close-button]:hover {
+  background: #f0f2f5 !important;
+  color: #1a2340 !important;
 }
 
 .btn-stepper {

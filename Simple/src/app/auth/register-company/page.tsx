@@ -10,6 +10,7 @@ import {
 } from 'react-icons/lu';
 import authService from '@/services/authService';
 import planService, { type PlanResponse } from '@/services/planService';
+import paymentsService from '@/services/paymentsService';
 import { notify } from '@/lib/toast';
 
 const POPULAR_PLAN_CODE = 'business';
@@ -89,7 +90,7 @@ export default function RegisterPage() {
   const handleSubmit = async (mode: 'trial' | 'demo' | 'buy' = 'trial') => {
     setSubmitting(true);
     try {
-      await authService.registerCompany({
+      const companyRes = await authService.registerCompany({
         companyName:          form.companyName,
         companyType:          'ORGANISATION',
         adminPhoneNumber:     form.companyPhone || undefined,
@@ -108,9 +109,41 @@ export default function RegisterPage() {
         setTimeout(() => router.push('/auth/sign-in'), 2000);
         return;
       }
+
       if (mode === 'buy') {
-        notify.success('Purchase request received!', 'Our team will contact you shortly to complete the payment.');
-        setTimeout(() => router.push('/auth/sign-in'), 2000);
+        const totalAmount = (plan?.monthlyPrice ?? 0) * driverCount;
+        const { uuid } = await paymentsService.createOnsiteUuid({
+          companyId:    companyRes.id,
+          planId:       plan!.id,
+          amount:       totalAmount,
+          itemName:     `${plan!.name} Plan - ${driverCount} driver${driverCount !== 1 ? 's' : ''}`,
+          emailAddress: form.email,
+        });
+
+        // Load PayFast onsite engine if not already loaded
+        if (!(window as any).payfast_do_onsite_payment) {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://sandbox.payfast.co.za/onsite/engine.js';
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load PayFast'));
+            document.head.appendChild(script);
+          });
+        }
+
+        setSubmitting(false);
+
+        (window as any).payfast_do_onsite_payment({ uuid }, async (result: boolean) => {
+          if (result) {
+            setSubmitting(true);
+            await authService.login(form.email, form.password);
+            notify.success('Payment successful!', `Your ${plan!.name} plan is now active. Welcome to StratoPOD!`);
+            setTimeout(() => router.push('/dashboard'), 1500);
+          } else {
+            notify.error('Payment cancelled', 'Your payment was not completed. Please try again.');
+          }
+          setSubmitting(false);
+        });
         return;
       }
 
@@ -381,19 +414,9 @@ export default function RegisterPage() {
                     style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--primary)', color: '#fff', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, boxShadow: '0 2px 8px rgba(59,111,212,0.35)', outline: 'none' }}>
                     {submitting ? 'Creating...' : 'Start free trial'}
                   </button>
-                  <button
-                    onClick={() => {
-                      sessionStorage.setItem('purchase_data', JSON.stringify({
-                        form, selectedPlan, driverCount,
-                        planName: plan.name,
-                        planPrice: plan.monthlyPrice,
-                        totalMonthly: plan.monthlyPrice * driverCount,
-                      }))
-                      router.push('/auth/payment')
-                    }}
-                    disabled={submitting}
-                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--color-green)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(34,197,94,0.35)', outline: 'none' }}>
-                    Buy Now
+                  <button onClick={() => handleSubmit('buy')} disabled={submitting}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.5rem', borderRadius: '2rem', fontWeight: 600, background: 'var(--color-green)', color: '#fff', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, boxShadow: '0 2px 8px rgba(34,197,94,0.35)', outline: 'none' }}>
+                    {submitting ? 'Processing...' : 'Buy Now'}
                   </button>
                 </div>
               ) : (
