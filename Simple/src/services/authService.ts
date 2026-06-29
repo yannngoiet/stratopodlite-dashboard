@@ -25,9 +25,13 @@ const authService: AuthService = {
     const data = res.data
 
     if (data.success) {
+      // Store in localStorage for client-side API calls
       localStorage.setItem('accessToken',  data.accessToken)
       localStorage.setItem('refreshToken', data.refreshToken)
       localStorage.setItem('user',         JSON.stringify(data.user))
+
+      // Store in cookie so Next.js proxy can read it server-side
+      document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Strict`
     }
 
     return data
@@ -35,9 +39,17 @@ const authService: AuthService = {
 
   // ── Logout ───────────────────────────────────────────────────
   logout: () => {
+    // Clear localStorage
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
+
+    // Clear auth cookie
+    document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+
+    // Clear grace period acknowledgement cookie
+    // so grace warning shows again on next login
+    document.cookie = 'graceAcknowledged=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
   },
 
   // ── Get stored user ──────────────────────────────────────────
@@ -54,7 +66,7 @@ const authService: AuthService = {
   // ── Register Company + Admin User ────────────────────────────
   registerCompany: async (data: RegisterCompanyRequest) => {
     const res = await httpClient.post<RegisterCompanyResponse>(
-      '/api/companies/register',   // ← matches [HttpPost("register")] on controller
+      '/api/companies/register',
       data
     )
     return res.data
