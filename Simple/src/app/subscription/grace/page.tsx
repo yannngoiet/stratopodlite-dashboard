@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import authService from '@/services/authService';
 import httpClient from '@/services/api';
 import paymentsService from '@/services/paymentsService';
+import subscriptionService from '@/services/subscriptionService';
 import { notify } from '@/lib/toast';
 
 export default function GracePeriodPage() {
@@ -13,9 +14,7 @@ export default function GracePeriodPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    httpClient.get<{ daysLeft?: number }>('/api/subscription/status')
-      .then(r => setDaysLeft(r.data.daysLeft ?? null))
-      .catch(() => {});
+    subscriptionService.getStatus().then(s => setDaysLeft(s.daysLeft)).catch(() => {});
   }, []);
 
   const handleContinue = () => {
