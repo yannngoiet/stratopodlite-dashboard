@@ -12,6 +12,7 @@ const LOCK_SCREENS = [
   '/subscription/grace',
   '/subscription/suspended',
   '/subscription/cancelled',
+  '/subscription/change-plan',
 ]
 
 const LOCK_ROUTES: Record<string, string> = {

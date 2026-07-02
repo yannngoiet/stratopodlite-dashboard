@@ -1,14 +1,107 @@
 'use client';
-import { LuTruck, LuLock, LuArrowRight } from 'react-icons/lu';
+import { useState } from 'react';
+import { LuTruck, LuLock, LuArrowRight, LuLoader, LuRefreshCw } from 'react-icons/lu';
 import { useRouter } from 'next/navigation';
+import authService from '@/services/authService';
+import httpClient from '@/services/api';
+import paymentsService from '@/services/paymentsService';
+import { notify } from '@/lib/toast';
 
 export default function SuspendedPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const handleSignOut = () => {
     localStorage.clear();
     document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     router.push('/auth/sign-in');
+  };
+
+  const handleReactivate = async () => {
+    setLoading(true);
+    try {
+      // Step 1: Get companyId and email from session
+      const user = authService.getUser();
+      if (!user) {
+        notify.error('Session expired', 'Please sign in again.');
+        router.push('/auth/sign-in');
+        return;
+      }
+
+      // Step 2: Get current plan details (planId + amount) from subscription status
+      const statusRes = await httpClient.get<{
+        planId: number;
+        planName: string;
+        planMonthlyPrice: number;
+      }>('/api/subscription/status');
+
+      const { planId, planName, planMonthlyPrice } = statusRes.data;
+
+      if (!planId || !planMonthlyPrice) {
+        notify.error('Plan not found', 'Could not load your subscription details. Please contact support.');
+        return;
+      }
+
+      // Step 3: Call Payments API to get PayFast UUID
+      const { uuid } = await paymentsService.createOnsiteUuid({
+        companyId: user.companyId,
+        planId,
+        amount: planMonthlyPrice,
+        itemName: planName ?? 'StratoPOD Subscription',
+        emailAddress: user.email,
+      });
+
+      // Step 4: Load PayFast engine.js if not already loaded
+      if (!(window as any).payfast_do_onsite_payment) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://sandbox.payfast.co.za/onsite/engine.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load PayFast'));
+          document.head.appendChild(script);
+        });
+      }
+
+      setLoading(false);
+
+      // Step 5: Open PayFast onsite iframe
+      (window as any).payfast_do_onsite_payment({ uuid }, (result: boolean) => {
+        if (result) {
+          notify.success('Payment successful!', 'Activating your account...');
+          setLoading(true);
+
+          // Poll via internal Next.js route (avoids CORS/mixed-content issues)
+          let attempts = 0;
+          const checkStatus = async () => {
+            attempts++;
+            try {
+              const res = await fetch('/api/subscription-status', { cache: 'no-store' });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.status === 'active') {
+                  window.location.href = '/dashboard';
+                  return;
+                }
+              }
+            } catch {}
+            if (attempts >= 15) {
+              window.location.href = '/dashboard';
+              return;
+            }
+            setTimeout(checkStatus, 2000);
+          };
+          checkStatus();
+        } else {
+          notify.error('Payment cancelled', 'Your payment was not completed. Please try again.');
+        }
+      });
+
+    } catch (err: any) {
+      const message = err?.response?.data?.detail ?? err?.response?.data?.message ?? err?.message ?? 'Something went wrong. Please try again.';
+      notify.error('Reactivation failed', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,7 +129,7 @@ export default function SuspendedPage() {
 
         <div className="auth-card-heading">
           <h2 className="auth-card-title">Reactivate your account</h2>
-          <p className="auth-card-sub">Update your payment details on PayFast to reactivate immediately.</p>
+          <p className="auth-card-sub">Complete your payment on PayFast to reactivate immediately.</p>
         </div>
 
         <div style={{ background: '#f8f9fc', border: '1px solid #dde3f0', padding: '0.75rem 1rem', marginBottom: '1.25rem', fontSize: '0.78rem', color: '#6b7a99', lineHeight: 1.8 }}>
@@ -45,8 +138,44 @@ export default function SuspendedPage() {
           ✓ All drivers and dispatchers restored immediately
         </div>
 
-        <button onClick={() => window.open('https://www.payfast.co.za', '_blank')} style={{ width: '100%', justifyContent: 'center', marginBottom: 8 }}>
-          Reactivate on PayFast <LuArrowRight size={14} />
+        <button
+          onClick={handleReactivate}
+          disabled={loading}
+          style={{ width: '100%', justifyContent: 'center', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          {loading ? (
+            <>
+              <LuLoader size={14} style={{ animation: 'spin 1s linear infinite' }} />
+              Loading payment...
+            </>
+          ) : (
+            <>
+              Reactivate on PayFast <LuArrowRight size={14} />
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={() => router.push('/subscription/change-plan')}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            marginBottom: 8,
+            background: '#fff',
+            border: '1.5px solid #3b6fd4',
+            color: '#3b6fd4',
+            borderRadius: 4,
+            padding: '0.6rem 1rem',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+          }}
+        >
+          <LuRefreshCw size={14} />
+          Change or upgrade plan
         </button>
 
         <button onClick={handleSignOut} className="btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.8rem', color: '#6b7a99', padding: '0.5rem' }}>

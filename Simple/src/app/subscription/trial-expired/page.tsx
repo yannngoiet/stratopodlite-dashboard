@@ -57,10 +57,31 @@ export default function TrialExpiredPage() {
 
       (window as any).payfast_do_onsite_payment({ uuid }, (result: boolean) => {
         if (result) {
-          notify.success('Payment successful!', `Your ${selectedPlan.name} plan is now active.`)
-          router.push('/dashboard')
+          notify.success('Payment successful!', `Your ${selectedPlan.name} plan is now active.`);
+          setPaying(true);
+
+          let attempts = 0;
+          const checkStatus = async () => {
+            attempts++;
+            try {
+              const res = await fetch('/api/subscription-status', { cache: 'no-store' });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.status === 'active') {
+                  window.location.href = '/dashboard';
+                  return;
+                }
+              }
+            } catch {}
+            if (attempts >= 15) {
+              window.location.href = '/dashboard';
+              return;
+            }
+            setTimeout(checkStatus, 2000);
+          };
+          checkStatus();
         } else {
-          notify.error('Payment cancelled', 'Your payment was not completed. Please try again.')
+          notify.error('Payment cancelled', 'Your payment was not completed. Please try again.');
         }
       })
 
