@@ -18,7 +18,7 @@ export default function GracePeriodPage() {
   }, []);
 
   const handleContinue = () => {
-    document.cookie = 'graceAcknowledged=true; path=/; SameSite=Strict';
+    document.cookie = 'graceAcknowledged=true; path=/; SameSite=Lax';
     router.push('/dashboard');
   };
 
