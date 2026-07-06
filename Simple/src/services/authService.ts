@@ -30,8 +30,9 @@ const authService: AuthService = {
       localStorage.setItem('refreshToken', data.refreshToken)
       localStorage.setItem('user',         JSON.stringify(data.user))
 
-      // Store in cookie so Next.js proxy can read it server-side
-      document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Strict`
+      // SameSite=Lax allows cookie to be sent when redirected from
+      // external sites (e.g. Xero redirecting back to dashboard)
+      document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Lax`
     }
 
     return data
@@ -48,7 +49,6 @@ const authService: AuthService = {
     document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
 
     // Clear grace period acknowledgement cookie
-    // so grace warning shows again on next login
     document.cookie = 'graceAcknowledged=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
   },
 
