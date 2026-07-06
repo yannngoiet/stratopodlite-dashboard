@@ -187,6 +187,7 @@ export default function DriversPage() {
         await vehicleService.assignDriver(companyId, newVehicleId, driverId)
       }
       await loadVehicles()
+      await loadDrivers()
       setAssigningVehicleId(prev => {
         const next = { ...prev }
         delete next[driverId]
