@@ -61,14 +61,12 @@ export const menuItems: MenuItemType[] = [
     label: 'Delivery Notes',
     icon: LuFileText,
     url: '/delivery-notes',
-    badge: { text: '0', variant: 'primary' }
   },
   {
     key: 'trip-sheets',
     label: 'Trip Sheets',
     icon: LuFileSpreadsheet,
     url: '/trip-sheets',
-    badge: { text: '0', variant: 'warning' }
   },
   {
     key: 'devices',

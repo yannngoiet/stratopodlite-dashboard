@@ -761,12 +761,6 @@ const DispatchHub = () => {
             </div>
           </div>
 
-          <div className="d-flex gap-2 mb-2 flex-wrap">
-            <Badge bg="primary" style={{ fontSize: 11, padding: '6px 10px', cursor: 'pointer' }}>📄 POD IN TONS</Badge>
-            <Badge bg="warning" text="dark" style={{ fontSize: 11, padding: '6px 10px', cursor: 'pointer' }}>📄 POD DISPATCHED</Badge>
-            <Badge bg="danger" style={{ fontSize: 11, padding: '6px 10px', cursor: 'pointer' }}>📄 WEIGHBRIDGE ERROR</Badge>
-          </div>
-
           <div className="d-flex gap-2 mb-2">
             <InputGroup size="sm" style={{ flex: 1 }}>
               <InputGroup.Text style={{ background: '#fff' }}><LuSearch size={12} /></InputGroup.Text>
