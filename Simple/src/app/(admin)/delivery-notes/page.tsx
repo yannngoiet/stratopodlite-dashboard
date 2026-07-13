@@ -63,6 +63,19 @@ const Page = () => {
   const [status,       setStatus]       = useState('')
   const [dateLoaded,   setDateLoaded]   = useState('')
 
+  // ── Read error message from blob response ─────────────────────────────────
+  const readBlobError = async (err: any): Promise<string | undefined> => {
+    try {
+      const blob: Blob = err?.response?.data
+      if (!blob) return undefined
+      const text = await blob.text()
+      const json = JSON.parse(text)
+      return json?.message ?? undefined
+    } catch {
+      return undefined
+    }
+  }
+
   // ── Download PDF ───────────────────────────────────────────────────────────
   const handleDownloadPdf = async (dn: string) => {
     setDownloadingId(dn)
@@ -83,9 +96,10 @@ const Page = () => {
           { duration: Infinity }
         )
       } else {
+        const apiMsg = await readBlobError(err)
         notify.error(
           'Download failed',
-          'An error occurred while generating the PDF.',
+          apiMsg ?? 'An error occurred while generating the PDF.',
           { duration: Infinity }
         )
       }
@@ -111,9 +125,10 @@ const Page = () => {
           { duration: Infinity }
         )
       } else {
+        const apiMsg = await readBlobError(err)
         notify.error(
           'Preview failed',
-          'An error occurred while loading the PDF preview.',
+          apiMsg ?? 'An error occurred while loading the PDF preview.',
           { duration: Infinity }
         )
       }
