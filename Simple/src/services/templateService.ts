@@ -1,8 +1,4 @@
-import axios from 'axios'
-
-const pdfApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_PDF_API_URL,
-})
+import httpClient from './api'
 
 export interface Template {
   id: number
@@ -25,7 +21,7 @@ export interface UploadTemplateRequest {
 
 const templateService = {
   getAll: async (companyId: number): Promise<Template[]> => {
-    const res = await pdfApiClient.get<Template[]>(
+    const res = await httpClient.get<Template[]>(
       `/api/companies/${companyId}/templates?includeInactive=true`
     )
     return res.data
@@ -37,23 +33,16 @@ const templateService = {
     form.append('name', data.name)
     form.append('description', data.description)
     form.append('category', data.category)
-    await pdfApiClient.post(
-      `/api/companies/${companyId}/templates`,
-      form
-    )
+    await httpClient.post(`/api/companies/${companyId}/templates`, form)
   },
 
   setDefault: async (companyId: number, id: number): Promise<void> => {
-    await pdfApiClient.post(
-      `/api/companies/${companyId}/templates/${id}/set-default`
-    )
+    await httpClient.post(`/api/companies/${companyId}/templates/${id}/set-default`)
   },
 
   delete: async (companyId: number, id: number): Promise<void> => {
-    await pdfApiClient.delete(
-      `/api/companies/${companyId}/templates/${id}`
-    )
-  }
+    await httpClient.delete(`/api/companies/${companyId}/templates/${id}`)
+  },
 }
 
 export default templateService

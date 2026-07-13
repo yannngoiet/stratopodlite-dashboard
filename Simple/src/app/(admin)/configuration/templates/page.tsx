@@ -7,6 +7,7 @@ import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getCompanyId } from '@/helpers/config'
 import templateService, { type Template } from '@/services/templateService'
+import { notify } from '@/lib/toast'
 
 const CATEGORIES = ['DELIVERY', 'INVOICE']
 
@@ -88,7 +89,12 @@ const Page = () => {
     setDeleting(true)
     try {
       await templateService.delete(companyId, deletingTemplate.id)
-      setShowDeleteModal(false); setDeletingTemplate(null); await fetchTemplates()
+      setShowDeleteModal(false)
+      setDeletingTemplate(null)
+      notify.success('Template deleted', deletingTemplate.name)
+      await fetchTemplates()
+    } catch (err: any) {
+      notify.error('Delete failed', err?.response?.data?.error ?? 'Could not delete the template. Please try again.')
     } finally { setDeleting(false) }
   }
 
