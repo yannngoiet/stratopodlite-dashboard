@@ -9,12 +9,13 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table';
-import { Container, Badge, Spinner } from 'react-bootstrap';
-import { LuDownload, LuEye } from 'react-icons/lu';
+import { Container, Badge, Spinner, Modal } from 'react-bootstrap';
+import { LuDownload, LuEye, LuX } from 'react-icons/lu';
 import { ArrowUp, ArrowDown, ArrowUpDown, Search, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import * as XLSX from 'xlsx';
 import deliveryNoteService, { type DeliveryNoteListItem } from '@/services/deliveryNoteService';
+import { notify } from '@/lib/toast';
 
 
 const getStatusVariant = (status: string | null) => {
@@ -50,7 +51,10 @@ const Page = () => {
   const [pageSize]                  = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
-  const [sorting, setSorting]           = useState<SortingState>([])
+  const [previewingId,  setPreviewingId]  = useState<string | null>(null)
+  const [previewUrl,    setPreviewUrl]    = useState<string | null>(null)
+  const [previewDn,     setPreviewDn]     = useState<string | null>(null)
+  const [sorting, setSorting]             = useState<SortingState>([])
 
   const [deliveryNo,   setDeliveryNo]   = useState('')
   const [shipmentNo,   setShipmentNo]   = useState('')
@@ -70,12 +74,58 @@ const Page = () => {
       a.download = `DeliveryNote_${dn}.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (err) {
-      console.error(err)
-      alert('An error occurred while generating the PDF.')
+    } catch (err: any) {
+      const status = err?.response?.status
+      if (status === 404) {
+        notify.warning(
+          'No template configured',
+          'Please upload a PDF template in Configuration → Templates before downloading.',
+          { duration: Infinity }
+        )
+      } else {
+        notify.error(
+          'Download failed',
+          'An error occurred while generating the PDF.',
+          { duration: Infinity }
+        )
+      }
     } finally {
       setDownloadingId(null)
     }
+  }
+
+  // ── Preview PDF ────────────────────────────────────────────────────────────
+  const handlePreview = async (dn: string) => {
+    setPreviewingId(dn)
+    try {
+      const blob = await deliveryNoteService.downloadPdf(dn)
+      const url  = URL.createObjectURL(blob)
+      setPreviewUrl(url)
+      setPreviewDn(dn)
+    } catch (err: any) {
+      const status = err?.response?.status
+      if (status === 404) {
+        notify.warning(
+          'No template configured',
+          'Please upload a PDF template in Configuration → Templates before previewing.',
+          { duration: Infinity }
+        )
+      } else {
+        notify.error(
+          'Preview failed',
+          'An error occurred while loading the PDF preview.',
+          { duration: Infinity }
+        )
+      }
+    } finally {
+      setPreviewingId(null)
+    }
+  }
+
+  const closePreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(null)
+    setPreviewDn(null)
   }
 
   // ── Columns ────────────────────────────────────────────────────────────────
@@ -146,13 +196,14 @@ const Page = () => {
       cell: ({ row }) => {
         const dn = row.original.deliveryNo
         const isDownloading = downloadingId === dn
+        const isPreviewing  = previewingId  === dn
 
         if (row.original.status !== 'Completed') return null
 
         return (
           <div className="flex gap-1">
-            <Button size="sm" variant="outline" title="View Details" onClick={() => alert(`Preview: ${dn}`)} className="rounded-md px-2">
-              <LuEye size={14} />
+            <Button size="sm" variant="outline" title="Preview PDF" disabled={isPreviewing} onClick={() => handlePreview(dn)} className="rounded-md px-2">
+              {isPreviewing ? <Spinner size="sm" /> : <LuEye size={14} />}
             </Button>
             <Button size="sm" variant="outline" title="Download PDF" disabled={isDownloading} onClick={() => handleDownloadPdf(dn)} className="rounded-md px-2 !border-green-500 !text-green-600 hover:!bg-green-50">
               {isDownloading ? <Spinner size="sm" /> : <LuDownload size={14} />}
@@ -247,6 +298,7 @@ const Page = () => {
   const end   = Math.min(page * pageSize, totalCount)
 
   return (
+    <>
     <Container fluid className="py-3">
       <div className="card shadow-sm">
         <div className="card-header d-flex justify-content-between align-items-center py-2">
@@ -361,6 +413,30 @@ const Page = () => {
         </div>
       </div>
     </Container>
+
+      {/* ── PDF Preview Modal ──────────────────────────────────────────────── */}
+      <Modal show={!!previewUrl} onHide={closePreview} size="xl" centered
+        dialogClassName="modal-fullheight">
+        <Modal.Header style={{ background: '#1a2340', padding: '10px 16px' }}>
+          <Modal.Title style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+            Preview — {previewDn}
+          </Modal.Title>
+          <button onClick={closePreview}
+            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', opacity: 0.7, marginLeft: 'auto' }}>
+            <LuX size={18} />
+          </button>
+        </Modal.Header>
+        <Modal.Body style={{ padding: 0, height: '80vh' }}>
+          {previewUrl && (
+            <iframe
+              src={`${previewUrl}#navpanes=0&scrollbar=1`}
+              style={{ width: '100%', height: '100%', border: 'none' }}
+              title={`Preview ${previewDn}`}
+            />
+          )}
+        </Modal.Body>
+      </Modal>
+    </>
   )
 }
 

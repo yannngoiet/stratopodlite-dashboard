@@ -371,7 +371,7 @@ export default function UsersPage() {
               <label className="field-label">Phone Number</label>
               <input className="dash-filter-input" placeholder="+27 82 000 0000"
                 value={form.phoneNumber}
-                onChange={e => setForm({ ...form, phoneNumber: e.target.value })} />
+                onChange={e => setForm({ ...form, phoneNumber: e.target.value.replace(/[^0-9+]/g, '') })} />
             </div>
 
             <div className="flex flex-col gap-1">

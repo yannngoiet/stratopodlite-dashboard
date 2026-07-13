@@ -219,7 +219,7 @@ export default function RegisterPage() {
                 <label className="field-label">Phone number *</label>
                 <div className={`input-wrapper${errors.companyPhone ? ' has-error' : ''}`}>
                   <LuPhone size={15} className="dash-text-muted" />
-                  <input className="raw-input" type="tel" placeholder="+27 11 000 0000" value={form.companyPhone} onChange={e => set('companyPhone', e.target.value)} />
+                  <input className="raw-input" type="tel" placeholder="+27 11 000 0000" value={form.companyPhone} onChange={e => set('companyPhone', e.target.value.replace(/[^0-9+]/g, ''))} />
                 </div>
                 {errors.companyPhone && <p className="field-error">{errors.companyPhone}</p>}
               </div>
