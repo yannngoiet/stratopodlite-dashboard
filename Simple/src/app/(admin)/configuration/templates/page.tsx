@@ -240,13 +240,15 @@ const Page = () => {
       </div>
 
       {/* Delete Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
         <Modal.Header closeButton className="modal-header-dark">
           <Modal.Title style={{ fontSize: 15, fontWeight: 600 }}>Delete Template</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           <p className="mb-1">Are you sure you want to delete:</p>
-          <strong>{deletingTemplate?.name}</strong>
+          <strong style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', display: 'block' }}>
+            {deletingTemplate?.name}
+          </strong>
           <p className="text-muted mt-2 mb-0" style={{ fontSize: 12 }}>This action cannot be undone.</p>
         </Modal.Body>
         <Modal.Footer style={{ borderTop: '1px solid #dde3f0', padding: '0.75rem 1.25rem' }}>

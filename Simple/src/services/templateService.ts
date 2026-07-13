@@ -33,7 +33,9 @@ const templateService = {
     form.append('name', data.name)
     form.append('description', data.description)
     form.append('category', data.category)
-    await httpClient.post(`/api/companies/${companyId}/templates`, form)
+    await httpClient.post(`/api/companies/${companyId}/templates`, form, {
+      headers: { 'Content-Type': undefined },
+    })
   },
 
   setDefault: async (companyId: number, id: number): Promise<void> => {
