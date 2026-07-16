@@ -1,4 +1,4 @@
-import dashboardApi from './dashboardApi'
+import httpClient from './api'
 import { getCompanyId } from '@/helpers/config'
 
 export interface DeliveryStatusStat {
@@ -28,7 +28,7 @@ export interface DashboardStats {
 const dashboardStatsService = {
   getStats: async (): Promise<DashboardStats> => {
     const companyId = getCompanyId()
-    const res = await dashboardApi.get<DashboardStats>(
+    const res = await httpClient.get<DashboardStats>(
       `/api/companies/${companyId}/dashboard/stats`
     )
     return res.data

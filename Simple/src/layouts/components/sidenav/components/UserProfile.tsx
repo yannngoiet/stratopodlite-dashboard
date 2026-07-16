@@ -20,8 +20,8 @@ const UserProfile = () => {
   }, [])
 
   return (
-    <div className="sidenav-user text-nowrap border border-dashed rounded-3">
-      <Link href="" className="sidenav-user-name d-flex align-items-center">
+    <div className="sidenav-user border border-dashed rounded-3">
+      <Link href="" className="sidenav-user-name d-flex align-items-center" style={{ overflow: 'hidden' }}>
         <div style={{
           width: 36, height: 36, borderRadius: '50%',
           background: 'linear-gradient(135deg, #2d5a27, #192319)',
@@ -31,9 +31,9 @@ const UserProfile = () => {
         }}>
           {name ? getInitials(name) : '?'}
         </div>
-        <span>
-          <h5 className="my-0 fw-semibold">{name || 'Loading...'}</h5>
-          <h6 className="my-0 text-muted">{role || ''}</h6>
+        <span style={{ overflow: 'hidden', minWidth: 0 }}>
+          <h5 className="my-0 fw-semibold" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name || 'Loading...'}</h5>
+          <h6 className="my-0 text-muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{role || ''}</h6>
         </span>
       </Link>
     </div>
