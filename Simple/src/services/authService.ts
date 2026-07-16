@@ -8,7 +8,7 @@ import type {
 // ── Auth Service ───────────────────────────────────────────────
 interface AuthService {
   login:           (usernameOrEmail: string, password: string) => Promise<LoginResponse>
-  logout:          () => void
+  logout:          () => Promise<void>
   getUser:         () => LoginResponse['user'] | null
   isAuthenticated: () => boolean
   registerCompany: (data: RegisterCompanyRequest) => Promise<RegisterCompanyResponse>
@@ -25,30 +25,24 @@ const authService: AuthService = {
     const data = res.data
 
     if (data.success) {
-      // Store in localStorage for client-side API calls
-      localStorage.setItem('accessToken',  data.accessToken)
-      localStorage.setItem('refreshToken', data.refreshToken)
-      localStorage.setItem('user',         JSON.stringify(data.user))
-
-      // SameSite=Lax allows cookie to be sent when redirected from
-      // external sites (e.g. Xero redirecting back to dashboard)
-      document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Lax`
+      // Tokens are now in HttpOnly cookies set by the server.
+      // Only store non-sensitive user info for client-side use.
+      localStorage.setItem('user', JSON.stringify(data.user))
     }
 
     return data
   },
 
   // ── Logout ───────────────────────────────────────────────────
-  logout: () => {
-    // Clear localStorage
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
+  logout: async () => {
+    try {
+      // Ask server to clear the HttpOnly cookies
+      await httpClient.post('/api/auth/logout')
+    } catch {
+      // Proceed even if the request fails
+    }
+
     localStorage.removeItem('user')
-
-    // Clear auth cookie
-    document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-
-    // Clear grace period acknowledgement cookie
     document.cookie = 'graceAcknowledged=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
   },
 
@@ -60,7 +54,7 @@ const authService: AuthService = {
 
   // ── Check if logged in ───────────────────────────────────────
   isAuthenticated: () => {
-    return !!localStorage.getItem('accessToken')
+    return !!localStorage.getItem('user')
   },
 
   // ── Register Company + Admin User ────────────────────────────

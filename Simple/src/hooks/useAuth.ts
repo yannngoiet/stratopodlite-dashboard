@@ -35,8 +35,8 @@ export const useAuth = () => {
     }
   }
 
-  const logout = () => {
-    authService.logout()
+  const logout = async () => {
+    await authService.logout()
     router.push('/auth/sign-in')
   }
 
