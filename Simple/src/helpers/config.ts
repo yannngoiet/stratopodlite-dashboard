@@ -8,7 +8,6 @@ export const getCompanyId = (): number => {
   return user ? JSON.parse(user).companyId ?? 0 : 0
 }
 
-export const getToken = (): string => {
-  if (typeof window === 'undefined') return ''
-  return localStorage.getItem('accessToken') ?? ''
-}
+// Token is now in an HttpOnly cookie — not accessible from JS.
+// API calls use withCredentials:true so the browser sends it automatically.
+export const getToken = (): string => ''
