@@ -113,6 +113,7 @@ const MenuItem = ({ item, dynamicBadges }: MenuItemProps) => {
 };
 
 const AppMenu = () => {
+  const pathname = usePathname();
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
   const [dynamicBadges, setDynamicBadges] = useState<DynamicBadges>({});
 
@@ -139,7 +140,7 @@ const AppMenu = () => {
     vehicleService.getAll(getCompanyId())
       .then(r => set('vehicles', String(r.length)))
       .catch(() => {})
-  }, []);
+  }, [pathname]);
 
   const scrollToActiveLink = () => {
     const activeItem = document.querySelector('.side-nav-link.active') as HTMLElement;
