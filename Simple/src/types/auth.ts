@@ -17,6 +17,7 @@ export interface UserDto {
 export interface LoginResponse {
   success: boolean
   message: string
+  accessToken: string
   expiresAt: string
   mustChangePassword: boolean
   user: UserDto
