@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [error, setError]                               = useState<string | null>(null);
   const [xeroSuccess, setXeroSuccess]                   = useState(false);
   const [xeroAlreadyConnected, setXeroAlreadyConnected] = useState(false);
+  const [xeroError, setXeroError]                       = useState(false);
   const [companyName, setCompanyName]                   = useState('STRATOPOD');
   const [companyType, setCompanyType]                   = useState('');
 
@@ -42,6 +43,9 @@ export default function DashboardPage() {
       else { setXeroSuccess(true); window.history.replaceState({}, '', '/dashboard'); }
     } else if (xeroParam === 'already_connected') {
       setXeroAlreadyConnected(true);
+      window.history.replaceState({}, '', '/dashboard');
+    } else if (xeroParam === 'error') {
+      setXeroError(true);
       window.history.replaceState({}, '', '/dashboard');
     }
   }, []);
@@ -102,6 +106,18 @@ export default function DashboardPage() {
             <AlertDescription className="font-semibold">This Xero organisation is already connected.</AlertDescription>
           </div>
           <button className="btn-ghost" style={{ color: '#3b6fd4' }} onClick={() => setXeroAlreadyConnected(false)}>
+            <X size={15} />
+          </button>
+        </Alert>
+      )}
+
+      {xeroError && (
+        <Alert className="border-red-200 bg-red-50 text-red-800 flex items-center justify-between rounded-none mb-3">
+          <div className="flex items-center gap-2">
+            <TriangleAlert size={15} />
+            <AlertDescription className="font-semibold">Xero connection failed. Please try again or contact support.</AlertDescription>
+          </div>
+          <button className="btn-ghost" style={{ color: '#c0392b' }} onClick={() => setXeroError(false)}>
             <X size={15} />
           </button>
         </Alert>

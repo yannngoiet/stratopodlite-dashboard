@@ -33,7 +33,8 @@ export function useSubscriptionGuard() {
     check()
     const interval = setInterval(check, 60_000)
     return () => clearInterval(interval)
-  }, [router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return { blocked }
 }
