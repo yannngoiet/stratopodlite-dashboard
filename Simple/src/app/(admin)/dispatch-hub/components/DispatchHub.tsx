@@ -1142,16 +1142,22 @@ function AssignedDeliveryCard({ delivery, isChecked, onToggleCheck, onDragStart,
             <Col xs={6}>
               <div><span className="text-muted">QUARRY: </span>
                 <span style={{ fontWeight: 600 }}>{delivery.factoryName || '—'}</span></div>
-              <div><span className="text-muted">QTY: </span>{delivery.itemQuantity || '—'}</div>
+              <div><span className="text-muted">QTY: </span>{(delivery as any).itemCount ?? delivery.itemQuantity ?? '—'}</div>
               <div><span className="text-muted">PRODUCT: </span>{delivery.deliveryType || '—'}</div>
             </Col>
           </Row>
         </div>
         <div className="d-flex flex-column align-items-center justify-content-center gap-1 px-2"
           style={{ borderLeft: '1px solid #eee' }}>
-          <Button variant="link" size="sm" style={{ color: '#17a2b8', padding: 2 }}><LuPrinter size={13} /></Button>
-          <Button variant="link" size="sm" style={{ color: '#666', padding: 2 }}><LuSettings size={13} /></Button>
-          <Button variant="link" size="sm" style={{ color: '#dc3545', padding: 2 }}><LuTrash2 size={13} /></Button>
+          <Button variant="primary" size="sm" title="Print" style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
+            <LuPrinter size={13} />
+          </Button>
+          <Button variant="secondary" size="sm" title="Settings" style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
+            <LuSettings size={13} />
+          </Button>
+          <Button variant="danger" size="sm" title="Remove" style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
+            <LuTrash2 size={13} />
+          </Button>
         </div>
       </div>
     </div>
