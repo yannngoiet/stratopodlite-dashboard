@@ -48,7 +48,9 @@ export async function proxy(req: NextRequest) {
   const token = req.cookies.get('accessToken')?.value
 
   if (!token) {
-    return NextResponse.redirect(new URL('/auth/sign-in', req.url))
+    // Cookie not present (cross-domain deployment — Netlify frontend + separate API domain).
+    // Client-side Bearer token auth and the 401 interceptor handle the redirect.
+    return NextResponse.next()
   }
 
   // 5. Check subscription status
