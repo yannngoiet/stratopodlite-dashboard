@@ -661,20 +661,20 @@ const DispatchHub = () => {
       <Row className="g-3">
         {/* ===== LEFT: Drivers ===== */}
         <Col lg={5}>
-          <div className="d-flex align-items-center justify-content-between mb-2 p-2 rounded"
+          <div className="d-flex align-items-center justify-content-between mb-2 p-2 rounded flex-wrap gap-2"
             style={{ background: '#fff', border: '1px solid #d0dbe8' }}>
             <div className="d-flex align-items-center gap-2">
               <LuUsers size={18} />
               <strong style={{ fontSize: 14 }}>Drivers</strong>
             </div>
-            <div className="d-flex align-items-center gap-2">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
               <ShadButton size="sm" onClick={() => setShowDriverModal(true)}
                 className="flex items-center gap-1 btn-green rounded-md" style={{ fontSize: 11 }}>
                 + Add Driver
               </ShadButton>
               <Form.Control type="date" size="sm" value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
-                style={{ fontSize: 12, width: 140 }} />
+                style={{ fontSize: 12, width: 130 }} />
               <ShadButton size="sm" variant="outline" onClick={refreshAll}
                 className="rounded-md px-2">
                 <RotateCcw size={13} />
@@ -690,24 +690,21 @@ const DispatchHub = () => {
           </div>
 
           <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
-            <Form.Select size="sm" style={{ width: 160, fontSize: 12 }}>
+            <Form.Select size="sm" style={{ flex: '1 1 140px', fontSize: 12 }}>
               <option>Driver Status</option>
               <option>All Drivers</option>
               <option>Active</option>
               <option>On Break</option>
               <option>Off Duty</option>
             </Form.Select>
-            <Badge bg="success" style={{ fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>✅ Available</Badge>
-            <Badge bg="warning" text="dark" style={{ fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>🚚 On Route</Badge>
-            <Badge bg="secondary" style={{ fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>⏸ On Break</Badge>
-            <InputGroup size="sm" style={{ flex: 1, minWidth: 100 }}>
+            <InputGroup size="sm" style={{ flex: '2 1 160px' }}>
               <InputGroup.Text style={{ background: '#fff' }}><LuSearch size={12} /></InputGroup.Text>
               <Form.Control placeholder="Search drivers..." value={driverSearch}
                 onChange={(e) => setDriverSearch(e.target.value)} style={{ fontSize: 12 }} />
             </InputGroup>
           </div>
 
-          <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
+          <div style={{ overflowY: 'auto', maxHeight: 'min(calc(100vh - 260px), 600px)' }}>
             {driversLoading ? (
               <div className="text-center text-muted py-5">
                 <div className="spinner-border spinner-border-sm mb-2" role="status" />
@@ -743,10 +740,10 @@ const DispatchHub = () => {
 
         {/* ===== RIGHT: Deliveries ===== */}
         <Col lg={7}>
-          <div className="d-flex align-items-center justify-content-between mb-2 p-2 rounded"
+          <div className="d-flex align-items-center justify-content-between mb-2 p-2 rounded flex-wrap gap-2"
             style={{ background: '#fff', border: '1px solid #d0dbe8' }}>
             <strong style={{ fontSize: 14 }}>📄 Delivery Notes</strong>
-            <div className="d-flex align-items-center gap-2">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
               <ShadButton size="sm" variant="outline" onClick={loadDeliveries} disabled={deliveriesLoading}
                 className="rounded-md px-2">
                 <RotateCcw size={13} className={deliveriesLoading ? 'spin' : ''} />
@@ -757,22 +754,22 @@ const DispatchHub = () => {
               </ShadButton>
               <Form.Control type="date" size="sm" value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
-                style={{ fontSize: 12, width: 140 }} />
+                style={{ fontSize: 12, width: 130 }} />
             </div>
           </div>
 
-          <div className="d-flex gap-2 mb-2">
-            <InputGroup size="sm" style={{ flex: 1 }}>
+          <div className="d-flex gap-2 mb-2 flex-wrap">
+            <InputGroup size="sm" style={{ flex: '1 1 130px' }}>
               <InputGroup.Text style={{ background: '#fff' }}><LuSearch size={12} /></InputGroup.Text>
               <Form.Control placeholder="Delivery Nr" value={deliverySearch}
                 onChange={(e) => setDeliverySearch(e.target.value)} style={{ fontSize: 12 }} />
             </InputGroup>
-            <InputGroup size="sm" style={{ flex: 1 }}>
+            <InputGroup size="sm" style={{ flex: '1 1 130px' }}>
               <InputGroup.Text style={{ background: '#fff' }}><LuFilter size={12} /></InputGroup.Text>
               <Form.Control placeholder="Factory Name" value={factoryFilter}
                 onChange={(e) => setFactoryFilter(e.target.value)} style={{ fontSize: 12 }} />
             </InputGroup>
-            <InputGroup size="sm" style={{ flex: 1 }}>
+            <InputGroup size="sm" style={{ flex: '1 1 130px' }}>
               <InputGroup.Text style={{ background: '#fff' }}><LuFilter size={12} /></InputGroup.Text>
               <Form.Control placeholder="Customer Name" value={customerFilter}
                 onChange={(e) => setCustomerFilter(e.target.value)} style={{ fontSize: 12 }} />
@@ -780,7 +777,7 @@ const DispatchHub = () => {
           </div>
 
           <div
-            style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 310px)' }}
+            style={{ overflowY: 'auto', maxHeight: 'min(calc(100vh - 310px), 600px)' }}
             onDragOver={(e) => { e.preventDefault(); if (dragSource === 'driver') setDragOverTarget('unassigned-panel') }}
             onDragLeave={() => { if (dragOverTarget === 'unassigned-panel') setDragOverTarget(null) }}
             onDrop={(e) => { e.preventDefault(); onDropOnUnassigned() }}>
@@ -900,31 +897,7 @@ function DriverCard({
           {index}
         </div>
 
-        {/* Driver Avatar */}
-        <div className="d-flex align-items-center justify-content-center px-3"
-          style={{ borderRight: '1px solid #eee', flexShrink: 0 }}>
-          {driver.photoUrl ? (
-            <img src={driver.photoUrl} alt={driver.fullName}
-              style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid #2c3e50' }} />
-          ) : (
-            <div style={{
-              width: 56, height: 56, borderRadius: '50%',
-              background: driver.fullName ? '#2c3e50' : '#ccc',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 24, fontWeight: 700, border: '2px solid #2c3e50'
-            }}>
-              {driver.fullName ? driver.fullName.charAt(0).toUpperCase() : '?'}
-            </div>
-          )}
-        </div>
 
-        {/* Print Icon */}
-        <div className="d-flex align-items-start justify-content-center pt-2 px-1"
-          style={{ borderRight: '1px solid #eee' }}>
-          <Button variant="link" size="sm" style={{ color: '#17a2b8', padding: 2 }}>
-            <LuPrinter size={16} />
-          </Button>
-        </div>
 
         {/* Driver Info + Shipments */}
         <div className="flex-grow-1 p-2">
@@ -970,57 +943,6 @@ function DriverCard({
           )}
         </div>
 
-        {/* ── Vehicle Photo — Option A: Landscape banner ── */}
-        <div style={{
-          width: 140,
-          minHeight: 80,
-          borderLeft: '1px solid #eee',
-          overflow: 'hidden',
-          flexShrink: 0,
-          position: 'relative',
-          background: '#e8edf3'
-        }}>
-          {driver.vehiclePhotoUrl ? (
-            <img
-              src={driver.vehiclePhotoUrl}
-              alt="Vehicle"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
-          ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              minHeight: 80,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 4,
-            }}>
-              <TbTruck size={36} color="#94a3b8" />
-              <span style={{ fontSize: 10, color: '#94a3b8' }}>No photo</span>
-            </div>
-          )}
-          {/* Reg plate overlay */}
-          {(driver.shipments[0]?.vehicleReg || driver.assignedVehicleReg) && (
-            <div style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: 'rgba(0,0,0,0.50)',
-              padding: '3px 6px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4
-            }}>
-              <TbTruck size={10} color="#fff" />
-              <span style={{ fontSize: 10, color: '#fff', fontWeight: 600, letterSpacing: '0.5px' }}>
-                {driver.shipments[0]?.vehicleReg ?? driver.assignedVehicleReg}
-              </span>
-            </div>
-          )}
-        </div>
 
       </div>
     </div>
@@ -1056,14 +978,6 @@ function ShipmentBlock({
         <span style={{ fontSize: 11, color: '#fff' }}>
           Shipment: {shipment.shipmentNo ?? <em style={{ opacity: 0.6 }}>Assigning...</em>}
         </span>
-        <div className="d-flex align-items-center gap-1">
-          <Button size="sm" style={{ fontSize: 10, padding: '1px 6px', background: '#3d5166', border: 'none' }}>
-            Waybill Required?
-          </Button>
-          <Button size="sm" style={{ fontSize: 10, padding: '1px 6px', background: '#3d5166', border: 'none' }}>
-            Customer Addresses
-          </Button>
-        </div>
       </div>
 
       {isHovered && isDropTarget && (
@@ -1140,24 +1054,10 @@ function AssignedDeliveryCard({ delivery, isChecked, onToggleCheck, onDragStart,
               <div><span className="text-muted">DELIVERY NR: </span><strong>{delivery.deliveryNo}</strong></div>
             </Col>
             <Col xs={6}>
-              <div><span className="text-muted">QUARRY: </span>
-                <span style={{ fontWeight: 600 }}>{delivery.factoryName || '—'}</span></div>
               <div><span className="text-muted">QTY: </span>{(delivery as any).itemCount ?? delivery.itemQuantity ?? '—'}</div>
               <div><span className="text-muted">PRODUCT: </span>{delivery.deliveryType || '—'}</div>
             </Col>
           </Row>
-        </div>
-        <div className="d-flex flex-column align-items-center justify-content-center gap-1 px-2"
-          style={{ borderLeft: '1px solid #eee' }}>
-          <Button variant="primary" size="sm" title="Print" style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
-            <LuPrinter size={13} />
-          </Button>
-          <Button variant="secondary" size="sm" title="Settings" style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
-            <LuSettings size={13} />
-          </Button>
-          <Button variant="danger" size="sm" title="Remove" style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
-            <LuTrash2 size={13} />
-          </Button>
         </div>
       </div>
     </div>

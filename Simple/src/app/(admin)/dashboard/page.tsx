@@ -130,20 +130,6 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      {/* ── Page header ── */}
-      <div className="mb-3 text-center" style={{ padding: '0.5rem 0 1rem' }}>
-        {companyType && (
-          <Badge variant="outline" className="text-[#6b7a99] border-[#dde3f0] text-xs font-normal rounded-sm mb-2">
-            {companyType}
-          </Badge>
-        )}
-        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#1a2340' }}>
-          {companyName} — Delivery Dashboard
-        </h1>
-        <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: '#6b7a99' }}>
-          Monitor your deliveries, customers, drivers and status.
-        </p>
-      </div>
 
       {/* ── Row 1: 4 stat cards ── */}
       <div className="row g-3 mb-3">
