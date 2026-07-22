@@ -110,55 +110,74 @@ const Page = () => {
           <span className="badge badge-blue" style={{ fontSize: 11 }}>Company ID: {companyId}</span>
         </div>
         <div className="card-body p-3">
-          <div className="flex flex-wrap gap-3 items-end">
-            <div className="flex flex-col gap-1" style={{ flex: '2 1 180px' }}>
-              <label className="field-label">Template Name <span className="text-red-500">*</span></label>
-              <input className={`dash-filter-input ${fieldErrors.templateName ? 'border-red-400' : ''}`}
+          <div className="row g-3 align-items-end">
+            {/* Template Name */}
+            <div className="col-12 col-sm-6 col-xl-3">
+              <label className="field-label mb-1">Template Name <span style={{ color: '#ef4444' }}>*</span></label>
+              <input
+                className={`dash-filter-input${fieldErrors.templateName ? ' border-danger' : ''}`}
+                style={{ height: 34 }}
                 placeholder="e.g. Standard Delivery Note"
                 value={templateName}
                 onChange={e => { setTemplateName(e.target.value); if (fieldErrors.templateName) setFieldErrors(p => ({ ...p, templateName: '' })) }} />
-              {fieldErrors.templateName && <span style={{ fontSize: 11, color: '#ef4444' }}>{fieldErrors.templateName}</span>}
+              {fieldErrors.templateName && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>{fieldErrors.templateName}</div>}
             </div>
-            <div className="flex flex-col gap-1" style={{ flex: '1 1 130px' }}>
-              <label className="field-label">Category</label>
-              <select className="dash-filter-input" value={category} onChange={e => setCategory(e.target.value)}>
+
+            {/* Category */}
+            <div className="col-12 col-sm-6 col-xl-2">
+              <label className="field-label mb-1">Category</label>
+              <select className="dash-filter-input" style={{ height: 34 }} value={category} onChange={e => setCategory(e.target.value)}>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <div className="flex flex-col gap-1" style={{ flex: '2 1 180px' }}>
-              <label className="field-label">Description <span className="text-red-500">*</span></label>
-              <input className={`dash-filter-input ${fieldErrors.description ? 'border-red-400' : ''}`}
+
+            {/* Description */}
+            <div className="col-12 col-sm-6 col-xl-3">
+              <label className="field-label mb-1">Description <span style={{ color: '#ef4444' }}>*</span></label>
+              <input
+                className={`dash-filter-input${fieldErrors.description ? ' border-danger' : ''}`}
+                style={{ height: 34 }}
                 placeholder="e.g. Standard delivery note template"
                 value={description}
                 onChange={e => { setDescription(e.target.value); if (fieldErrors.description) setFieldErrors(p => ({ ...p, description: '' })) }} />
-              {fieldErrors.description && <span style={{ fontSize: 11, color: '#ef4444' }}>{fieldErrors.description}</span>}
+              {fieldErrors.description && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>{fieldErrors.description}</div>}
             </div>
-            <div className="flex flex-col gap-1" style={{ flex: '2 1 180px' }}>
-              <label className="field-label">File (.docx) <span className="text-red-500">*</span></label>
-              <input id="templateFile" type="file" accept=".docx"
-                className={`dash-filter-input ${fieldErrors.file ? 'border-red-400' : ''}`}
-                style={{ padding: '3px 8px' }}
+
+            {/* File */}
+            <div className="col-12 col-sm-6 col-xl-3">
+              <label className="field-label mb-1">File (.docx) <span style={{ color: '#ef4444' }}>*</span></label>
+              <input
+                id="templateFile"
+                type="file"
+                accept=".docx"
+                className={`form-control form-control-sm${fieldErrors.file ? ' is-invalid' : ''}`}
+                style={{ fontSize: '0.82rem' }}
                 onChange={handleFileChange} />
-              {fieldErrors.file && <span style={{ fontSize: 11, color: '#ef4444' }}>{fieldErrors.file}</span>}
+              {fieldErrors.file && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>{fieldErrors.file}</div>}
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="field-label opacity-0 select-none">.</label>
-              <Button size="sm" disabled={uploading} onClick={handleUpload}
-                className="flex items-center gap-1.5 btn-blue rounded-md whitespace-nowrap px-4">
+
+            {/* Upload Button */}
+            <div className="col-12 col-xl-1">
+              <Button
+                size="sm"
+                disabled={uploading}
+                onClick={handleUpload}
+                className="flex items-center gap-1.5 btn-blue rounded-md whitespace-nowrap w-100 justify-center">
                 <LuUpload size={13} /> {uploading ? 'Uploading...' : 'Upload'}
               </Button>
             </div>
           </div>
 
           {selectedFile && (
-            <div className="flex items-center gap-1.5 mt-2 text-muted" style={{ fontSize: 13 }}>
-              <LuFileText size={14} /> {selectedFile.name}
+            <div className="d-flex align-items-center gap-2 mt-3 px-1" style={{ fontSize: 13, color: '#6b7a99' }}>
+              <LuFileText size={14} />
+              <span>{selectedFile.name}</span>
               <Badge bg="secondary" style={{ fontSize: 10 }}>{(selectedFile.size / 1024).toFixed(1)} KB</Badge>
             </div>
           )}
 
           {uploadError && (
-            <div className="mt-2 alert alert-danger py-2 mb-0" style={{ fontSize: 13 }}>{uploadError}</div>
+            <div className="mt-3 alert alert-danger py-2 mb-0" style={{ fontSize: 13 }}>{uploadError}</div>
           )}
         </div>
       </div>

@@ -436,11 +436,13 @@ button.btn-ghost {
   border-bottom: 1px solid #dde3f0;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
 .dash-filter-input {
   flex: 1;
+  min-width: 130px;
   padding: 6px 10px;
   font-size: 0.82rem;
   border: 1px solid #dde3f0;
@@ -448,6 +450,8 @@ button.btn-ghost {
   color: #1a2340;
   outline: none;
   background: #f8fafc;
+  width: 100%;
+  box-sizing: border-box;
 }
 .dash-filter-input::placeholder { color: #6b7a99; }
 
